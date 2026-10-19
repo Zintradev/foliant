@@ -6,24 +6,41 @@ import { invoke } from '@tauri-apps/api/core';
 export type SaveStatus = 'idle' | 'unsaved' | 'saving' | 'saved';
 
 interface FoliantEditorProps {
+  /** Stable ID of the chapter being displayed. Changing this ID triggers a content reload. */
+  chapterId: string;
+  /** Initial content for the chapter. Only consumed on mount or when chapterId changes. */
   content: string;
+  /** Called once after a successful disk write with the confirmed-saved HTML. */
   onChange?: (content: string) => void;
   onStatusChange?: (status: SaveStatus) => void;
 }
 
 export default function FoliantEditor({
+  chapterId,
   content,
   onChange,
   onStatusChange,
 }: FoliantEditorProps) {
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const onStatusChangeRef = useRef(onStatusChange);
 
-  // Keep callback ref updated across renders
+  // Stable callback refs — always reflect the latest prop values without
+  // being listed as reactive dependencies anywhere.
+  const onStatusChangeRef = useRef(onStatusChange);
+  const onChangeRef = useRef(onChange);
   useEffect(() => {
     onStatusChangeRef.current = onStatusChange;
-  }, [onStatusChange]);
+    onChangeRef.current = onChange;
+  });
+
+  // Non-reactive snapshot of the latest incoming content prop.
+  // Written synchronously every render so chapter-switch code always
+  // reads the freshest value without triggering re-renders.
+  const incomingContentRef = useRef<string>(content);
+  incomingContentRef.current = content;
+
+  // Tracks which chapter is currently loaded inside the editor instance.
+  const activeChapterIdRef = useRef<string>(chapterId);
 
   const editor = useEditor({
     extensions: [StarterKit],
@@ -35,38 +52,41 @@ export default function FoliantEditor({
       },
     },
     onUpdate: ({ editor }) => {
-      const text = editor.getHTML();
-
-      if (onChange) {
-        onChange(text);
-      }
-
-      // Mark as unsaved immediately when the user types
+      // Signal unsaved state immediately so the UI responds to the keystroke.
       onStatusChangeRef.current?.('unsaved');
 
-      // Clear existing debounce and idle timers
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      if (idleTimerRef.current) {
-        clearTimeout(idleTimerRef.current);
-      }
+      // Reset debounce window on every keystroke.
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
 
-      // Native 1-second debounce
+      // Auto-save after 3 seconds of inactivity.
+      //
+      // IMPORTANT: We do NOT call onChange on every keystroke.
+      // Doing so would push content into App.tsx state → re-render →
+      // content prop changes → this component re-renders with new prop.
+      // onChange is called exactly once: after Rust confirms the write,
+      // so App.tsx state always reflects what is actually on disk.
       debounceTimerRef.current = setTimeout(async () => {
-        // Change status to saving when the save routine begins
+        if (editor.isDestroyed) return;
+
+        // Read the editor's latest HTML at the moment of saving,
+        // not the stale closure value from when the timeout was created.
+        const freshContent = editor.getHTML();
+
         onStatusChangeRef.current?.('saving');
 
         try {
           await invoke('save_chapter_file', {
             path: '../test-chapter.md',
-            content: text,
+            content: freshContent,
           });
 
-          // Change status to saved when writing to Rust completes successfully
+          // Handoff to parent: update stored chapter content to match
+          // what was just confirmed written to disk.
+          onChangeRef.current?.(freshContent);
+
           onStatusChangeRef.current?.('saved');
 
-          // Return to idle after 2 seconds
           idleTimerRef.current = setTimeout(() => {
             onStatusChangeRef.current?.('idle');
           }, 2000);
@@ -74,26 +94,48 @@ export default function FoliantEditor({
           console.error('Failed to auto-save chapter:', error);
           onStatusChangeRef.current?.('unsaved');
         }
-      }, 1000);
+      }, 3000);
     },
   });
 
-  // Keep editor content in sync when the active chapter content changes externally
+  // Reload editor content ONLY when chapterId changes (genuine chapter switch).
+  //
+  // `content` is intentionally NOT in the dependency array. App.tsx echoes
+  // the content prop back after every onChange call, which would re-trigger
+  // this effect and overwrite the editor mid-session. We read the latest
+  // content via incomingContentRef to avoid that dependency entirely.
   useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content);
-    }
-  }, [content, editor]);
+    if (!editor || editor.isDestroyed) return;
+    if (chapterId === activeChapterIdRef.current) return;
 
-  // Clean up all active timers on unmount
+    // --- Genuine chapter switch ---
+    activeChapterIdRef.current = chapterId;
+
+    // Discard any pending auto-save from the previous chapter.
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    if (idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
+    }
+
+    onStatusChangeRef.current?.('idle');
+
+    // Inject the new chapter's content without firing onUpdate,
+    // so the auto-save debounce is not triggered.
+    editor.commands.setContent(incomingContentRef.current, { emitUpdate: false });
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chapterId, editor]);
+  // ^ `content` deliberately omitted — see comment above.
+
+  // Tear down timers when the editor unmounts.
   useEffect(() => {
     return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      if (idleTimerRef.current) {
-        clearTimeout(idleTimerRef.current);
-      }
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };
   }, []);
 

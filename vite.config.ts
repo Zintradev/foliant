@@ -32,8 +32,11 @@ export default defineConfig(() => ({
         }
       : undefined,
     watch: {
-      // 3. tell Vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"],
+      // 3. tell Vite to ignore watching `src-tauri` and any runtime
+      //    data files written by the Tauri backend (e.g. saved chapters).
+      //    Without this, Vite detects the file write and does a full page
+      //    reload, which resets all React state to its initial defaults.
+      ignored: ["**/src-tauri/**", "**/*.md"],
     },
   },
 }));

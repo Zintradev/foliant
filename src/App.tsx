@@ -197,6 +197,7 @@ export default function App() {
               {activeChapter?.title ?? 'Untitled'}
             </h1>
             <FoliantEditor
+              chapterId={activeChapterId}
               content={activeChapter?.content ?? ''}
               onChange={handleContentChange}
               onStatusChange={setSaveStatus}
