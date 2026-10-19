@@ -25,9 +25,13 @@ mod tests {
 
         // Verify path and markdown extension structure for chapter files
         let sample_path = "./test-chapter.md";
-        assert!(sample_path.ends_with(".md"), "Chapter file path must end with .md");
-        assert!(!sample_path.is_empty(), "Chapter file path must not be empty");
+        assert!(
+            sample_path.ends_with(".md"),
+            "Chapter file path must end with .md"
+        );
+        assert!(
+            !sample_path.is_empty(),
+            "Chapter file path must not be empty"
+        );
     }
 }
-
-
