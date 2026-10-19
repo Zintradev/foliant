@@ -1,0 +1,1 @@
+<p>Lanterns flickered along the stone corridor as the conspirators arrived one by one, cloaked against the autumn chill.</p>
