@@ -183,10 +183,10 @@ async fn list_reference_images(app: tauri::AppHandle) -> Result<Vec<String>, Str
                 .map(|e| e.to_lowercase())
                 .unwrap_or_default();
 
-            if allowed_extensions.contains(&ext.as_str()) {
-                if let Some(s) = path.to_str() {
-                    paths.push(s.to_string());
-                }
+            if allowed_extensions.contains(&ext.as_str())
+                && let Some(s) = path.to_str()
+            {
+                paths.push(s.to_string());
             }
         }
     }
