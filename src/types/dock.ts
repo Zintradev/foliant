@@ -1,0 +1,148 @@
+// ---------------------------------------------------------------------------
+// Dockable Tab System Types
+// ---------------------------------------------------------------------------
+
+export type DockSide = 'left' | 'right';
+
+export type TabId =
+  | 'outline'
+  | 'storyline'
+  | 'timeline'
+  | 'relationships'
+  | 'stats'
+  | 'context'
+  | 'moodboard'
+  | 'characters'
+  | 'worldbuilding';
+
+export const ALL_SYSTEM_TABS: readonly TabId[] = [
+  'outline',
+  'storyline',
+  'timeline',
+  'relationships',
+  'stats',
+  'context',
+  'moodboard',
+  'characters',
+  'worldbuilding',
+] as const;
+
+export interface TabConfig {
+  id: TabId;
+  label: string;
+  iconName: string;
+  description?: string;
+}
+
+export interface CharacterCustomField {
+  id: string;
+  label: string; // e.g. "Motivation", "Backstory", "Appearance" or custom
+  value: string;
+}
+
+export interface CharacterTag {
+  id: string;
+  label: string;
+  color: string; // Theme key or hex color
+}
+
+export type CharacterPresetRole = 'Protagonist' | 'Antagonist' | 'Supporting' | 'Minor';
+export type CharacterRole = CharacterPresetRole | string;
+
+export interface CharacterItem {
+  id: string;
+  name: string;
+  role: CharacterRole;
+  summary: string;
+  tags?: CharacterTag[];
+  fields?: CharacterCustomField[];
+}
+
+export type RelationshipType =
+  | 'Alliance'
+  | 'Enmity'
+  | 'Family'
+  | 'Romance'
+  | 'Debt'
+  | 'Mentor'
+  | 'Rival'
+  | 'Custom';
+
+export type LineStrokeStyle = 'solid' | 'dashed' | 'dotted';
+export type RelationshipColor = 'zinc' | 'emerald' | 'rose' | 'amber' | 'blue' | 'purple' | 'cyan';
+export type RelationshipDirection = 'bidirectional' | 'directed' | 'reverse' | 'none';
+
+export interface GraphJunctionNode {
+  id: string;
+  label?: string; // e.g. "Marriage", "Union", "Branch"
+  x: number;
+  y: number;
+  storylineId?: string;
+}
+
+export interface CharacterRelationship {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  type?: RelationshipType;
+  label?: string;
+  style?: LineStrokeStyle;
+  color?: RelationshipColor;
+  direction?: RelationshipDirection;
+  notes?: string;
+  controlOffset?: { x: number; y: number };
+}
+
+export interface CharacterNodePosition {
+  characterId: string;
+  x: number;
+  y: number;
+}
+
+export type StorylineColor = 'emerald' | 'purple' | 'amber' | 'blue' | 'rose' | 'cyan';
+
+export interface StorylineField {
+  id: string;
+  label: string;
+  value: string;
+}
+
+export interface StorylineItem {
+  id: string;
+  title: string;
+  color: StorylineColor;
+  description: string;
+  linkedChapterIds: string[];
+  status: 'Active' | 'Resolved' | 'Dormant';
+  fields?: StorylineField[];
+}
+
+// ---------------------------------------------------------------------------
+// Timeline Key Event Marker / Narrative Alert Types
+// ---------------------------------------------------------------------------
+
+export type TimelineMarkerIcon = 'alert' | 'star' | 'flag' | 'skull' | 'custom';
+export type TimelineMarkerColor = 'rose' | 'amber' | 'emerald' | 'cyan' | 'purple' | 'zinc';
+
+export interface TimelineMarker {
+  id: string;
+  title: string;
+  description?: string;
+  icon: TimelineMarkerIcon;
+  color: TimelineMarkerColor;
+}
+
+// ---------------------------------------------------------------------------
+// Worldbuilding & Lore Types
+// ---------------------------------------------------------------------------
+
+export type WorldCategory = 'Location' | 'Faction' | 'Lore' | 'Artifact';
+
+export interface WorldItem {
+  id: string;
+  title: string;
+  category: WorldCategory;
+  summary: string;
+  description: string;
+  tags?: string[];
+}
