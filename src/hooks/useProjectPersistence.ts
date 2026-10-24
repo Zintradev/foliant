@@ -25,6 +25,7 @@ export interface UseProjectPersistenceReturn {
   saveSilently: () => Promise<boolean>;
   openProject: () => Promise<boolean>;
   newProject: (title?: string) => void;
+  loadProject: (loaded: FoliantProject, filePath?: string | null) => void;
   clearError: () => void;
 }
 
@@ -438,6 +439,20 @@ export function useProjectPersistence({
     [onProjectLoaded]
   );
 
+  /**
+   * Directly sets the current project and binds it to a directory path if provided.
+   */
+  const loadProject = useCallback(
+    (loaded: FoliantProject, filePath: string | null = null) => {
+      setCurrentFilePath(filePath);
+      setLastSavedAt(filePath ? loaded.lastModified : null);
+      setError(null);
+      setSyncStatus(filePath ? 'saved' : 'unsaved');
+      onProjectLoaded(loaded);
+    },
+    [onProjectLoaded]
+  );
+
   return {
     currentFilePath,
     fileName,
@@ -451,6 +466,7 @@ export function useProjectPersistence({
     saveSilently,
     openProject,
     newProject,
+    loadProject,
     clearError,
   };
 }

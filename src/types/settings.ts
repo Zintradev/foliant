@@ -10,25 +10,27 @@ export type ColorThemeKey =
 
 export interface AppColorSettings {
   roles: {
-    Protagonist: ColorThemeKey;
-    Antagonist: ColorThemeKey;
-    Supporting: ColorThemeKey;
-    Minor: ColorThemeKey;
-    [customRole: string]: ColorThemeKey;
+    Protagonist: ColorThemeKey | string;
+    Antagonist: ColorThemeKey | string;
+    Supporting: ColorThemeKey | string;
+    Minor: ColorThemeKey | string;
+    [customRole: string]: ColorThemeKey | string;
   };
   storylines: {
-    emerald: ColorThemeKey;
-    purple: ColorThemeKey;
-    amber: ColorThemeKey;
-    blue: ColorThemeKey;
-    rose: ColorThemeKey;
-    cyan: ColorThemeKey;
+    emerald: ColorThemeKey | string;
+    purple: ColorThemeKey | string;
+    amber: ColorThemeKey | string;
+    blue: ColorThemeKey | string;
+    rose: ColorThemeKey | string;
+    cyan: ColorThemeKey | string;
+    [customStoryline: string]: ColorThemeKey | string;
   };
   categories: {
-    Location: ColorThemeKey;
-    Faction: ColorThemeKey;
-    Lore: ColorThemeKey;
-    Artifact: ColorThemeKey;
+    Location: ColorThemeKey | string;
+    Faction: ColorThemeKey | string;
+    Lore: ColorThemeKey | string;
+    Artifact: ColorThemeKey | string;
+    [customCategory: string]: ColorThemeKey | string;
   };
 }
 
@@ -42,7 +44,7 @@ export interface SwatchMeta {
   hexPreview: string;
 }
 
-export const COLOR_SWATCHES: Record<ColorThemeKey, SwatchMeta> = {
+export const COLOR_SWATCHES: Record<ColorThemeKey, SwatchMeta> & Record<string, SwatchMeta | undefined> = {
   emerald: {
     name: 'Emerald',
     badgeBg: 'bg-emerald-950/70',
@@ -140,34 +142,118 @@ export const DEFAULT_COLOR_SETTINGS: AppColorSettings = {
   },
 };
 
-const STORAGE_KEY = 'foliant_color_settings_v1';
+export type EditorFontFamily =
+  | 'serif'
+  | 'garamond'
+  | 'sans'
+  | 'humanist'
+  | 'mono'
+  | 'bookman';
 
-export function loadColorSettings(): AppColorSettings {
-  if (typeof window === 'undefined') return DEFAULT_COLOR_SETTINGS;
+export type Language = 'en' | 'es';
+export type ThemeMode = 'dark' | 'light' | 'custom';
+
+export interface CustomThemeColors {
+  background: string;
+  surface: string;
+  primary: string;
+  text: string;
+}
+
+export const DEFAULT_CUSTOM_THEME: CustomThemeColors = {
+  background: '#09090b',
+  surface: '#18181b',
+  primary: '#10b981',
+  text: '#f4f4f5',
+};
+
+export interface AppPreferences {
+  timelineDropMode: 'shift' | 'swap';
+  persistViewFilters: boolean;
+  preserveManualSceneWidth?: boolean;
+  editorIndentFirstLine?: boolean;
+  editorFontFamily?: EditorFontFamily;
+  language?: Language;
+  themeMode?: ThemeMode;
+  customTheme?: CustomThemeColors;
+  colorPreset?: 'default' | 'monochrome' | 'warm' | 'cyber' | 'custom';
+  saveMode?: 'auto' | 'manual';
+}
+
+export interface AppSettings extends AppColorSettings {
+  preferences: AppPreferences;
+}
+
+export const DEFAULT_PREFERENCES: AppPreferences = {
+  timelineDropMode: 'shift',
+  persistViewFilters: false,
+  preserveManualSceneWidth: false,
+  editorIndentFirstLine: true,
+  editorFontFamily: 'serif',
+  language: 'en',
+  themeMode: 'dark',
+  customTheme: DEFAULT_CUSTOM_THEME,
+  colorPreset: 'default',
+  saveMode: 'auto',
+};
+
+export const DEFAULT_APP_SETTINGS: AppSettings = {
+  ...DEFAULT_COLOR_SETTINGS,
+  preferences: DEFAULT_PREFERENCES,
+};
+
+const STORAGE_KEY = 'foliant_app_settings_v1';
+const LEGACY_COLOR_STORAGE_KEY = 'foliant_color_settings_v1';
+
+export function loadSettings(): AppSettings {
+  if (typeof window === 'undefined') return DEFAULT_APP_SETTINGS;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_COLOR_SETTINGS;
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_COLOR_STORAGE_KEY);
+    if (!raw) return DEFAULT_APP_SETTINGS;
     const parsed = JSON.parse(raw);
     return {
       roles: { ...DEFAULT_COLOR_SETTINGS.roles, ...(parsed.roles || {}) },
       storylines: { ...DEFAULT_COLOR_SETTINGS.storylines, ...(parsed.storylines || {}) },
       categories: { ...DEFAULT_COLOR_SETTINGS.categories, ...(parsed.categories || {}) },
+      preferences: {
+        ...DEFAULT_PREFERENCES,
+        ...(parsed.preferences || {}),
+        customTheme: {
+          ...DEFAULT_CUSTOM_THEME,
+          ...(parsed.preferences?.customTheme || {}),
+        },
+      },
     };
   } catch {
-    return DEFAULT_COLOR_SETTINGS;
+    return DEFAULT_APP_SETTINGS;
   }
 }
 
-export function saveColorSettings(settings: AppColorSettings): void {
+export function saveSettings(settings: AppSettings): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    // Also mirror to legacy key for compatibility
+    localStorage.setItem(LEGACY_COLOR_STORAGE_KEY, JSON.stringify(settings));
   } catch {
     // Non-fatal if localStorage is unavailable
   }
 }
 
-export function getRoleColorKey(role: string, settings?: AppColorSettings): ColorThemeKey {
+export function loadColorSettings(): AppColorSettings {
+  return loadSettings();
+}
+
+export function saveColorSettings(settings: AppColorSettings): void {
+  const current = loadSettings();
+  saveSettings({
+    ...current,
+    ...settings,
+    preferences: current.preferences || DEFAULT_PREFERENCES,
+  });
+}
+
+export function getRoleColorKey(role: string, settings?: AppColorSettings): ColorThemeKey | string {
   if (!settings) {
     return (
       (DEFAULT_COLOR_SETTINGS.roles as Record<string, ColorThemeKey>)[role] || 'zinc'

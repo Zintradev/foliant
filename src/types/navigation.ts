@@ -14,7 +14,8 @@ export type MainViewId =
   | 'context'
   | 'characters'
   | 'worldbuilding'
-  | 'moodboard';
+  | 'moodboard'
+  | 'search';
 
 export interface MainViewConfig {
   id: MainViewId;

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   GitMerge,
   Plus,
@@ -12,18 +12,57 @@ import {
   Check,
   ChevronUp,
   Layers,
+  Globe,
 } from 'lucide-react';
 import { TextNode } from '../../../types/project';
-import { StorylineItem, StorylineColor, StorylineField } from '../../../types/dock';
+import { StorylineItem, StorylineColor, StorylineField, WorldItem } from '../../../types/dock';
 import { AppColorSettings, COLOR_SWATCHES } from '../../../types/settings';
+import { useTranslation } from '../../../i18n/translations';
 
 interface StorylineViewProps {
   storylines: StorylineItem[];
   chapters: TextNode[];
+  worldItems?: WorldItem[];
   onChange: (storylines: StorylineItem[]) => void;
   onSelectChapter?: (chapterId: string) => void;
   colorSettings?: AppColorSettings;
   isExpanded?: boolean;
+  onDirtyChange?: (isDirty: boolean) => void;
+}
+
+function CollapsibleStorylineDescription({ description }: { description: string }) {
+  const { t } = useTranslation();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const isLong = description.length > 130;
+
+  return (
+    <div className="space-y-1">
+      <p
+        className={`text-[11px] text-zinc-400 font-sans leading-relaxed ${
+          !isExpanded && isLong ? 'line-clamp-2' : ''
+        }`}
+      >
+        {description}
+      </p>
+      {isLong && (
+        <button
+          type="button"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 transition flex items-center gap-0.5 cursor-pointer"
+        >
+          {isExpanded ? (
+            <>
+              {t('showLess')} <ChevronUp className="w-2.5 h-2.5" />
+            </>
+          ) : (
+            <>
+              {t('showMore')} <ChevronDown className="w-2.5 h-2.5" />
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  );
 }
 
 type ViewMode = 'threads' | 'chapters';
@@ -89,11 +128,30 @@ const COLOR_CLASSES: Record<
 export default function StorylineView({
   storylines,
   chapters,
+  worldItems = [],
   onChange,
   onSelectChapter,
   colorSettings,
   isExpanded = false,
+  onDirtyChange,
 }: StorylineViewProps) {
+  const { t } = useTranslation();
+
+  const getPresetFieldLabel = (preset: typeof PRESET_FIELDS[number]): string => {
+    switch (preset) {
+      case 'Motivation':
+        return t('fieldMotivation');
+      case 'Beginning':
+        return t('presetBeginning');
+      case 'Turning Point':
+        return t('presetTurningPoint');
+      case 'Resolution':
+        return t('presetResolution');
+      default:
+        return preset;
+    }
+  };
+
   const [viewMode, setViewMode] = useState<ViewMode>('threads');
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -115,6 +173,14 @@ export default function StorylineView({
   const [editDescription, setEditDescription] = useState('');
   const [editColor, setEditColor] = useState<StorylineColor>('emerald');
 
+  useEffect(() => {
+    const isDirty = isAdding || editingStorylineId !== null;
+    onDirtyChange?.(isDirty);
+    return () => {
+      onDirtyChange?.(false);
+    };
+  }, [isAdding, editingStorylineId, onDirtyChange]);
+
   // ---------------------------------------------------------------------------
   // Card Creation & Editing Handlers
   // ---------------------------------------------------------------------------
@@ -126,7 +192,6 @@ export default function StorylineView({
       color: newColor,
       description: newDescription.trim() || 'No description added.',
       linkedChapterIds: initialChapterId ? [initialChapterId] : [],
-      status: 'Active',
       fields: [],
     };
     onChange([...storylines, newStoryline]);
@@ -171,21 +236,6 @@ export default function StorylineView({
       setEditingStorylineId(null);
     }
     onChange(storylines.filter((s) => s.id !== id));
-  };
-
-  const handleToggleStatus = (storylineId: string) => {
-    onChange(
-      storylines.map((s) => {
-        if (s.id !== storylineId) return s;
-        const nextStatus: StorylineItem['status'] =
-          s.status === 'Active'
-            ? 'Resolved'
-            : s.status === 'Resolved'
-            ? 'Dormant'
-            : 'Active';
-        return { ...s, status: nextStatus };
-      })
-    );
   };
 
   // ---------------------------------------------------------------------------
@@ -291,6 +341,36 @@ export default function StorylineView({
     );
   };
 
+  // ---------------------------------------------------------------------------
+  // World Item Linking Handlers
+  // ---------------------------------------------------------------------------
+  const handleLinkWorldItem = (storylineId: string, worldItemId: string) => {
+    if (!worldItemId) return;
+    onChange(
+      storylines.map((s) => {
+        if (s.id !== storylineId) return s;
+        const currentLinks = s.linkedWorldItemIds || [];
+        if (currentLinks.includes(worldItemId)) return s;
+        return {
+          ...s,
+          linkedWorldItemIds: [...currentLinks, worldItemId],
+        };
+      })
+    );
+  };
+
+  const handleUnlinkWorldItem = (storylineId: string, worldItemId: string) => {
+    onChange(
+      storylines.map((s) => {
+        if (s.id !== storylineId) return s;
+        return {
+          ...s,
+          linkedWorldItemIds: (s.linkedWorldItemIds || []).filter((id) => id !== worldItemId),
+        };
+      })
+    );
+  };
+
   const chapterStorylineMap = useMemo(() => {
     const map = new Map<string, StorylineItem[]>();
     for (const ch of validChapters) {
@@ -310,34 +390,34 @@ export default function StorylineView({
           <div className="flex items-center bg-zinc-950 border border-zinc-800 rounded-sm p-0.5">
             <button
               onClick={() => setViewMode('threads')}
-              title="View by Storyline Threads"
-              className={`px-2 py-0.5 rounded-xs text-[10px] font-medium transition ${
+              title={t('storylinesAndPlots')}
+              className={`px-2 py-0.5 rounded-xs text-[10px] font-medium transition cursor-pointer ${
                 viewMode === 'threads'
                   ? 'bg-zinc-800 text-zinc-100'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              Threads ({storylines.length})
+              {t('storyline')} ({storylines.length})
             </button>
             <button
               onClick={() => setViewMode('chapters')}
-              title="View by Chapters & Scenes"
-              className={`px-2 py-0.5 rounded-xs text-[10px] font-medium transition ${
+              title={t('chaptersCount')}
+              className={`px-2 py-0.5 rounded-xs text-[10px] font-medium transition cursor-pointer ${
                 viewMode === 'chapters'
                   ? 'bg-zinc-800 text-zinc-100'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              Chapters ({validChapters.length})
+              {t('chaptersCount')} ({validChapters.length})
             </button>
           </div>
         </div>
 
         <button
           onClick={() => setIsAdding(!isAdding)}
-          title="Add New Storyline Thread"
-          className="p-1 hover:bg-zinc-800 rounded-sm text-zinc-400 hover:text-white transition"
-          aria-label="Add New Storyline"
+          title={t('addStoryline')}
+          className="p-1 hover:bg-zinc-800 rounded-sm text-zinc-400 hover:text-white transition cursor-pointer"
+          aria-label={t('addStoryline')}
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
@@ -348,7 +428,7 @@ export default function StorylineView({
         <div className="p-3 border-b border-zinc-800 bg-zinc-900/90 space-y-2.5 animate-in fade-in duration-100">
           <input
             type="text"
-            placeholder="Storyline name (e.g. The Cipher Ledger)..."
+            placeholder={t('storylineTitlePlaceholder')}
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             className="w-full bg-zinc-950 border border-zinc-800 rounded-sm px-2.5 py-1.5 text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
@@ -357,13 +437,13 @@ export default function StorylineView({
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-zinc-500">Color:</span>
+              <span className="text-[10px] text-zinc-500">{t('color')}:</span>
               {STORYLINE_COLORS.map((c) => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => setNewColor(c)}
-                  className={`w-3.5 h-3.5 rounded-full transition-transform ${
+                  className={`w-3.5 h-3.5 rounded-full transition-transform cursor-pointer ${
                     COLOR_CLASSES[c].dot
                   } ${
                     newColor === c
@@ -381,7 +461,7 @@ export default function StorylineView({
                   onChange={(e) => setInitialChapterId(e.target.value)}
                   className="appearance-none bg-zinc-950 border border-zinc-800 rounded-sm px-2 py-1 pr-6 text-[10px] text-zinc-300 focus:outline-none focus:border-zinc-600 cursor-pointer"
                 >
-                  <option value="">No initial chapter</option>
+                  <option value="">{t('noneSelect')}</option>
                   {validChapters.map((ch) => (
                     <option key={ch.id} value={ch.id}>
                       Link: {ch.title}
@@ -394,7 +474,7 @@ export default function StorylineView({
           </div>
 
           <textarea
-            placeholder="Plot thread goal, stakes, and progression..."
+            placeholder={t('storylineGoalPlaceholder')}
             value={newDescription}
             onChange={(e) => setNewDescription(e.target.value)}
             rows={2}
@@ -404,16 +484,16 @@ export default function StorylineView({
           <div className="flex items-center justify-end gap-2 pt-1">
             <button
               onClick={() => setIsAdding(false)}
-              className="px-2.5 py-1 rounded-sm text-xs text-zinc-400 hover:text-zinc-200"
+              className="px-2.5 py-1 rounded-sm text-xs text-zinc-400 hover:text-zinc-200 cursor-pointer"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               onClick={handleAddStoryline}
               disabled={!newTitle.trim()}
-              className="px-3 py-1 rounded-sm text-xs font-medium bg-zinc-100 hover:bg-white text-zinc-950 disabled:opacity-50 transition"
+              className="px-3 py-1 rounded-sm text-xs font-medium bg-zinc-100 hover:bg-white text-zinc-950 disabled:opacity-50 transition cursor-pointer"
             >
-              Add Storyline
+              {t('addStoryline')}
             </button>
           </div>
         </div>
@@ -427,9 +507,9 @@ export default function StorylineView({
             {storylines.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-center text-zinc-500 gap-1.5">
                 <GitMerge className="w-6 h-6 text-zinc-600" />
-                <p className="text-xs">No storylines yet</p>
+                <p className="text-xs">{t('noStorylinesYet')}</p>
                 <p className="text-[10px] text-zinc-500 max-w-[200px]">
-                  Click + to create narrative plot threads and link them directly to project chapters.
+                  {t('emptyStateText')}
                 </p>
               </div>
             ) : (
@@ -462,12 +542,12 @@ export default function StorylineView({
                         <div className="space-y-2.5 pb-2 border-b border-zinc-800 bg-zinc-950/60 p-2.5 rounded-sm">
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider">
-                              Edit Storyline
+                              {t('edit')} {t('storyline')}
                             </span>
                             <div className="flex items-center gap-1">
                               <button
                                 onClick={() => handleSaveEdit(storyline.id)}
-                                title="Save changes"
+                                title={t('save')}
                                 disabled={!editTitle.trim()}
                                 className="p-1 rounded-sm bg-zinc-100 hover:bg-white text-zinc-950 disabled:opacity-50 transition"
                               >
@@ -475,7 +555,7 @@ export default function StorylineView({
                               </button>
                               <button
                                 onClick={handleCancelEdit}
-                                title="Cancel edit"
+                                title={t('cancelEdit')}
                                 className="p-1 rounded-sm text-zinc-400 hover:text-zinc-200 transition"
                               >
                                 <X className="w-3 h-3" />
@@ -487,13 +567,13 @@ export default function StorylineView({
                             type="text"
                             value={editTitle}
                             onChange={(e) => setEditTitle(e.target.value)}
-                            placeholder="Storyline title..."
+                            placeholder={t('storylineTitlePlaceholder')}
                             className="w-full bg-zinc-950 border border-zinc-800 rounded-sm px-2 py-1 text-xs text-zinc-100 focus:outline-none focus:border-zinc-600"
                             autoFocus
                           />
 
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-zinc-500">Color:</span>
+                            <span className="text-[10px] text-zinc-500">{t('color')}:</span>
                             {STORYLINE_COLORS.map((c) => (
                               <button
                                 key={c}
@@ -513,7 +593,7 @@ export default function StorylineView({
                           <textarea
                             value={editDescription}
                             onChange={(e) => setEditDescription(e.target.value)}
-                            placeholder="Plot thread goal, stakes, and synopsis..."
+                            placeholder={t('storylineGoalPlaceholder')}
                             rows={2}
                             className="w-full bg-zinc-950 border border-zinc-800 rounded-sm px-2 py-1 text-xs text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 resize-none font-sans"
                           />
@@ -528,20 +608,11 @@ export default function StorylineView({
                           </div>
 
                           <div className="flex items-center gap-1.5 shrink-0">
-                            {/* Status badge toggle */}
-                            <button
-                              onClick={() => handleToggleStatus(storyline.id)}
-                              title="Click to cycle status: Active -> Resolved -> Dormant"
-                              className="text-[9px] font-mono px-1.5 py-0.5 rounded-xs border border-zinc-750 bg-zinc-850 text-zinc-300 hover:border-zinc-600 transition"
-                            >
-                              {storyline.status}
-                            </button>
-
                             {/* Edit Button */}
                             <button
                               onClick={() => handleStartEdit(storyline)}
                               className="p-1 rounded-sm text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition"
-                              title="Edit storyline card"
+                              title={t('edit')}
                             >
                               <Pencil className="w-3 h-3" />
                             </button>
@@ -550,7 +621,7 @@ export default function StorylineView({
                             <button
                               onClick={() => handleDeleteStoryline(storyline.id)}
                               className="p-1 rounded-sm text-zinc-500 hover:text-red-400 hover:bg-zinc-800 transition"
-                              title="Delete storyline"
+                              title={t('deleteStoryline')}
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>
@@ -558,11 +629,9 @@ export default function StorylineView({
                         </div>
                       )}
 
-                      {/* Description View */}
+                      {/* Description View with Accordion Show More */}
                       {!isEditing && storyline.description && (
-                        <p className="text-[11px] text-zinc-400 font-sans leading-relaxed">
-                          {storyline.description}
-                        </p>
+                        <CollapsibleStorylineDescription description={storyline.description} />
                       )}
 
                       {/* MODULAR FIELDS / BEATS SECTION */}
@@ -570,7 +639,7 @@ export default function StorylineView({
                         <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono">
                           <span className="flex items-center gap-1 uppercase tracking-wider text-zinc-400">
                             <Layers className="w-2.5 h-2.5 text-zinc-500" />
-                            Modular Fields ({fields.length})
+                            {t('modularFields')} ({fields.length})
                           </span>
                         </div>
 
@@ -580,20 +649,20 @@ export default function StorylineView({
                             <button
                               key={preset}
                               type="button"
-                              onClick={() => handleAddField(storyline.id, preset)}
-                              className="px-1.5 py-0.5 rounded-xs text-[10px] bg-zinc-950 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-850 text-zinc-400 hover:text-zinc-200 transition"
-                              title={`Add ${preset} block`}
+                              onClick={() => handleAddField(storyline.id, getPresetFieldLabel(preset))}
+                              className="px-1.5 py-0.5 rounded-xs text-[10px] bg-zinc-950 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-850 text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
+                              title={`Add ${getPresetFieldLabel(preset)} block`}
                             >
-                              + {preset}
+                              + {getPresetFieldLabel(preset)}
                             </button>
                           ))}
                           <button
                             type="button"
-                            onClick={() => handleAddField(storyline.id, 'Custom Field')}
-                            className="px-1.5 py-0.5 rounded-xs text-[10px] bg-zinc-950 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-850 text-zinc-400 hover:text-zinc-200 transition font-medium"
-                            title="Add Custom Modular Field"
+                            onClick={() => handleAddField(storyline.id, t('customField'))}
+                            className="px-1.5 py-0.5 rounded-xs text-[10px] bg-zinc-950 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-850 text-zinc-400 hover:text-zinc-200 transition font-medium cursor-pointer"
+                            title={t('addCustomModularField')}
                           >
-                            + Custom Field
+                            + {t('customField')}
                           </button>
                         </div>
 
@@ -615,7 +684,7 @@ export default function StorylineView({
                                         label: e.target.value,
                                       })
                                     }
-                                    placeholder="Field label..."
+                                    placeholder={t('fieldLabelPlaceholder')}
                                     className="bg-transparent hover:bg-zinc-900 focus:bg-zinc-900 px-1 py-0.5 text-[10px] font-mono uppercase tracking-wider text-zinc-300 focus:text-white border border-transparent focus:border-zinc-700 rounded-xs focus:outline-none transition-colors max-w-[160px]"
                                   />
 
@@ -673,7 +742,7 @@ export default function StorylineView({
                         <div className="flex items-center justify-between text-[10px] text-zinc-500 font-mono">
                           <span className="flex items-center gap-1 uppercase tracking-wider">
                             <BookmarkCheck className="w-2.5 h-2.5 text-zinc-500" />
-                            Linked Chapters ({storyline.linkedChapterIds.length})
+                            {t('linkedChapters')} ({storyline.linkedChapterIds.length})
                           </span>
                         </div>
 
@@ -699,7 +768,7 @@ export default function StorylineView({
                                       handleUnlinkChapter(storyline.id, chId);
                                     }}
                                     className="hover:text-red-400 text-zinc-500 ml-0.5 transition"
-                                    title="Unlink chapter"
+                                    title={t('unlinkChapter')}
                                   >
                                     <X className="w-2.5 h-2.5" />
                                   </button>
@@ -709,7 +778,7 @@ export default function StorylineView({
                           </div>
                         ) : (
                           <p className="text-[10px] text-zinc-500 italic">
-                            No chapters linked yet.
+                            {t('noChaptersLinkedYet')}
                           </p>
                         )}
 
@@ -728,7 +797,7 @@ export default function StorylineView({
                                 className="w-full appearance-none bg-zinc-950 border border-zinc-800 hover:border-zinc-700 rounded-sm px-2 py-1 pr-6 text-[11px] text-zinc-300 focus:outline-none focus:border-zinc-600 cursor-pointer transition"
                               >
                                 <option value="" disabled>
-                                  + Link to chapter...
+                                  {t('linkToChapter')}
                                 </option>
                                 {unlinkedChapters.map((ch) => (
                                   <option
@@ -744,9 +813,98 @@ export default function StorylineView({
                             </div>
                           ) : (
                             <span className="text-[10px] text-zinc-500 italic">
-                              All chapters linked
+                              {t('allChaptersLinked')}
                             </span>
                           )}
+                        </div>
+                      </div>
+
+                      {/* Linked World References Section */}
+                      <div className="pt-2 border-t border-zinc-850 space-y-1.5">
+                        <div className="flex items-center justify-between text-[10px] text-zinc-500 font-mono">
+                          <span className="flex items-center gap-1 uppercase tracking-wider">
+                            <Globe className="w-2.5 h-2.5 text-zinc-500" />
+                            {t('linkedWorldReferences')} ({(storyline.linkedWorldItemIds || []).length})
+                          </span>
+                        </div>
+
+                        {/* Linked World Badges */}
+                        {(storyline.linkedWorldItemIds || []).length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {(storyline.linkedWorldItemIds || []).map((worldId) => {
+                              const item = worldItems.find((w) => w.id === worldId);
+                              return (
+                                <span
+                                  key={worldId}
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-xs text-[10px] border border-emerald-900/60 bg-emerald-950/40 text-emerald-300"
+                                >
+                                  <span className="truncate max-w-[130px]">
+                                    {item?.title || worldId}
+                                  </span>
+                                  {item?.category && (
+                                    <span className="text-[9px] opacity-60 font-mono">
+                                      ({item.category})
+                                    </span>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUnlinkWorldItem(storyline.id, worldId)}
+                                    className="hover:text-red-400 text-zinc-500 ml-0.5 transition cursor-pointer"
+                                    title={t('unlinkWorldEntity')}
+                                  >
+                                    <X className="w-2.5 h-2.5" />
+                                  </button>
+                                </span>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-[10px] text-zinc-500 italic">
+                            {t('noWorldEntitiesLinkedYet')}
+                          </p>
+                        )}
+
+                        {/* Dropdown to Link World Items */}
+                        <div className="flex items-center gap-1.5 pt-0.5">
+                          <Link2 className="w-3 h-3 text-zinc-500 shrink-0" />
+                          {(() => {
+                            const unlinkedWorld = worldItems.filter(
+                              (w) => !(storyline.linkedWorldItemIds || []).includes(w.id)
+                            );
+                            return unlinkedWorld.length > 0 ? (
+                              <div className="relative flex-1">
+                                <select
+                                  value=""
+                                  onChange={(e) => {
+                                    if (e.target.value) {
+                                      handleLinkWorldItem(storyline.id, e.target.value);
+                                    }
+                                  }}
+                                  className="w-full appearance-none bg-zinc-950 border border-zinc-800 hover:border-zinc-700 rounded-sm px-2 py-1 pr-6 text-[11px] text-zinc-300 focus:outline-none focus:border-zinc-600 cursor-pointer transition"
+                                >
+                                  <option value="" disabled>
+                                    {t('linkWorldEntity')}
+                                  </option>
+                                  {unlinkedWorld.map((w) => (
+                                    <option
+                                      key={w.id}
+                                      value={w.id}
+                                      className="bg-zinc-950 text-zinc-200"
+                                    >
+                                      {w.title} ({w.category})
+                                    </option>
+                                  ))}
+                                </select>
+                                <ChevronDown className="w-2.5 h-2.5 text-zinc-500 pointer-events-none absolute right-2 top-1/2 -translate-y-1/2" />
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-zinc-600 italic">
+                                {worldItems.length === 0
+                                  ? t('noWorldEntities')
+                                  : t('allWorldEntitiesLinked')}
+                              </span>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -763,10 +921,7 @@ export default function StorylineView({
             {validChapters.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-center text-zinc-500 gap-1.5">
                 <BookOpen className="w-6 h-6 text-zinc-600" />
-                <p className="text-xs">No chapters created</p>
-                <p className="text-[10px] text-zinc-500">
-                  Add chapters to your project in the Outline tab to attach plot threads.
-                </p>
+                <p className="text-xs">{t('noChaptersCreated')}</p>
               </div>
             ) : (
               <div
@@ -792,7 +947,7 @@ export default function StorylineView({
                         <div
                           onClick={() => onSelectChapter?.(chapter.id)}
                           className="flex items-center gap-1.5 min-w-0 cursor-pointer hover:text-white transition"
-                          title="Click to open chapter in editor"
+                          title={t('openChapterInEditor')}
                         >
                           <BookOpen className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
                           <h3 className="text-xs font-medium text-zinc-200 truncate">
@@ -800,7 +955,7 @@ export default function StorylineView({
                           </h3>
                         </div>
                         <span className="text-[10px] font-mono text-zinc-500 shrink-0">
-                          {linkedStorylines.length} {linkedStorylines.length === 1 ? 'thread' : 'threads'}
+                          {linkedStorylines.length} {linkedStorylines.length === 1 ? t('track') : t('tracks')}
                         </span>
                       </div>
 
@@ -817,7 +972,7 @@ export default function StorylineView({
                               <span
                                 key={st.id}
                                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-xs text-[10px] border border-zinc-750 bg-zinc-850 text-zinc-300"
-                                title={`${st.title} (${st.status})`}
+                                title={st.title}
                               >
                                 <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
                                 <span className="truncate max-w-[120px] font-medium">
@@ -827,7 +982,7 @@ export default function StorylineView({
                                   type="button"
                                   onClick={() => handleUnlinkChapter(st.id, chapter.id)}
                                   className="hover:text-red-400 text-zinc-500 ml-0.5 transition"
-                                  title="Detach thread from chapter"
+                                  title={t('detachPlotThread')}
                                 >
                                   <X className="w-2.5 h-2.5" />
                                 </button>
@@ -837,12 +992,12 @@ export default function StorylineView({
                         </div>
                       ) : (
                         <p className="text-[10px] text-zinc-500 italic">
-                          No storylines linked to this chapter.
+                          {t('noStorylinesLinkedToChapter')}
                         </p>
                       )}
 
                       {/* 1-Click Dropdown Selector to Attach Storylines */}
-                      <div className="flex items-center gap-1.5 pt-0.5 border-t border-zinc-850">
+                      <div className="flex items-center gap-1.5 pt-0.5 border-t border-zinc-855">
                         <GitMerge className="w-3 h-3 text-zinc-500 shrink-0" />
                         {unlinkedStorylines.length > 0 ? (
                           <div className="relative flex-1">
@@ -856,7 +1011,7 @@ export default function StorylineView({
                               className="w-full appearance-none bg-zinc-950 border border-zinc-800 hover:border-zinc-700 rounded-sm px-2 py-1 pr-6 text-[11px] text-zinc-300 focus:outline-none focus:border-zinc-600 cursor-pointer transition"
                             >
                               <option value="" disabled>
-                                + Attach plot thread...
+                                {t('attachPlotThread')}
                               </option>
                               {unlinkedStorylines.map((st) => (
                                 <option
@@ -864,7 +1019,7 @@ export default function StorylineView({
                                   value={st.id}
                                   className="bg-zinc-950 text-zinc-200"
                                 >
-                                  {st.title} ({st.status})
+                                  {st.title}
                                 </option>
                               ))}
                             </select>
@@ -872,7 +1027,7 @@ export default function StorylineView({
                           </div>
                         ) : (
                           <span className="text-[10px] text-zinc-500 italic">
-                            All plot threads attached
+                            {t('allPlotThreadsAttached')}
                           </span>
                         )}
                       </div>
@@ -893,7 +1048,7 @@ export default function StorylineView({
             className="flex items-center justify-center gap-1.5 w-full px-2 py-1.5 rounded-sm text-[11px] font-medium text-zinc-300 hover:text-white border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900 transition"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>New Storyline</span>
+            <span>{t('addStoryline')}</span>
           </button>
         </div>
       )}

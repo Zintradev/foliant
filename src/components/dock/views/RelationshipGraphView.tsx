@@ -27,6 +27,7 @@ import {
   StorylineItem,
   StorylineColor,
 } from '../../../types/dock';
+import { useTranslation, getRoleLabel } from '../../../i18n/translations';
 
 interface RelationshipGraphViewProps {
   characters: CharacterItem[];
@@ -167,37 +168,58 @@ const STROKE_STYLES: Record<LineStrokeStyle, { label: string; dash?: string }> =
 
 /**
  * Calculates exact perimeter anchor coordinate on the outer boundary of a target node
- * with an offset/margin, preventing arrowhead markers from clipping under cards.
+ * with an offset/margin, preventing arrowhead markers from clipping under cards or inverting.
+ * Uses strict Ray-Box intersection for cards and Ray-Circle intersection for junctions.
  */
 function getPerimeterAnchor(
   from: { cx: number; cy: number },
   to: { cx: number; cy: number; isJunction: boolean },
-  padding: number = 4
+  padding: number = 4,
+  arrowOffset: number = 9
 ): { x: number; y: number } {
-  const dx = to.cx - from.cx;
-  const dy = to.cy - from.cy;
-  if (dx === 0 && dy === 0) return { x: to.cx, y: to.cy };
+  let dx = from.cx - to.cx;
+  let dy = from.cy - to.cy;
+  let dist = Math.hypot(dx, dy);
 
+  // If distance is negligible, clamp to minimal distance so vector never inverts
+  if (dist < 0.0001) {
+    dx = 1;
+    dy = 0;
+    dist = 1;
+  }
+
+  const ux = dx / dist;
+  const uy = dy / dist;
+
+  // Ray-Circle intersection for junction nodes
   if (to.isJunction) {
     const radius = 14 + padding;
-    const dist = Math.hypot(dx, dy) || 1;
     return {
-      x: Math.round(to.cx - (dx / dist) * radius),
-      y: Math.round(to.cy - (dy / dist) * radius),
+      x: Math.round(to.cx + ux * (radius + arrowOffset)),
+      y: Math.round(to.cy + uy * (radius + arrowOffset)),
     };
   }
 
-  // Character Card: halfWidth = 80, halfHeight = 42
+  // Ray-Box intersection for rectangular Character Cards (exact 160x72px card)
   const effHalfW = 80 + padding;
-  const effHalfH = 42 + padding;
+  const effHalfH = 36 + padding;
 
-  const scaleX = effHalfW / Math.abs(dx || 0.0001);
-  const scaleY = effHalfH / Math.abs(dy || 0.0001);
-  const scale = Math.min(scaleX, scaleY);
+  const absDx = Math.abs(dx);
+  const absDy = Math.abs(dy);
 
+  // Calculate hit parameter t along direction vector
+  const tX = absDx > 0.00001 ? effHalfW / absDx : Infinity;
+  const tY = absDy > 0.00001 ? effHalfH / absDy : Infinity;
+  const tHit = Math.min(tX, tY);
+
+  const intersectX = to.cx + dx * tHit;
+  const intersectY = to.cy + dy * tHit;
+
+  // Step back endpoint outward towards origin node by arrowOffset (8-10px)
+  // so the SVG arrowhead marker rests completely visible on the card perimeter
   return {
-    x: Math.round(to.cx - dx * scale),
-    y: Math.round(to.cy - dy * scale),
+    x: Math.round(intersectX + ux * arrowOffset),
+    y: Math.round(intersectY + uy * arrowOffset),
   };
 }
 
@@ -212,6 +234,21 @@ export default function RelationshipGraphView({
   onAddCharacter,
   isExpanded = false,
 }: RelationshipGraphViewProps) {
+  const { t } = useTranslation();
+
+  const getColorPaletteLabel = (key: string): string => {
+    switch (key) {
+      case 'blue': return t('relAlliance');
+      case 'rose': return t('relHostile');
+      case 'emerald': return t('relFamily');
+      case 'amber': return t('relMentor');
+      case 'purple': return t('relRomance');
+      case 'cyan': return t('relContract');
+      case 'zinc': return t('relNeutral');
+      default: return key;
+    }
+  };
+
   const boardRef = useRef<HTMLDivElement | null>(null);
 
   // ---------------------------------------------------------------------------
@@ -855,6 +892,43 @@ export default function RelationshipGraphView({
     }
   };
 
+  const cardPointerCoordRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handleCardMouseDown = (e: React.MouseEvent) => {
+    if (e.button === 0) {
+      cardPointerCoordRef.current = { x: e.clientX, y: e.clientY };
+    }
+  };
+
+  const handleCardMouseUp = (e: React.MouseEvent, charId: string) => {
+    if (e.button !== 0 || !cardPointerCoordRef.current) return;
+    const delta = Math.hypot(
+      e.clientX - cardPointerCoordRef.current.x,
+      e.clientY - cardPointerCoordRef.current.y
+    );
+    cardPointerCoordRef.current = null;
+
+    // Movement greater than 3px is treated as a drag, not a click
+    if (delta > 3) {
+      return;
+    }
+
+    // If currently in connecting mode, confirm connection to this card
+    if (connectingSourceId) {
+      if (connectingSourceId !== charId) {
+        createQuickRelationship(connectingSourceId, charId);
+      }
+      setConnectingSourceId(null);
+      setElasticCursor(null);
+      return;
+    }
+
+    // Pure click anywhere on card opens the editor modal
+    setEditingCardId(charId);
+    setSelectedRelId(null);
+    setSelectedJunctionId(null);
+  };
+
   const handleCardClick = (e: React.MouseEvent, charId: string) => {
     e.stopPropagation();
 
@@ -868,6 +942,7 @@ export default function RelationshipGraphView({
       return;
     }
 
+    setEditingCardId(charId);
     setSelectedRelId(null);
     setSelectedJunctionId(null);
   };
@@ -949,7 +1024,7 @@ export default function RelationshipGraphView({
 
       return {
         cx: pos.x + 80,
-        cy: pos.y + 42,
+        cy: pos.y + 36,
         isJunction: false,
       };
     },
@@ -995,10 +1070,10 @@ export default function RelationshipGraphView({
           {isExpanded && (
             <>
               <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider font-mono">
-                Relationship Board
+                {t('relationshipBoard')}
               </span>
               <span className="text-[10px] text-zinc-500 font-mono">
-                ({characters.length} characters • {junctions.length} unions • {relationships.length} links)
+                ({characters.length} {t('charactersCountLabel')} • {junctions.length} {t('unionsCountLabel')} • {relationships.length} {t('linksCountLabel')})
               </span>
             </>
           )}
@@ -1009,7 +1084,7 @@ export default function RelationshipGraphView({
           {connectingSourceId ? (
             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-xs bg-blue-950/80 border border-blue-800 text-blue-300 text-[10px] font-mono animate-pulse">
               <Link className="w-3 h-3" />
-              <span>Click target character to connect with "{connectingSourceName}"</span>
+              <span>{t('clickTargetToConnect')} "{connectingSourceName}"</span>
               <button
                 type="button"
                 onClick={() => {
@@ -1021,11 +1096,7 @@ export default function RelationshipGraphView({
                 <X className="w-3 h-3" />
               </button>
             </div>
-          ) : (
-            <span className="hidden md:inline text-[10px] text-zinc-500 font-mono">
-              Tip: Right-click card to link • Right-click canvas to add • 2-finger scroll to pan
-            </span>
-          )}
+          ) : null}
 
           {/* Filter Type */}
           <select
@@ -1033,10 +1104,10 @@ export default function RelationshipGraphView({
             onChange={(e) => setFilterType(e.target.value)}
             className="bg-zinc-950 border border-zinc-800 rounded-xs px-1.5 py-0.5 text-zinc-300 text-[10px] font-mono focus:outline-none focus:border-zinc-600 cursor-pointer"
           >
-            <option value="all">All Links</option>
-            {Object.entries(COLOR_PALETTE).map(([key, config]) => (
+            <option value="all">{t('allLinks')}</option>
+            {Object.entries(COLOR_PALETTE).map(([key]) => (
               <option key={key} value={key}>
-                {config.label}
+                {getColorPaletteLabel(key)}
               </option>
             ))}
           </select>
@@ -1045,7 +1116,7 @@ export default function RelationshipGraphView({
           <button
             type="button"
             onClick={resetLayout}
-            title="Auto-arrange character nodes in circular layout"
+            title={t('autoArrangeTooltip')}
             className="p-1 hover:bg-zinc-800 rounded-xs text-zinc-400 hover:text-white transition cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" />
@@ -1063,7 +1134,7 @@ export default function RelationshipGraphView({
               className="flex items-center gap-1 px-2 py-0.5 rounded-xs border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 text-[10px] font-mono transition cursor-pointer"
             >
               <Plus className="w-3 h-3" />
-              <span>Connect</span>
+              <span>{t('connect')}</span>
             </button>
           )}
         </div>
@@ -1098,10 +1169,7 @@ export default function RelationshipGraphView({
         {characters.length === 0 && junctions.length === 0 ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-zinc-500 gap-2 pointer-events-none">
             <Users className="w-7 h-7 text-zinc-600" />
-            <p className="text-xs font-medium text-zinc-400">No characters registered</p>
-            <p className="text-[10px] text-zinc-500 max-w-xs">
-              Right-click on empty canvas to add characters or union nodes.
-            </p>
+            <p className="text-xs font-medium text-zinc-400">{t('noCharactersRegistered')}</p>
           </div>
         ) : null}
 
@@ -1129,7 +1197,7 @@ export default function RelationshipGraphView({
                     id={`arrowhead-end-${key}`}
                     markerWidth="8"
                     markerHeight="6"
-                    refX="7"
+                    refX="16"
                     refY="3"
                     orient="auto"
                   >
@@ -1190,8 +1258,8 @@ export default function RelationshipGraphView({
               const py = naturalMidY + (rel.controlOffset?.y ?? 0);
 
               // Calculate clean perimeter contact endpoints on card outer boundary towards peak
-              const startAnchor = getPerimeterAnchor({ cx: px, cy: py }, sourceInfo, 2);
-              const endAnchor = getPerimeterAnchor({ cx: px, cy: py }, targetInfo, 4);
+              const startAnchor = getPerimeterAnchor({ cx: px, cy: py }, sourceInfo, 2, 9);
+              const endAnchor = getPerimeterAnchor({ cx: px, cy: py }, targetInfo, 4, 9);
 
               const startX = startAnchor.x;
               const startY = startAnchor.y;
@@ -1272,6 +1340,47 @@ export default function RelationshipGraphView({
             const colorMeta = COLOR_PALETTE[colorKey] || COLOR_PALETTE.blue;
             const isSelected = selectedRelId === rel.id;
             const isPillDragging = draggingRelId === rel.id;
+            const dx = targetInfo.cx - sourceInfo.cx;
+            const dy = targetInfo.cy - sourceInfo.cy;
+            const isCompactPill = Math.abs(dx) < 160 && Math.abs(dy) < 50;
+
+            if (isCompactPill) {
+              return (
+                <button
+                  key={`pill-${rel.id}`}
+                  type="button"
+                  onPointerDown={(e) => handlePillPointerDown(e, rel)}
+                  onPointerMove={handlePillPointerMove}
+                  onPointerUp={handlePillPointerUp}
+                  onDoubleClick={(e) => handlePillDoubleClick(e, rel.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (justDraggedRelRef.current) return;
+                    setSelectedRelId(rel.id);
+                    setSelectedJunctionId(null);
+                    setEditingCardId(null);
+                  }}
+                  title={`${rel.label || 'Relationship'} (Drag to bend curve, double-click to straighten)`}
+                  style={{
+                    position: 'absolute',
+                    left: `${px}px`,
+                    top: `${py}px`,
+                    transform: 'translate(-50%, -50%)',
+                  }}
+                  className={`relationship-pill pointer-events-auto w-5 h-5 flex items-center justify-center rounded-xs border text-[9px] font-mono transition shadow-md hover:scale-110 select-none ${
+                    isPillDragging
+                      ? 'cursor-grabbing scale-110 ring-1 ring-white/50'
+                      : 'cursor-grab'
+                  } ${
+                    isSelected
+                      ? 'bg-zinc-800 border-zinc-400 text-white ring-1 ring-zinc-300 font-bold z-30'
+                      : `${colorMeta.bg} ${colorMeta.border} ${colorMeta.text} hover:border-zinc-500 z-20`
+                  }`}
+                >
+                  <span className="leading-none text-[9px]">...</span>
+                </button>
+              );
+            }
 
             return (
               <button
@@ -1415,14 +1524,17 @@ export default function RelationshipGraphView({
                   left: `${pos.x}px`,
                   top: `${pos.y}px`,
                   width: '160px',
+                  height: '72px',
                 }}
                 onPointerDown={(e) => handleNodePointerDown(e, char.id)}
                 onPointerMove={handleNodePointerMove}
                 onPointerUp={(e) => handleNodePointerUp(e, char.id)}
+                onMouseDown={handleCardMouseDown}
+                onMouseUp={(e) => handleCardMouseUp(e, char.id)}
                 onContextMenu={(e) => handleNodeContextMenu(e, char.id)}
                 onClick={(e) => handleCardClick(e, char.id)}
                 onDoubleClick={(e) => handleCardDoubleClick(e, char.id)}
-                className={`character-card rounded-sm border p-2 bg-zinc-900/95 shadow-lg select-none transition-shadow ${
+                className={`character-card h-[72px] rounded-sm border p-2 bg-zinc-900/95 shadow-lg select-none transition-shadow ${
                   isDrawingConnection
                     ? isConnectingSource
                       ? 'cursor-not-allowed'
@@ -1439,7 +1551,7 @@ export default function RelationshipGraphView({
                 {/* Header */}
                 <div className="flex items-center justify-between gap-1 pb-1 border-b border-zinc-800/80 mb-1">
                   <span className="text-[10px] font-mono px-1 rounded-xs bg-zinc-950 border border-zinc-800 text-zinc-400 uppercase tracking-wider truncate max-w-[110px]">
-                    {char.role}
+                    {getRoleLabel(char.role, t)}
                   </span>
                   <button
                     type="button"
@@ -1497,7 +1609,7 @@ export default function RelationshipGraphView({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-2 py-0.5 text-[8px] font-mono text-zinc-500 uppercase border-b border-zinc-850 mb-0.5">
-              Canvas Actions
+              {t('canvasActions')}
             </div>
             <button
               type="button"
@@ -1509,7 +1621,7 @@ export default function RelationshipGraphView({
               className="w-full text-left px-2 py-1 text-[10px] text-zinc-300 hover:bg-zinc-900 hover:text-white flex items-center gap-1.5 cursor-pointer"
             >
               <Users className="w-3 h-3 text-zinc-400" />
-              <span>Add Character</span>
+              <span>{t('addCharacter')}</span>
             </button>
             <button
               type="button"
@@ -1517,7 +1629,7 @@ export default function RelationshipGraphView({
               className="w-full text-left px-2 py-1 text-[10px] text-zinc-300 hover:bg-zinc-900 hover:text-white flex items-center gap-1.5 cursor-pointer"
             >
               <GitCommit className="w-3 h-3 text-emerald-400" />
-              <span>Add Union Node</span>
+              <span>{t('addUnionNode')}</span>
             </button>
           </div>
         )}
@@ -1533,7 +1645,7 @@ export default function RelationshipGraphView({
             type="button"
             onClick={handleZoomOut}
             disabled={zoom <= MIN_ZOOM}
-            title="Zoom Out"
+            title={t('zoomOut')}
             className="p-1 hover:bg-zinc-800 disabled:opacity-30 disabled:hover:bg-transparent rounded-xs transition text-zinc-400 hover:text-white cursor-pointer"
           >
             <ZoomOut className="w-3.5 h-3.5" />
@@ -1541,7 +1653,7 @@ export default function RelationshipGraphView({
           <button
             type="button"
             onClick={handleResetViewport}
-            title="Current zoom level"
+            title={t('currentZoom')}
             className="text-[10px] font-mono px-1.5 min-w-[38px] text-center text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-xs transition cursor-pointer select-none"
           >
             {Math.round(zoom * 100)}%
@@ -1550,7 +1662,7 @@ export default function RelationshipGraphView({
             type="button"
             onClick={handleZoomIn}
             disabled={zoom >= MAX_ZOOM}
-            title="Zoom In"
+            title={t('zoomIn')}
             className="p-1 hover:bg-zinc-800 disabled:opacity-30 disabled:hover:bg-transparent rounded-xs transition text-zinc-400 hover:text-white cursor-pointer"
           >
             <ZoomIn className="w-3.5 h-3.5" />
@@ -1559,7 +1671,7 @@ export default function RelationshipGraphView({
           <button
             type="button"
             onClick={handleResetViewport}
-            title="Reset Zoom (100%) & Viewport"
+            title={t('resetViewport')}
             className="p-1 hover:bg-zinc-800 rounded-xs transition text-zinc-400 hover:text-white cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -1578,7 +1690,7 @@ export default function RelationshipGraphView({
         >
           <div className="flex items-center justify-between pb-1.5 border-b border-zinc-850 mb-2">
             <span className="font-semibold text-zinc-100 text-xs font-mono">
-              Relationship Line Inspector
+              {t('relationshipInspector')}
             </span>
             <button
               type="button"
@@ -1676,7 +1788,7 @@ export default function RelationshipGraphView({
 
             {/* Stroke Style */}
             <div className="space-y-0.5">
-              <label className="text-[9px] font-mono text-zinc-500 uppercase">Style</label>
+              <label className="text-[9px] font-mono text-zinc-500 uppercase">{t('style')}</label>
               <div className="grid grid-cols-3 gap-1">
                 {(['solid', 'dashed', 'dotted'] as LineStrokeStyle[]).map((st) => (
                   <button
@@ -1697,7 +1809,7 @@ export default function RelationshipGraphView({
                         : 'bg-zinc-900 border-zinc-850 text-zinc-400 hover:text-zinc-200'
                     }`}
                   >
-                    {st}
+                    {st === 'solid' ? t('strokeSolid') : st === 'dashed' ? t('strokeDashed') : t('strokeDotted')}
                   </button>
                 ))}
               </div>
@@ -1705,7 +1817,7 @@ export default function RelationshipGraphView({
 
             {/* Color Palette */}
             <div className="space-y-0.5">
-              <label className="text-[9px] font-mono text-zinc-500 uppercase">Color</label>
+              <label className="text-[9px] font-mono text-zinc-500 uppercase">{t('color')}</label>
               <div className="grid grid-cols-4 gap-1">
                 {Object.entries(COLOR_PALETTE).map(([colKey, conf]) => (
                   <button
@@ -1793,7 +1905,7 @@ export default function RelationshipGraphView({
                 className="text-[10px] font-mono text-rose-400 hover:text-rose-300 px-2 py-0.5 rounded-xs hover:bg-zinc-900 transition cursor-pointer flex items-center gap-1"
               >
                 <Trash2 className="w-3 h-3" />
-                <span>Delete Connection</span>
+                <span>{t('deleteConnection')}</span>
               </button>
             </div>
           </div>
@@ -1867,7 +1979,7 @@ export default function RelationshipGraphView({
                   <option value="">No Storyline (Independent)</option>
                   {storylines.map((st) => (
                     <option key={st.id} value={st.id}>
-                      {st.title} ({st.status || 'Active'})
+                      {st.title}
                     </option>
                   ))}
                 </select>
@@ -1894,7 +2006,7 @@ export default function RelationshipGraphView({
                   className="text-[10px] font-mono text-rose-400 hover:text-rose-300 px-2 py-0.5 rounded-xs hover:bg-zinc-900 transition cursor-pointer flex items-center gap-1"
                 >
                   <Trash2 className="w-3 h-3" />
-                  <span>Delete Union</span>
+                  <span>{t('deleteUnion')}</span>
                 </button>
               </div>
             </div>
@@ -1937,7 +2049,7 @@ export default function RelationshipGraphView({
               >
                 {characters.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name} ({c.role})
+                    {c.name} ({getRoleLabel(c.role, t)})
                   </option>
                 ))}
               </select>
@@ -1948,7 +2060,7 @@ export default function RelationshipGraphView({
               <div className="flex items-center justify-between border-b border-zinc-850 pb-1.5">
                 <span className="font-semibold text-zinc-100">{editingCharacter.name}</span>
                 <span className="text-[9px] font-mono px-1 py-0.2 rounded-xs bg-zinc-950 border border-zinc-800 text-zinc-400 uppercase">
-                  {editingCharacter.role}
+                  {getRoleLabel(editingCharacter.role, t)}
                 </span>
               </div>
 
@@ -1966,14 +2078,9 @@ export default function RelationshipGraphView({
               )}
 
               <div className="text-[11px] text-zinc-400 leading-relaxed">
-                {editingCharacter.summary || 'No summary notes recorded for this character.'}
+                {editingCharacter.summary || t('noSummaryCharacter')}
               </div>
             </div>
-
-            <p className="text-[10px] text-zinc-500 font-mono italic leading-normal">
-              Note: Character biographical details, roles, and faction tags are managed globally in
-              the Cast & Characters panel.
-            </p>
 
             <div className="pt-2 border-t border-zinc-850 flex justify-end">
               <button
@@ -1981,7 +2088,7 @@ export default function RelationshipGraphView({
                 onClick={() => setEditingCardId(null)}
                 className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-xs text-[10px] font-mono transition cursor-pointer"
               >
-                Done
+                {t('done')}
               </button>
             </div>
           </div>
@@ -2002,7 +2109,7 @@ export default function RelationshipGraphView({
           >
             <div className="flex items-center justify-between pb-2 border-b border-zinc-850 mb-3">
               <span className="font-semibold text-zinc-100 text-xs font-mono">
-                Place Character at Cursor
+                {t('placeCharacterAtCursor')}
               </span>
               <button
                 type="button"
@@ -2043,7 +2150,7 @@ export default function RelationshipGraphView({
               className="space-y-2.5"
             >
               <div className="space-y-0.5">
-                <label className="text-[10px] font-mono text-zinc-400 uppercase">Name</label>
+                <label className="text-[10px] font-mono text-zinc-400 uppercase">{t('name')}</label>
                 <input
                   type="text"
                   required
@@ -2055,7 +2162,7 @@ export default function RelationshipGraphView({
               </div>
 
               <div className="space-y-0.5">
-                <label className="text-[10px] font-mono text-zinc-400 uppercase">Role</label>
+                <label className="text-[10px] font-mono text-zinc-400 uppercase">{t('role')}</label>
                 <input
                   type="text"
                   value={newCharRole}
@@ -2065,10 +2172,10 @@ export default function RelationshipGraphView({
               </div>
 
               <div className="space-y-0.5">
-                <label className="text-[10px] font-mono text-zinc-400 uppercase">Summary</label>
+                <label className="text-[10px] font-mono text-zinc-400 uppercase">{t('summary')}</label>
                 <textarea
                   rows={2}
-                  placeholder="Brief role in narrative..."
+                  placeholder={t('briefRolePlaceholder')}
                   value={newCharSummary}
                   onChange={(e) => setNewCharSummary(e.target.value)}
                   className="w-full bg-zinc-900 border border-zinc-800 rounded-xs p-1.5 text-xs text-zinc-200 focus:outline-none focus:border-zinc-600 resize-none"
@@ -2081,13 +2188,13 @@ export default function RelationshipGraphView({
                   onClick={() => setIsCreatingChar(false)}
                   className="px-2.5 py-1 text-[10px] font-mono text-zinc-400 hover:text-white rounded-xs transition cursor-pointer"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-xs text-[10px] font-mono transition cursor-pointer"
                 >
-                  Place Character
+                  {t('placeCharacter')}
                 </button>
               </div>
             </form>

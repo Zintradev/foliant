@@ -1,7 +1,10 @@
 import { Palette } from 'lucide-react';
 import MoodboardBlock from '../context/MoodboardBlock';
+import { useTranslation } from '../../i18n/translations';
 
 export default function MoodboardStudioView() {
+  const { t } = useTranslation();
+
   return (
     <div className="flex-1 flex flex-col h-full bg-zinc-950 select-none overflow-hidden font-sans">
       {/* Header */}
@@ -12,11 +15,8 @@ export default function MoodboardStudioView() {
           </div>
           <div>
             <h1 className="text-sm font-semibold text-zinc-100 tracking-tight">
-              Visual Moodboard Studio
+              {t('visualReference')}
             </h1>
-            <p className="text-[11px] text-zinc-400">
-              Collect inspiring setting artwork, costume designs, and character face-claims
-            </p>
           </div>
         </div>
       </header>
@@ -25,7 +25,6 @@ export default function MoodboardStudioView() {
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-zinc-950">
         <div className="w-full max-w-[1800px] mx-auto h-full">
           <MoodboardBlock
-            title="Project Visual References"
             collapsible={false}
             isExpanded={true}
           />

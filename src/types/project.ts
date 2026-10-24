@@ -14,6 +14,13 @@ export type ChapterStatus =
   | 'Revised'
   | 'Completed';
 
+export type PlotStatus = 'Active' | 'Dormant' | 'Resolved';
+
+export interface ScenePlotState {
+  storylineId: string;
+  status: 'Active' | 'Dormant' | 'Resolved';
+}
+
 export interface TextNode {
   id: string;
   title: string;
@@ -24,7 +31,10 @@ export interface TextNode {
   targetWords?: number; // Optional specific target for this node
   status?: ChapterStatus;
   attachedCharacterIds?: string[];
+  povCharacterId?: string;
+  attachedWorldItemIds?: string[];
   markers?: TimelineMarker[];
+  plotStates?: ScenePlotState[];
 }
 
 /** A single modular block inside the context panel. */

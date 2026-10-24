@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   BarChart3,
   Folder,
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { TextNode, ChapterStatus } from '../../../types/project';
 import { StorylineItem } from '../../../types/dock';
+import { useTranslation } from '../../../i18n/translations';
 
 export const STATUS_OPTIONS: ChapterStatus[] = [
   'Not Started',
@@ -31,6 +32,7 @@ interface ManuscriptStatsViewProps {
   onSelectChapter: (chapterId: string) => void;
   onUpdateChapter?: (id: string, updates: Partial<TextNode>) => void;
   targetWordCount?: number;
+  onUpdateTargetWordCount?: (target: number) => void;
   isExpanded?: boolean;
 }
 
@@ -136,13 +138,63 @@ export default function ManuscriptStatsView({
   onSelectChapter,
   onUpdateChapter,
   targetWordCount: initialTarget = 80000,
+  onUpdateTargetWordCount,
   isExpanded = false,
 }: ManuscriptStatsViewProps) {
+  const { t } = useTranslation();
+
+  const getStatusLabel = (status: ChapterStatus): string => {
+    switch (status) {
+      case 'Not Started':
+        return t('statusNotStarted');
+      case 'In Progress':
+        return t('statusInProgress');
+      case 'First Draft':
+        return t('statusFirstDraft');
+      case 'Revised':
+        return t('statusRevised');
+      case 'Completed':
+        return t('statusDone');
+      default:
+        return status;
+    }
+  };
+
+  const getBadgeLabel = (badgeText: string): string => {
+    switch (badgeText) {
+      case 'No target':
+        return t('noTarget');
+      case 'Exceeded':
+        return t('exceeded');
+      case 'Optimal':
+        return t('optimal');
+      case 'In Progress':
+        return t('statusInProgress');
+      default:
+        return badgeText;
+    }
+  };
+
+  // Sum of targetWords of all scenes in the manuscript
+  const sumSceneTargets = useMemo(() => {
+    return chapters
+      .filter((c) => c.type === 'scene')
+      .reduce((sum, c) => sum + (c.targetWords || 0), 0);
+  }, [chapters]);
+
   const [targetWordCount, setTargetWordCount] = useState<number>(initialTarget);
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditingTarget, setIsEditingTarget] = useState(false);
   const [customTargetInput, setCustomTargetInput] = useState(String(initialTarget));
   const [collapsedFolderIds, setCollapsedFolderIds] = useState<Set<string>>(new Set());
+
+  // Keep targetWordCount synced with prop changes from project
+  useEffect(() => {
+    if (initialTarget !== undefined) {
+      setTargetWordCount(initialTarget);
+      setCustomTargetInput(String(initialTarget));
+    }
+  }, [initialTarget]);
 
   // ---------------------------------------------------------------------------
   // Build Hierarchical Stats Tree
@@ -292,8 +344,18 @@ export default function ManuscriptStatsView({
     const val = parseInt(customTargetInput.replace(/\D/g, ''), 10);
     if (!isNaN(val) && val > 0) {
       setTargetWordCount(val);
+      onUpdateTargetWordCount?.(val);
     }
     setIsEditingTarget(false);
+  };
+
+  const handleSyncWithSceneTargets = () => {
+    if (sumSceneTargets > 0) {
+      setTargetWordCount(sumSceneTargets);
+      setCustomTargetInput(String(sumSceneTargets));
+      onUpdateTargetWordCount?.(sumSceneTargets);
+      setIsEditingTarget(false);
+    }
   };
 
   return (
@@ -307,14 +369,14 @@ export default function ManuscriptStatsView({
         <div className="flex items-center gap-1.5 min-w-0">
           <BarChart3 className="w-3.5 h-3.5 text-zinc-300 shrink-0" />
           <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider font-mono truncate">
-            {isExpanded ? 'Project Analytics & Target Tracking' : 'Project Analytics'}
+            {isExpanded ? t('projectAnalyticsTracking') : t('projectAnalytics')}
           </span>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
           <span
             className="hidden sm:flex items-center gap-1 text-[10px] text-zinc-500 font-mono px-1.5 py-0.5 rounded-sm bg-zinc-950 border border-zinc-850"
-            title="Estimated reading time at ~225 words per minute"
+            title={t('estReadingTimeTooltip')}
           >
             <Clock className="w-2.5 h-2.5 text-zinc-500" />
             <span>~{formatReadingTime(totalWords)}</span>
@@ -325,8 +387,8 @@ export default function ManuscriptStatsView({
               setCustomTargetInput(String(targetWordCount));
               setIsEditingTarget(!isEditingTarget);
             }}
-            title="Configure Target Word Count"
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-mono text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850 transition border border-zinc-800"
+            title={t('configureTargetWordCount')}
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-mono text-zinc-400 hover:text-zinc-200 hover:bg-zinc-855 transition border border-zinc-800"
           >
             <Target className="w-2.5 h-2.5" />
             <span>{targetWordCount.toLocaleString()}w</span>
@@ -336,9 +398,9 @@ export default function ManuscriptStatsView({
 
       {/* Target Word Count Quick Editor Modal/Bar */}
       {isEditingTarget && (
-        <div className="p-2 border-b border-zinc-800 bg-zinc-900/90 flex items-center justify-between gap-2 text-xs">
-          <span className="text-zinc-400 font-mono text-[11px]">Project Target:</span>
-          <div className="flex items-center gap-1.5">
+        <div className="p-2 border-b border-zinc-800 bg-zinc-900/90 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-zinc-400 font-mono text-[11px]">{t('projectTarget')}</span>
             <input
               type="text"
               value={customTargetInput}
@@ -352,15 +414,25 @@ export default function ManuscriptStatsView({
               onClick={handleSaveTarget}
               className="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xs text-[10px] font-mono transition"
             >
-              Save
+              {t('save')}
             </button>
             <button
               onClick={() => setIsEditingTarget(false)}
               className="px-1.5 py-0.5 text-zinc-500 hover:text-zinc-300 text-[10px] transition"
             >
-              Cancel
+              {t('cancel')}
             </button>
           </div>
+
+          {sumSceneTargets > 0 && (
+            <button
+              onClick={handleSyncWithSceneTargets}
+              title="Set project goal equal to sum of individual scene goals"
+              className="text-[10px] font-mono text-blue-400 hover:text-blue-300 bg-blue-950/40 border border-blue-800/60 px-2 py-0.5 rounded-xs transition"
+            >
+              {t('syncToScenes')} ({sumSceneTargets.toLocaleString()}w)
+            </button>
+          )}
         </div>
       )}
 
@@ -376,12 +448,12 @@ export default function ManuscriptStatsView({
               <div className="flex items-center justify-between text-xs font-mono text-zinc-400 uppercase tracking-wider font-semibold">
                 <span className="flex items-center gap-1.5">
                   <TrendingUp className="w-3.5 h-3.5 text-zinc-400" />
-                  Target Tracking
+                  {t('targetTracking')}
                 </span>
                 <span
                   className={`px-2 py-0.5 rounded-xs border text-[10px] font-mono uppercase tracking-wider ${globalStatus.badgeClass}`}
                 >
-                  {globalStatus.badgeText}
+                  {getBadgeLabel(globalStatus.badgeText)}
                 </span>
               </div>
 
@@ -390,9 +462,28 @@ export default function ManuscriptStatsView({
                   <span className="text-2xl lg:text-3xl font-bold text-zinc-100">
                     {totalWords.toLocaleString()}
                   </span>
-                  <span className="text-xs text-zinc-400">
-                    / {targetWordCount.toLocaleString()} w
-                  </span>
+                  <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                    <span>/</span>
+                    <div className="flex items-center gap-1 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 focus-within:border-zinc-500 rounded-xs px-1.5 py-0.5">
+                      <Target className="w-2.5 h-2.5 text-zinc-500 shrink-0" />
+                      <input
+                        type="number"
+                        min="0"
+                        step="1000"
+                        value={targetWordCount}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          const next = isNaN(val) ? 0 : Math.max(0, val);
+                          setTargetWordCount(next);
+                          setCustomTargetInput(String(next));
+                          onUpdateTargetWordCount?.(next);
+                        }}
+                        title="Edit Global Word Goal directly"
+                        className="w-20 bg-transparent text-xs font-mono font-bold text-zinc-200 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-zinc-500 font-mono">w</span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="w-full h-2 rounded-full bg-zinc-800 overflow-hidden border border-zinc-700/40">
@@ -405,12 +496,12 @@ export default function ManuscriptStatsView({
 
               <div className="flex items-center justify-between text-xs text-zinc-400 font-mono pt-1 border-t border-zinc-800/80">
                 <span className="font-semibold text-zinc-300">
-                  {globalStatus.percent.toFixed(1)}% Completed
+                  {globalStatus.percent.toFixed(1)}% {t('completed')}
                 </span>
                 <span>
                   {remainingWords > 0
-                    ? `${remainingWords.toLocaleString()} w remaining`
-                    : 'Goal reached'}
+                    ? `${remainingWords.toLocaleString()} ${t('wordsRemaining')}`
+                    : t('goalReached')}
                 </span>
               </div>
             </div>
@@ -419,7 +510,7 @@ export default function ManuscriptStatsView({
             <div className="p-4 rounded-sm border border-zinc-800 bg-zinc-900/40 flex flex-col justify-between space-y-3">
               <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider font-semibold flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-zinc-400" />
-                Reading & Pacing
+                {t('readingAndPacing')}
               </span>
 
               <div className="space-y-1">
@@ -427,12 +518,12 @@ export default function ManuscriptStatsView({
                   ~{formatReadingTime(totalWords)}
                 </div>
                 <div className="text-xs text-zinc-400 font-mono">
-                  Estimated read time (~225 wpm)
+                  {t('estimatedReadTime')}
                 </div>
               </div>
 
               <div className="pt-2 border-t border-zinc-800/80 flex items-center justify-between text-xs text-zinc-400 font-mono">
-                <span>Avg/Scene:</span>
+                <span>{t('avgPerScene')}</span>
                 <span className="text-zinc-200 font-semibold">
                   {sceneCount > 0 ? Math.round(totalWords / sceneCount).toLocaleString() : 0} w
                 </span>
@@ -443,32 +534,32 @@ export default function ManuscriptStatsView({
             <div className="p-4 rounded-sm border border-zinc-800 bg-zinc-900/40 flex flex-col justify-between space-y-3">
               <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider font-semibold flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5 text-zinc-400" />
-                Workflow Status
+                {t('workflowStatus')}
               </span>
 
               <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
                 <div className="flex items-center justify-between px-2 py-1 rounded-xs bg-zinc-950 border border-zinc-850">
-                  <span className="text-zinc-400">In Progress:</span>
+                  <span className="text-zinc-400">{t('statusInProgress')}:</span>
                   <span className="text-blue-400 font-semibold">{statusCounts['In Progress']}</span>
                 </div>
                 <div className="flex items-center justify-between px-2 py-1 rounded-xs bg-zinc-950 border border-zinc-850">
-                  <span className="text-zinc-400">First Draft:</span>
+                  <span className="text-zinc-400">{t('statusFirstDraft')}:</span>
                   <span className="text-amber-400 font-semibold">{statusCounts['First Draft']}</span>
                 </div>
                 <div className="flex items-center justify-between px-2 py-1 rounded-xs bg-zinc-950 border border-zinc-850">
-                  <span className="text-zinc-400">Revised:</span>
+                  <span className="text-zinc-400">{t('statusRevised')}:</span>
                   <span className="text-purple-400 font-semibold">{statusCounts['Revised']}</span>
                 </div>
                 <div className="flex items-center justify-between px-2 py-1 rounded-xs bg-zinc-950 border border-zinc-850">
-                  <span className="text-zinc-400">Completed:</span>
+                  <span className="text-zinc-400">{t('statusDone')}:</span>
                   <span className="text-emerald-400 font-semibold">{statusCounts['Completed']}</span>
                 </div>
               </div>
 
               <div className="pt-2 border-t border-zinc-800/80 flex items-center justify-between text-xs text-zinc-400 font-mono">
-                <span>Total Items:</span>
+                <span>{t('totalItems')}</span>
                 <span className="text-zinc-200 font-semibold">
-                  {sceneCount} scenes, {folderCount} sections
+                  {sceneCount} {t('scenesCountLabel')}, {folderCount} {t('sectionsCountLabel')}
                 </span>
               </div>
             </div>
@@ -479,7 +570,7 @@ export default function ManuscriptStatsView({
             <div className="flex items-center justify-between text-[10px] text-zinc-400 uppercase tracking-wider font-mono">
               <span className="flex items-center gap-1">
                 <TrendingUp className="w-2.5 h-2.5 text-zinc-400" />
-                Progress
+                {t('targetProgressLabel')}
               </span>
               <span className={`font-semibold ${globalStatus.textColor}`}>
                 {globalStatus.percent.toFixed(1)}%
@@ -490,9 +581,25 @@ export default function ManuscriptStatsView({
               <span className="text-base font-bold text-zinc-100">
                 {totalWords.toLocaleString()}
               </span>
-              <span className="text-[10px] text-zinc-400">
-                / {targetWordCount.toLocaleString()} w
-              </span>
+              <div className="flex items-center gap-1 text-[10px] text-zinc-400">
+                <span>/</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={targetWordCount}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    const next = isNaN(val) ? 0 : Math.max(0, val);
+                    setTargetWordCount(next);
+                    setCustomTargetInput(String(next));
+                    onUpdateTargetWordCount?.(next);
+                  }}
+                  title="Click to edit project target words"
+                  className="w-16 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 focus:border-zinc-500 rounded-xs px-1 py-0.2 text-[10px] font-mono font-bold text-zinc-200 focus:outline-none"
+                />
+                <span>w</span>
+              </div>
             </div>
 
             <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
@@ -505,11 +612,11 @@ export default function ManuscriptStatsView({
             <div className="flex items-center justify-between text-[9px] text-zinc-500 font-mono pt-0.5">
               <span>
                 {remainingWords > 0
-                  ? `${remainingWords.toLocaleString()} w left`
-                  : 'Goal reached!'}
+                  ? `${remainingWords.toLocaleString()} ${t('wordsLeft')}`
+                  : t('goalReached')}
               </span>
               <span>
-                {sceneCount} scenes
+                {sceneCount} {t('scenesCountLabel')}
               </span>
             </div>
           </div>
@@ -523,7 +630,7 @@ export default function ManuscriptStatsView({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search outline elements..."
+              placeholder={t('searchOutlineElements')}
               className="w-full bg-zinc-950 border border-zinc-800 rounded-sm pl-7 pr-3 py-1 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 font-sans"
             />
           </div>
@@ -531,11 +638,11 @@ export default function ManuscriptStatsView({
           {folderCount > 0 && (
             <button
               onClick={handleToggleExpandAll}
-              title={collapsedFolderIds.size > 0 ? 'Expand all folders' : 'Collapse all folders'}
+              title={collapsedFolderIds.size > 0 ? t('expandAllFolders') : t('collapseAllFolders')}
               className="flex items-center gap-1 px-2 py-1 rounded-sm border border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 text-[10px] font-mono transition shrink-0"
             >
               <ChevronsUpDown className="w-3 h-3" />
-              <span>{collapsedFolderIds.size > 0 ? 'Expand' : 'Collapse'}</span>
+              <span>{collapsedFolderIds.size > 0 ? t('expand') : t('collapse')}</span>
             </button>
           )}
         </div>
@@ -549,39 +656,39 @@ export default function ManuscriptStatsView({
               <thead>
                 <tr className="border-b border-zinc-800 bg-zinc-900/80 text-[10px] font-mono text-zinc-400 uppercase tracking-wider">
                   <th className={`font-medium ${isExpanded ? 'py-2.5 px-3' : 'py-2 px-2'}`}>
-                    Outline Structure
+                    {t('outlineStructure')}
                   </th>
                   <th className={`font-medium text-center ${isExpanded ? 'w-20' : 'w-14'}`}>
-                    Type
+                    {t('columnType')}
                   </th>
                   {isExpanded ? (
                     <>
                       <th className="py-2.5 px-3 font-medium text-right w-40">
-                        Words / Target
+                        {t('wordsTarget')}
                       </th>
                       <th className="py-2.5 px-3 font-medium text-right w-36">
-                        Progress Bar
+                        {t('progressBar')}
                       </th>
                       <th className="py-2.5 px-3 font-medium text-right w-20">
-                        Percent
+                        {t('percent')}
                       </th>
                       <th className="py-2.5 px-3 font-medium text-center w-36">
-                        Status
+                        {t('status')}
                       </th>
                     </>
                   ) : (
                     <>
                       <th className="py-2 px-2 font-medium text-right w-16">
-                        Words
+                        {t('words')}
                       </th>
                       <th className="py-2 px-2 font-medium text-right w-16">
-                        Target
+                        {t('target')}
                       </th>
                       <th className="py-2 px-2 font-medium text-right w-20">
-                        Progress
+                        {t('targetProgressLabel')}
                       </th>
                       <th className="py-2 px-2 font-medium text-center w-32">
-                        Status
+                        {t('status')}
                       </th>
                     </>
                   )}
@@ -594,7 +701,7 @@ export default function ManuscriptStatsView({
                       colSpan={isExpanded ? 6 : 6}
                       className="py-8 text-center text-zinc-500 text-xs"
                     >
-                      {searchQuery ? 'No elements match your search' : 'No chapters available'}
+                      {searchQuery ? t('noElementsMatch') : t('noChaptersAvailable')}
                     </td>
                   </tr>
                 ) : (
@@ -674,7 +781,7 @@ export default function ManuscriptStatsView({
                                 }`}
                               >
                                 {node.title ||
-                                  (isFolder ? 'Untitled Folder' : 'Untitled Scene')}
+                                  (isFolder ? t('untitledFolder') : t('untitledScene'))}
                               </span>
                               {isExpanded && node.synopsis && (
                                 <span className="text-[10px] text-zinc-500 truncate block font-normal">
@@ -685,7 +792,7 @@ export default function ManuscriptStatsView({
 
                             {isActive && (
                               <span className="text-[8px] font-mono px-1 rounded-xs bg-zinc-800 text-zinc-200 border border-zinc-700 shrink-0">
-                                Active
+                                {t('active')}
                               </span>
                             )}
                           </div>
@@ -767,7 +874,7 @@ export default function ManuscriptStatsView({
                                     value={opt}
                                     className="bg-zinc-950 text-zinc-200"
                                   >
-                                    {opt}
+                                    {getStatusLabel(opt)}
                                   </option>
                                 ))}
                               </select>
@@ -836,7 +943,7 @@ export default function ManuscriptStatsView({
                                     value={opt}
                                     className="bg-zinc-950 text-zinc-200"
                                   >
-                                    {opt}
+                                    {getStatusLabel(opt)}
                                   </option>
                                 ))}
                               </select>

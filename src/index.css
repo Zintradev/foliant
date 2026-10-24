@@ -1,7 +1,28 @@
 @import "tailwindcss";
 
-@layer utilities {
+@theme {
+  --color-zinc-850: var(--color-zinc-850, #1f1f23);
+  --color-zinc-750: var(--color-zinc-750, #333338);
+  --color-bg-base: var(--bg-base);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-surface-elevated: var(--bg-surface-elevated);
+  --color-primary: var(--color-primary);
+  --color-text-base: var(--text-base);
+  --color-text-muted: var(--text-muted);
+  --color-border-base: var(--border-base);
+}
 
+:root {
+  --bg-base: #09090b;
+  --bg-surface: #18181b;
+  --bg-surface-elevated: #27272a;
+  --color-primary: #10b981;
+  --text-base: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --border-base: #27272a;
+}
+
+@layer utilities {
   /* Hide scrollbar for Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -12,4 +33,40 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+}
+
+/* Custom Dark Scrollbars matching zinc theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a; /* zinc-800 */
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46; /* zinc-700 */
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox scrollbar styles */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #27272a transparent;
+}
+
+/* Delicate, slightly transparent markdown-style divider */
+hr {
+  border: none;
+  border-top: 1px solid rgba(161, 161, 170, 0.28);
+  margin: 1.5rem 0;
 }

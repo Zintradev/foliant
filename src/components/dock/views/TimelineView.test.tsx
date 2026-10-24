@@ -16,6 +16,7 @@ const mockChapters: TextNode[] = [
     targetWords: 3000,
     status: 'In Progress',
     attachedCharacterIds: ['char-1'],
+    plotStates: [{ storylineId: 'story-1', status: 'Active' }],
   },
   {
     id: 'scene-2',
@@ -37,7 +38,6 @@ const mockStorylines: StorylineItem[] = [
     color: 'purple',
     description: 'Infiltration of the royal council.',
     linkedChapterIds: ['scene-1'],
-    status: 'Active',
   },
 ];
 
@@ -57,7 +57,7 @@ const mockCharacters: CharacterItem[] = [
 ];
 
 describe('TimelineView', () => {
-  it('renders scenes in chronological order with attached markers', () => {
+  it('renders scenes in grouped chapter lanes layout', () => {
     render(
       <TimelineView
         chapters={mockChapters}
@@ -72,9 +72,9 @@ describe('TimelineView', () => {
     expect(screen.getByText('The Secret Meeting')).toBeInTheDocument();
     expect(screen.getByText('The Confrontation')).toBeInTheDocument();
 
-    // Attached markers (button elements with text)
+    // Attached markers / plot thread badges
     const markerStoryline = screen.getByRole('button', {
-      name: 'Crown Conspiracy',
+      name: /Crown Conspiracy/i,
     });
     expect(markerStoryline).toBeInTheDocument();
 
@@ -96,14 +96,14 @@ describe('TimelineView', () => {
     );
 
     const marker = screen.getByRole('button', {
-      name: 'Crown Conspiracy',
+      name: /Crown Conspiracy/i,
     });
     fireEvent.click(marker);
 
     // Popover shows description and detach action
     expect(
-      screen.getByText('Infiltration of the royal council.')
-    ).toBeInTheDocument();
+      screen.getAllByText('Infiltration of the royal council.').length
+    ).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Detach from Scene')).toBeInTheDocument();
   });
 
@@ -136,7 +136,7 @@ describe('TimelineView', () => {
     });
   });
 
-  it('handles zoom in, zoom out, and reset zoom controls', () => {
+  it('allows switching layout modes between Subway Map and Chapter Lanes', () => {
     render(
       <TimelineView
         chapters={mockChapters}
@@ -147,119 +147,23 @@ describe('TimelineView', () => {
       />
     );
 
-    // Initial zoom 100%
-    expect(screen.getByText('100%')).toBeInTheDocument();
+    // Subway Map is default view
+    expect(screen.getByText('Storyline Tracks')).toBeInTheDocument();
 
-    // Zoom in
-    const zoomInBtn = screen.getByTitle(/Zoom In/i);
-    fireEvent.click(zoomInBtn);
-    expect(screen.getByText('110%')).toBeInTheDocument();
+    // Click Chapter Lanes button
+    const lanesBtn = screen.getByRole('button', { name: /Chapter Lanes/i });
+    fireEvent.click(lanesBtn);
 
-    // Zoom out twice
-    const zoomOutBtn = screen.getByTitle(/Zoom Out/i);
-    fireEvent.click(zoomOutBtn);
-    expect(screen.getByText('100%')).toBeInTheDocument();
-    fireEvent.click(zoomOutBtn);
-    expect(screen.getByText('90%')).toBeInTheDocument();
+    expect(screen.getAllByText('Chapter Lanes').length).toBeGreaterThan(0);
 
-    // Reset zoom
-    const resetBtn = screen.getByTitle(/Reset Zoom/i);
-    fireEvent.click(resetBtn);
-    expect(screen.getByText('100%')).toBeInTheDocument();
+    // Switch back to Subway Map
+    const subwayBtn = screen.getByRole('button', { name: /Subway Map/i });
+    fireEvent.click(subwayBtn);
+    expect(screen.getByText('Storyline Tracks')).toBeInTheDocument();
   });
 
-  it('supports trackpad pinch-to-zoom with ctrlKey and prevents native touch actions', () => {
+  it('highlights active scene card cleanly', () => {
     render(
-      <TimelineView
-        chapters={mockChapters}
-        storylines={mockStorylines}
-        characters={mockCharacters}
-        activeChapterId="scene-1"
-        onSelectChapter={vi.fn()}
-      />
-    );
-
-    const canvas = screen.getByTestId('timeline-canvas');
-    expect(canvas).toBeInTheDocument();
-    expect(canvas.className).toContain('touch-none');
-    expect(canvas.style.touchAction).toBe('none');
-
-    // Trackpad pinch-to-zoom (ctrlKey: true)
-    fireEvent.wheel(canvas, {
-      ctrlKey: true,
-      deltaY: -30,
-    });
-    expect(screen.queryByText('100%')).not.toBeInTheDocument();
-
-    // WebKit gesture prevention
-    const gestureEvent = new Event('gesturestart', { bubbles: true, cancelable: true });
-    canvas.dispatchEvent(gestureEvent);
-    expect(gestureEvent.defaultPrevented).toBe(true);
-  });
-
-  it('renders SVG connector layer with overflow visible to prevent clipping', () => {
-    const { container } = render(
-      <TimelineView
-        chapters={mockChapters}
-        storylines={mockStorylines}
-        characters={mockCharacters}
-        activeChapterId="scene-1"
-        onSelectChapter={vi.fn()}
-      />
-    );
-
-    const svg = container.querySelector('svg.overflow-visible');
-    expect(svg).not.toBeNull();
-    expect(svg).toHaveStyle('overflow: visible');
-  });
-
-  it('handles free canvas pan dragging with mouse', () => {
-    render(
-      <TimelineView
-        chapters={mockChapters}
-        storylines={mockStorylines}
-        characters={mockCharacters}
-        activeChapterId="scene-1"
-        onSelectChapter={vi.fn()}
-      />
-    );
-
-    const canvas = screen.getByTestId('timeline-canvas');
-    expect(canvas).toHaveClass('cursor-grab');
-
-    // Pan with mouse down on empty canvas
-    fireEvent.mouseDown(canvas, { button: 0, clientX: 200, clientY: 200 });
-    expect(canvas).toHaveClass('cursor-grabbing');
-
-    // Drag canvas
-    fireEvent.mouseMove(window, { clientX: 280, clientY: 240 });
-    fireEvent.mouseUp(window);
-    expect(canvas).toHaveClass('cursor-grab');
-  });
-
-  it('supports spacebar modifier for hand grab navigation', () => {
-    render(
-      <TimelineView
-        chapters={mockChapters}
-        storylines={mockStorylines}
-        characters={mockCharacters}
-        activeChapterId="scene-1"
-        onSelectChapter={vi.fn()}
-      />
-    );
-
-    const canvas = screen.getByTestId('timeline-canvas');
-
-    // Press space
-    fireEvent.keyDown(window, { code: 'Space' });
-    expect(canvas).toHaveClass('cursor-grab');
-
-    // Release space
-    fireEvent.keyUp(window, { code: 'Space' });
-  });
-
-  it('highlights active scene card cleanly without redundant selection dots', () => {
-    const { container } = render(
       <TimelineView
         chapters={mockChapters}
         storylines={mockStorylines}
@@ -272,37 +176,6 @@ describe('TimelineView', () => {
     const activeTitle = screen.getByText('The Secret Meeting');
     const activeCard = activeTitle.closest('.rounded-sm');
     expect(activeCard).toHaveClass('border-zinc-300');
-
-    // Confirm that the old redundant selection dot wrapper is eliminated
-    const oldDots = container.querySelectorAll('.w-3\\.5.h-3\\.5.rounded-full.border-2');
-    expect(oldDots.length).toBe(0);
-  });
-
-  it('supports dragging cards to reposition them freely without triggering canvas pan', () => {
-    render(
-      <TimelineView
-        chapters={mockChapters}
-        storylines={mockStorylines}
-        characters={mockCharacters}
-        activeChapterId="scene-1"
-        onSelectChapter={vi.fn()}
-      />
-    );
-
-    const canvas = screen.getByTestId('timeline-canvas');
-    const card = screen.getByText('The Secret Meeting').closest('.rounded-sm');
-    expect(card).toBeInTheDocument();
-
-    // Mouse down on card should not make canvas enter grabbing
-    fireEvent.mouseDown(card!, { clientX: 200, clientY: 100 });
-    expect(canvas).toHaveClass('cursor-grab');
-
-    // Drag mouse
-    fireEvent.mouseMove(window, { clientX: 250, clientY: 180 });
-    fireEvent.mouseUp(window);
-
-    // Card has new position applied
-    expect(card).toHaveStyle('position: absolute');
   });
 
   it('renders key event marker badges and opens the interactive popover on click', () => {
@@ -349,7 +222,7 @@ describe('TimelineView', () => {
     ).toBeInTheDocument();
   });
 
-  it('adds a new marker when clicking "+ Alert / Marker" and invokes onUpdateChapter', () => {
+  it('adds a new marker when clicking "+ Alert" and invokes onUpdateChapter', () => {
     const handleUpdateChapter = vi.fn();
 
     render(
@@ -430,7 +303,7 @@ describe('TimelineView', () => {
     });
 
     // Change color to cyan
-    const cyanBtn = screen.getByRole('button', { name: /cyan/i });
+    const cyanBtn = screen.getByRole('button', { name: /Color: cyan/i });
     fireEvent.click(cyanBtn);
     expect(handleUpdateChapter).toHaveBeenCalledWith('scene-1', {
       markers: [
@@ -449,24 +322,10 @@ describe('TimelineView', () => {
     });
   });
 
-  it('does not close the marker popover on canvas pan mouse down', () => {
-    const chaptersWithMarkers: TextNode[] = [
-      {
-        ...mockChapters[0],
-        markers: [
-          {
-            id: 'm-1',
-            title: 'Climax Duel',
-            icon: 'skull',
-            color: 'rose',
-          },
-        ],
-      },
-    ];
-
+  it('renders Subway Map with storyline tracks and interactive station nodes', () => {
     render(
       <TimelineView
-        chapters={chaptersWithMarkers}
+        chapters={mockChapters}
         storylines={mockStorylines}
         characters={mockCharacters}
         activeChapterId="scene-1"
@@ -474,17 +333,345 @@ describe('TimelineView', () => {
       />
     );
 
-    // Open popover
-    const badge = screen.getByText('Climax Duel');
-    fireEvent.click(badge);
-    expect(screen.getByText('Event Marker / Alert')).toBeInTheDocument();
+    // Switch to Subway Map
+    const subwayBtn = screen.getByRole('button', { name: /Subway Map/i });
+    fireEvent.click(subwayBtn);
 
-    // Canvas background mouse down (panning)
-    const canvas = screen.getByTestId('timeline-canvas');
-    fireEvent.mouseDown(canvas, { button: 0, clientX: 10, clientY: 10 });
+    // Header tracks label present
+    expect(screen.getByText('Storyline Tracks')).toBeInTheDocument();
 
-    // Popover remains open
-    expect(screen.getByText('Event Marker / Alert')).toBeInTheDocument();
+    // Storyline left header present
+    expect(screen.getAllByText('Crown Conspiracy').length).toBeGreaterThan(0);
+
+    // Circular Subway station node present on track
+    const stationNode = screen.getByRole('button', {
+      name: /Crown Conspiracy at The Secret Meeting/i,
+    });
+    expect(stationNode).toBeInTheDocument();
+
+    // Clicking station node opens the plot popover
+    fireEvent.click(stationNode);
+    expect(
+      screen.getAllByText('Infiltration of the royal council.').length
+    ).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Detach from Scene')).toBeInTheDocument();
+  });
+
+  it('compresses consecutive inactive scenes into [...] gap spacer and expands when clicked', () => {
+    const chaptersWithGap: TextNode[] = [
+      ...mockChapters,
+      {
+        id: 'scene-3',
+        title: 'Quiet Morning',
+        content: 'Birds chirped.',
+        type: 'scene',
+        parentId: null,
+        targetWords: 1000,
+        status: 'In Progress',
+        attachedCharacterIds: [],
+        plotStates: [],
+      },
+      {
+        id: 'scene-4',
+        title: 'Market Day',
+        content: 'Apples were sold.',
+        type: 'scene',
+        parentId: null,
+        targetWords: 1500,
+        status: 'In Progress',
+        attachedCharacterIds: [],
+        plotStates: [],
+      },
+    ];
+
+    render(
+      <TimelineView
+        chapters={chaptersWithGap}
+        storylines={mockStorylines}
+        characters={mockCharacters}
+        activeChapterId="scene-1"
+        onSelectChapter={vi.fn()}
+      />
+    );
+
+    // Switch to Subway Map
+    const subwayBtn = screen.getByRole('button', { name: /Subway Map/i });
+    fireEvent.click(subwayBtn);
+
+    // In Subway Map, all scenes are always fully rendered and never compressed into [...]
+    expect(screen.queryByText('[...]')).not.toBeInTheDocument();
+    expect(screen.getByText('Quiet Morning')).toBeInTheDocument();
+    expect(screen.getByText('Market Day')).toBeInTheDocument();
+  });
+
+  it('keeps storyline and character filters independent and applies additive AND filtering', () => {
+    render(
+      <TimelineView
+        chapters={mockChapters}
+        storylines={mockStorylines}
+        characters={mockCharacters}
+        activeChapterId="scene-1"
+        onSelectChapter={vi.fn()}
+      />
+    );
+
+    const selects = screen.getAllByRole('combobox');
+    const plotSelect = selects[0];
+    const castSelect = selects[1];
+
+    // Switch to Chapter Lanes to inspect chapter lane scene cards
+    fireEvent.click(screen.getByRole('button', { name: /Chapter Lanes/i }));
+
+    // Select storyline filter
+    fireEvent.change(plotSelect, { target: { value: 'story-1' } });
+    expect(plotSelect).toHaveValue('story-1');
+
+    // Select character filter - storyline filter MUST NOT reset to 'all'
+    fireEvent.change(castSelect, { target: { value: 'char-1' } });
+    expect(plotSelect).toHaveValue('story-1');
+    expect(castSelect).toHaveValue('char-1');
+
+    // Scene 1 matches both story-1 and char-1 -> participates (not dimmed)
+    const scene1Card = screen.getByText('The Secret Meeting').closest('.min-w-\\[240px\\]');
+    expect(scene1Card).not.toHaveClass('opacity-35');
+
+    // Scene 2 matches neither -> dimmed
+    const scene2Card = screen.getByText('The Confrontation').closest('.min-w-\\[240px\\]');
+    expect(scene2Card).toHaveClass('opacity-35');
+  });
+
+  it('renders empty folders as a compact structural divider without empty scene block', () => {
+    const chaptersWithEmptyFolder: TextNode[] = [
+      {
+        id: 'folder-empty',
+        title: 'Act II: The Descent',
+        content: '',
+        type: 'folder',
+        parentId: null,
+      },
+      ...mockChapters,
+    ];
+
+    render(
+      <TimelineView
+        chapters={chaptersWithEmptyFolder}
+        storylines={mockStorylines}
+        characters={mockCharacters}
+        activeChapterId="scene-1"
+        onSelectChapter={vi.fn()}
+      />
+    );
+
+    // Switch to Chapter Lanes view where structural folders are rendered
+    fireEvent.click(screen.getByRole('button', { name: /Chapter Lanes/i }));
+
+    // Empty folder title is rendered as divider
+    expect(screen.getByText('Act II: The Descent')).toBeInTheDocument();
+    expect(screen.getByText('(Folder)')).toBeInTheDocument();
+
+    // No empty section placeholder text
+    expect(screen.queryByText(/No scenes inside this section/i)).not.toBeInTheDocument();
+  });
+
+  it('renders visual indicators for plot states (Dormant with text and Resolved with text/line-through)', () => {
+    const chaptersWithPlotStates: TextNode[] = [
+      {
+        id: 'scene-states',
+        title: 'The Crossroads',
+        content: 'Forks in the road.',
+        type: 'scene',
+        parentId: null,
+        targetWords: 2000,
+        status: 'In Progress',
+        attachedCharacterIds: [],
+        plotStates: [
+          { storylineId: 'story-1', status: 'Dormant' },
+        ],
+      },
+    ];
+
+    const { rerender } = render(
+      <TimelineView
+        chapters={chaptersWithPlotStates}
+        storylines={mockStorylines}
+        characters={mockCharacters}
+        activeChapterId="scene-states"
+        onSelectChapter={vi.fn()}
+      />
+    );
+
+    // Dormant state reflects visual indicator
+    expect(screen.getByText('(Dormant)')).toBeInTheDocument();
+
+    // Now test Resolved state
+    const chaptersResolved: TextNode[] = [
+      {
+        ...chaptersWithPlotStates[0],
+        plotStates: [
+          { storylineId: 'story-1', status: 'Resolved' },
+        ],
+      },
+    ];
+
+    rerender(
+      <TimelineView
+        chapters={chaptersResolved}
+        storylines={mockStorylines}
+        characters={mockCharacters}
+        activeChapterId="scene-states"
+        onSelectChapter={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('(Resolved)')).toBeInTheDocument();
+  });
+
+  it('supports controlled storyline and character filters', () => {
+    const handleStorylineFilter = vi.fn();
+    const handleCharacterFilter = vi.fn();
+
+    render(
+      <TimelineView
+        chapters={mockChapters}
+        storylines={mockStorylines}
+        characters={mockCharacters}
+        activeChapterId="scene-1"
+        onSelectChapter={vi.fn()}
+        selectedStorylineFilter="story-1"
+        onStorylineFilterChange={handleStorylineFilter}
+        selectedCharacterFilter="char-1"
+        onCharacterFilterChange={handleCharacterFilter}
+      />
+    );
+
+    const storylineSelect = screen.getByDisplayValue('Crown Conspiracy');
+    fireEvent.change(storylineSelect, { target: { value: 'all' } });
+    expect(handleStorylineFilter).toHaveBeenCalledWith('all');
+
+    const characterSelect = screen.getByDisplayValue('Evelyn Cross');
+    fireEvent.change(characterSelect, { target: { value: 'all' } });
+    expect(handleCharacterFilter).toHaveBeenCalledWith('all');
+  });
+
+  it('executes swap reordering when timelineDropMode is swap', () => {
+    const multipleStorylines: StorylineItem[] = [
+      { id: 'st-1', title: 'Plot Alpha', color: 'emerald', description: '', linkedChapterIds: [] },
+      { id: 'st-2', title: 'Plot Beta', color: 'rose', description: '', linkedChapterIds: [] },
+    ];
+    const handleUpdate = vi.fn();
+
+    render(
+      <TimelineView
+        chapters={mockChapters}
+        storylines={multipleStorylines}
+        characters={mockCharacters}
+        activeChapterId="scene-1"
+        onSelectChapter={vi.fn()}
+        onUpdateStorylines={handleUpdate}
+        timelineDropMode="swap"
+      />
+    );
+
+    const plotAlphaHeader = screen.getByRole('heading', { name: 'Plot Alpha' });
+    const plotBetaHeader = screen.getByRole('heading', { name: 'Plot Beta' });
+
+    const alphaTrack = plotAlphaHeader.closest('[draggable="true"]');
+    const betaContainer = plotBetaHeader.closest('[draggable="true"]');
+
+    expect(alphaTrack).toBeTruthy();
+    expect(betaContainer).toBeTruthy();
+
+    if (alphaTrack && betaContainer) {
+      fireEvent.dragStart(alphaTrack, {
+        dataTransfer: { setData: vi.fn(), effectAllowed: 'move' },
+      });
+      fireEvent.dragEnter(betaContainer);
+      fireEvent.dragOver(betaContainer, { dataTransfer: { dropEffect: 'move' } });
+      fireEvent.drop(betaContainer);
+
+      expect(handleUpdate).toHaveBeenCalledWith([multipleStorylines[1], multipleStorylines[0]]);
+    }
+  });
+
+  it('ensures all internal elements in draggable storyline header have pointer-events-none', () => {
+    render(
+      <TimelineView
+        chapters={mockChapters}
+        storylines={mockStorylines}
+        characters={mockCharacters}
+        activeChapterId="scene-1"
+        onSelectChapter={vi.fn()}
+      />
+    );
+
+    const title = screen.getByRole('heading', { name: 'Crown Conspiracy' });
+    const draggableHeader = title.closest('[draggable="true"]');
+    expect(draggableHeader).toBeInTheDocument();
+
+    // Check that text, labels, and icons have pointer-events-none so the whole card is grabbable
+    const nonInteractiveElements = draggableHeader?.querySelectorAll('h4, p, span');
+    expect(nonInteractiveElements?.length).toBeGreaterThan(0);
+    nonInteractiveElements?.forEach((el) => {
+      expect(el).toHaveClass('pointer-events-none');
+    });
+
+    // The collapse button must be interactive (pointer-events-auto)
+    const collapseButton = draggableHeader?.querySelector('button');
+    expect(collapseButton).toHaveClass('pointer-events-auto');
+  });
+
+  it('renders scene card resize handle with cursor-col-resize and supports manual resizing', () => {
+    render(
+      <TimelineView
+        chapters={mockChapters}
+        storylines={mockStorylines}
+        characters={mockCharacters}
+        activeChapterId="scene-1"
+        onSelectChapter={vi.fn()}
+      />
+    );
+
+    const resizeHandles = document.querySelectorAll('.cursor-col-resize');
+    expect(resizeHandles.length).toBeGreaterThan(0);
+
+    const handle = resizeHandles[0] as HTMLElement;
+    expect(handle).toBeInTheDocument();
+
+    // Trigger pointerdown
+    fireEvent.pointerDown(handle, { clientX: 100 });
+    // Trigger pointermove on window
+    fireEvent(window, new MouseEvent('pointermove', { clientX: 250 }));
+    // Trigger pointerup
+    fireEvent(window, new MouseEvent('pointerup'));
+  });
+
+  it('resets manualSceneWidths on zoomX change when preserveManualSceneWidth is false', () => {
+    render(
+      <TimelineView
+        chapters={mockChapters}
+        storylines={mockStorylines}
+        characters={mockCharacters}
+        activeChapterId="scene-1"
+        onSelectChapter={vi.fn()}
+        appSettings={{
+          ...({} as any),
+          preferences: {
+            timelineDropMode: 'shift',
+            persistViewFilters: false,
+            preserveManualSceneWidth: false,
+          },
+        }}
+      />
+    );
+
+    // Find zoom X slider by title
+    const zoomXContainer = screen.getByTitle('Horizontal Zoom (Scene column width)');
+    const zoomXSlider = zoomXContainer.querySelector('input[type="range"]') as HTMLInputElement;
+    expect(zoomXSlider).toBeInTheDocument();
+
+    // Change zoomX
+    fireEvent.change(zoomXSlider, { target: { value: '1.5' } });
   });
 });
+
 

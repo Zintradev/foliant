@@ -5,6 +5,7 @@
 export type DockSide = 'left' | 'right';
 
 export type TabId =
+  | 'inspector'
   | 'outline'
   | 'storyline'
   | 'timeline'
@@ -13,9 +14,11 @@ export type TabId =
   | 'context'
   | 'moodboard'
   | 'characters'
-  | 'worldbuilding';
+  | 'worldbuilding'
+  | 'search';
 
 export const ALL_SYSTEM_TABS: readonly TabId[] = [
+  'inspector',
   'outline',
   'storyline',
   'timeline',
@@ -25,6 +28,7 @@ export const ALL_SYSTEM_TABS: readonly TabId[] = [
   'moodboard',
   'characters',
   'worldbuilding',
+  'search',
 ] as const;
 
 export interface TabConfig {
@@ -54,6 +58,7 @@ export interface CharacterItem {
   name: string;
   role: CharacterRole;
   summary: string;
+  avatarUrl?: string;
   tags?: CharacterTag[];
   fields?: CharacterCustomField[];
 }
@@ -113,8 +118,8 @@ export interface StorylineItem {
   color: StorylineColor;
   description: string;
   linkedChapterIds: string[];
-  status: 'Active' | 'Resolved' | 'Dormant';
   fields?: StorylineField[];
+  linkedWorldItemIds?: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -136,7 +141,7 @@ export interface TimelineMarker {
 // Worldbuilding & Lore Types
 // ---------------------------------------------------------------------------
 
-export type WorldCategory = 'Location' | 'Faction' | 'Lore' | 'Artifact';
+export type WorldCategory = 'Location' | 'Faction' | 'Lore' | 'Artifact' | string;
 
 export interface WorldItem {
   id: string;
@@ -145,4 +150,7 @@ export interface WorldItem {
   summary: string;
   description: string;
   tags?: string[];
+  imageUrl?: string;
+  imagePath?: string;
+  avatarUrl?: string;
 }

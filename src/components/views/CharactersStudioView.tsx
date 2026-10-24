@@ -12,6 +12,7 @@ import {
   COLOR_SWATCHES,
   DEFAULT_COLOR_SETTINGS,
 } from '../../types/settings';
+import { useTranslation, getRoleLabel } from '../../i18n/translations';
 
 interface CharactersStudioViewProps {
   characters: CharacterItem[];
@@ -24,6 +25,7 @@ export default function CharactersStudioView({
   onChange,
   colorSettings,
 }: CharactersStudioViewProps) {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [isAdding, setIsAdding] = useState(false);
@@ -75,7 +77,7 @@ export default function CharactersStudioView({
       <span
         className={`text-[10px] font-mono px-2 py-0.5 rounded-sm border ${swatch.badgeBg} ${swatch.badgeBorder} ${swatch.badgeText}`}
       >
-        {role}
+        {getRoleLabel(role, t)}
       </span>
     );
   };

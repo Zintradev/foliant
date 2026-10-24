@@ -11,6 +11,15 @@
     "dialog:default",
     "fs:default",
     {
+      "identifier": "fs:allow-read-dir",
+      "allow": [
+        "$HOME/**",
+        "$DESKTOP/**",
+        "$DOCUMENT/**",
+        "$DOWNLOAD/**"
+      ]
+    },
+    {
       "identifier": "fs:allow-read-text-file",
       "allow": [
         "$HOME/**",

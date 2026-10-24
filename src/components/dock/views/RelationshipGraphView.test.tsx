@@ -312,7 +312,6 @@ describe('RelationshipGraphView', () => {
         color: 'purple',
         description: 'Succession crisis plotline',
         linkedChapterIds: [],
-        status: 'Active',
       },
     ];
     const mockJunctions: GraphJunctionNode[] = [

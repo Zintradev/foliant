@@ -1,0 +1,470 @@
+import { useState, useEffect, useMemo } from 'react';
+import { X, Search, Clock, Check, Omega } from 'lucide-react';
+
+export interface SymbolItem {
+  char: string;
+  name: string;
+  code: string;
+}
+
+export type SymbolCategory = 'dialogue' | 'accents' | 'math' | 'editorial' | 'currency';
+
+export const SYMBOL_CATEGORIES: { id: SymbolCategory; label: string }[] = [
+  { id: 'dialogue', label: 'Dialogue & Punctuation' },
+  { id: 'accents', label: 'Latin & Accents' },
+  { id: 'math', label: 'Greek & Math' },
+  { id: 'editorial', label: 'Editorial & Marks' },
+  { id: 'currency', label: 'Currency' },
+];
+
+export const SYMBOLS_DATA: Record<SymbolCategory, SymbolItem[]> = {
+  dialogue: [
+    { char: '—', name: 'Em Dash (Raya de diálogo)', code: 'U+2014' },
+    { char: '–', name: 'En Dash (Semirraya)', code: 'U+2013' },
+    { char: '―', name: 'Horizontal Bar', code: 'U+2015' },
+    { char: '‐', name: 'Hyphen', code: 'U+2010' },
+    { char: '‑', name: 'Non-breaking Hyphen', code: 'U+2011' },
+    { char: '…', name: 'Horizontal Ellipsis (Puntos suspensivos)', code: 'U+2026' },
+    { char: '‥', name: 'Two Dot Leader', code: 'U+2025' },
+    { char: '«', name: 'Left-Pointing Guillemet (Comilla latina apertura)', code: 'U+00AB' },
+    { char: '»', name: 'Right-Pointing Guillemet (Comilla latina cierre)', code: 'U+00BB' },
+    { char: '‹', name: 'Single Left Guillemet', code: 'U+2039' },
+    { char: '›', name: 'Single Right Guillemet', code: 'U+203A' },
+    { char: '“', name: 'Left Double Quotation Mark (Comilla inglesa apertura)', code: 'U+201C' },
+    { char: '”', name: 'Right Double Quotation Mark (Comilla inglesa cierre)', code: 'U+201D' },
+    { char: '„', name: 'Double Low-9 Quotation Mark', code: 'U+201E' },
+    { char: '‘', name: 'Left Single Quotation Mark', code: 'U+2018' },
+    { char: '’', name: 'Right Single Quotation Mark (Apostrophe)', code: 'U+2019' },
+    { char: '‚', name: 'Single Low-9 Quotation Mark', code: 'U+201A' },
+    { char: '¿', name: 'Inverted Question Mark (Apertura interrogación)', code: 'U+00BF' },
+    { char: '¡', name: 'Inverted Exclamation Mark (Apertura exclamación)', code: 'U+00A1' },
+    { char: '¶', name: 'Pilcrow / Paragraph Sign', code: 'U+00B6' },
+    { char: '§', name: 'Section Sign', code: 'U+00A7' },
+    { char: '†', name: 'Dagger (Daga)', code: 'U+2020' },
+    { char: '‡', name: 'Double Dagger (Doble daga)', code: 'U+2021' },
+    { char: '•', name: 'Bullet Point', code: 'U+2022' },
+    { char: '‣', name: 'Triangular Bullet', code: 'U+2023' },
+    { char: '⁃', name: 'Hyphen Bullet', code: 'U+2043' },
+    { char: '◦', name: 'White Bullet', code: 'U+25E6' },
+    { char: '⁂', name: 'Asterism (Separador de escena)', code: 'U+2042' },
+    { char: '\u00A0', name: 'No-Break Space (Espacio duro)', code: 'U+00A0' },
+    { char: '\u200A', name: 'Hair Space (Espacio ultrafino)', code: 'U+200A' },
+    { char: '\u2009', name: 'Thin Space (Espacio fino)', code: 'U+2009' },
+  ],
+  accents: [
+    { char: 'á', name: 'Latin Small a with Acute', code: 'U+00E1' },
+    { char: 'é', name: 'Latin Small e with Acute', code: 'U+00E9' },
+    { char: 'í', name: 'Latin Small i with Acute', code: 'U+00ED' },
+    { char: 'ó', name: 'Latin Small o with Acute', code: 'U+00F3' },
+    { char: 'ú', name: 'Latin Small u with Acute', code: 'U+00FA' },
+    { char: 'Á', name: 'Latin Capital A with Acute', code: 'U+00C1' },
+    { char: 'É', name: 'Latin Capital E with Acute', code: 'U+00C9' },
+    { char: 'Í', name: 'Latin Capital I with Acute', code: 'U+00CD' },
+    { char: 'Ó', name: 'Latin Capital O with Acute', code: 'U+00D3' },
+    { char: 'Ú', name: 'Latin Capital U with Acute', code: 'U+00DA' },
+    { char: 'à', name: 'Latin Small a with Grave', code: 'U+00E0' },
+    { char: 'è', name: 'Latin Small e with Grave', code: 'U+00E8' },
+    { char: 'ì', name: 'Latin Small i with Grave', code: 'U+00EC' },
+    { char: 'ò', name: 'Latin Small o with Grave', code: 'U+00F2' },
+    { char: 'ù', name: 'Latin Small u with Grave', code: 'U+00F9' },
+    { char: 'â', name: 'Latin Small a with Circumflex', code: 'U+00E2' },
+    { char: 'ê', name: 'Latin Small e with Circumflex', code: 'U+00EA' },
+    { char: 'î', name: 'Latin Small i with Circumflex', code: 'U+00EE' },
+    { char: 'ô', name: 'Latin Small o with Circumflex', code: 'U+00F4' },
+    { char: 'û', name: 'Latin Small u with Circumflex', code: 'U+00FB' },
+    { char: 'ä', name: 'Latin Small a with Diaeresis', code: 'U+00E4' },
+    { char: 'ë', name: 'Latin Small e with Diaeresis', code: 'U+00EB' },
+    { char: 'ï', name: 'Latin Small i with Diaeresis', code: 'U+00EF' },
+    { char: 'ö', name: 'Latin Small o with Diaeresis', code: 'U+00F6' },
+    { char: 'ü', name: 'Latin Small u with Diaeresis (Diéresis)', code: 'U+00FC' },
+    { char: 'Ü', name: 'Latin Capital U with Diaeresis', code: 'U+00DC' },
+    { char: 'ã', name: 'Latin Small a with Tilde', code: 'U+00E3' },
+    { char: 'õ', name: 'Latin Small o with Tilde', code: 'U+00F5' },
+    { char: 'ñ', name: 'Latin Small n with Tilde (Eñe minúscula)', code: 'U+00F1' },
+    { char: 'Ñ', name: 'Latin Capital N with Tilde (Eñe mayúscula)', code: 'U+00D1' },
+    { char: 'ç', name: 'Latin Small c with Cedilla', code: 'U+00E7' },
+    { char: 'Ç', name: 'Latin Capital C with Cedilla', code: 'U+00C7' },
+    { char: 'ß', name: 'Latin Small Sharp S (Eszett)', code: 'U+00DF' },
+    { char: 'ẞ', name: 'Latin Capital Sharp S', code: 'U+1E9E' },
+    { char: 'æ', name: 'Latin Small Ligature ae', code: 'U+00E6' },
+    { char: 'Æ', name: 'Latin Capital Ligature AE', code: 'U+00C6' },
+    { char: 'œ', name: 'Latin Small Ligature oe', code: 'U+0153' },
+    { char: 'Œ', name: 'Latin Capital Ligature OE', code: 'U+0152' },
+    { char: 'å', name: 'Latin Small a with Ring Above', code: 'U+00E5' },
+    { char: 'Å', name: 'Latin Capital A with Ring Above (Angstrom)', code: 'U+00C5' },
+    { char: 'ø', name: 'Latin Small o with Stroke', code: 'U+00F8' },
+    { char: 'Ø', name: 'Latin Capital O with Stroke', code: 'U+00D8' },
+    { char: 'ð', name: 'Latin Small Letter Eth', code: 'U+00F0' },
+    { char: 'Ð', name: 'Latin Capital Letter Eth', code: 'U+00D0' },
+    { char: 'þ', name: 'Latin Small Letter Thorn', code: 'U+00FE' },
+    { char: 'Þ', name: 'Latin Capital Letter Thorn', code: 'U+00DE' },
+  ],
+  math: [
+    { char: 'α', name: 'Greek Small Letter Alpha', code: 'U+03B1' },
+    { char: 'β', name: 'Greek Small Letter Beta', code: 'U+03B2' },
+    { char: 'γ', name: 'Greek Small Letter Gamma', code: 'U+03B3' },
+    { char: 'δ', name: 'Greek Small Letter Delta', code: 'U+03B4' },
+    { char: 'ε', name: 'Greek Small Letter Epsilon', code: 'U+03B5' },
+    { char: 'ζ', name: 'Greek Small Letter Zeta', code: 'U+03B6' },
+    { char: 'η', name: 'Greek Small Letter Eta', code: 'U+03B7' },
+    { char: 'θ', name: 'Greek Small Letter Theta', code: 'U+03B8' },
+    { char: 'ι', name: 'Greek Small Letter Iota', code: 'U+03B9' },
+    { char: 'κ', name: 'Greek Small Letter Kappa', code: 'U+03BA' },
+    { char: 'λ', name: 'Greek Small Letter Lambda', code: 'U+03BB' },
+    { char: 'μ', name: 'Greek Small Letter Mu (Micro)', code: 'U+03BC' },
+    { char: 'ν', name: 'Greek Small Letter Nu', code: 'U+03BD' },
+    { char: 'ξ', name: 'Greek Small Letter Xi', code: 'U+03BE' },
+    { char: 'π', name: 'Greek Small Letter Pi', code: 'U+03C0' },
+    { char: 'ρ', name: 'Greek Small Letter Rho', code: 'U+03C1' },
+    { char: 'σ', name: 'Greek Small Letter Sigma', code: 'U+03C3' },
+    { char: 'τ', name: 'Greek Small Letter Tau', code: 'U+03C4' },
+    { char: 'υ', name: 'Greek Small Letter Upsilon', code: 'U+03C5' },
+    { char: 'φ', name: 'Greek Small Letter Phi', code: 'U+03C6' },
+    { char: 'χ', name: 'Greek Small Letter Chi', code: 'U+03C7' },
+    { char: 'ψ', name: 'Greek Small Letter Psi', code: 'U+03C8' },
+    { char: 'ω', name: 'Greek Small Letter Omega', code: 'U+03C9' },
+    { char: 'Γ', name: 'Greek Capital Letter Gamma', code: 'U+0393' },
+    { char: 'Δ', name: 'Greek Capital Letter Delta', code: 'U+0394' },
+    { char: 'Θ', name: 'Greek Capital Letter Theta', code: 'U+0398' },
+    { char: 'Λ', name: 'Greek Capital Letter Lambda', code: 'U+039B' },
+    { char: 'Ξ', name: 'Greek Capital Letter Xi', code: 'U+039E' },
+    { char: 'Π', name: 'Greek Capital Letter Pi', code: 'U+03A0' },
+    { char: 'Σ', name: 'Greek Capital Letter Sigma', code: 'U+03A3' },
+    { char: 'Φ', name: 'Greek Capital Letter Phi', code: 'U+03A6' },
+    { char: 'Ψ', name: 'Greek Capital Letter Psi', code: 'U+03A8' },
+    { char: 'Ω', name: 'Greek Capital Letter Omega', code: 'U+03A9' },
+    { char: '±', name: 'Plus-Minus Sign', code: 'U+00B1' },
+    { char: '×', name: 'Multiplication Sign', code: 'U+00D7' },
+    { char: '÷', name: 'Division Sign', code: 'U+00F7' },
+    { char: '≠', name: 'Not Equal To', code: 'U+2260' },
+    { char: '≈', name: 'Almost Equal To', code: 'U+2248' },
+    { char: '≡', name: 'Identical To', code: 'U+2261' },
+    { char: '≤', name: 'Less-Than or Equal To', code: 'U+2264' },
+    { char: '≥', name: 'Greater-Than or Equal To', code: 'U+2265' },
+    { char: '≪', name: 'Much Less-Than', code: 'U+226A' },
+    { char: '≫', name: 'Much Greater-Than', code: 'U+226B' },
+    { char: '∞', name: 'Infinity', code: 'U+221E' },
+    { char: '∝', name: 'Proportional To', code: 'U+221D' },
+    { char: '√', name: 'Square Root', code: 'U+221A' },
+    { char: '∑', name: 'N-Ary Summation', code: 'U+2211' },
+    { char: '∏', name: 'N-Ary Product', code: 'U+220F' },
+    { char: '∫', name: 'Integral', code: 'U+222B' },
+    { char: '∂', name: 'Partial Differential', code: 'U+2202' },
+    { char: '∇', name: 'Nabla', code: 'U+2207' },
+    { char: '∈', name: 'Element Of', code: 'U+2208' },
+    { char: '∉', name: 'Not An Element Of', code: 'U+2209' },
+    { char: '∅', name: 'Empty Set', code: 'U+2205' },
+    { char: '∀', name: 'For All', code: 'U+2200' },
+    { char: '∃', name: 'There Exists', code: 'U+2203' },
+    { char: '¬', name: 'Not Sign', code: 'U+00AC' },
+    { char: '∧', name: 'Logical AND', code: 'U+2227' },
+    { char: '∨', name: 'Logical OR', code: 'U+2228' },
+    { char: '°', name: 'Degree Sign (Grado)', code: 'U+00B0' },
+    { char: '‰', name: 'Per Mille Sign', code: 'U+2030' },
+  ],
+  editorial: [
+    { char: '©', name: 'Copyright Sign', code: 'U+00A9' },
+    { char: '®', name: 'Registered Sign', code: 'U+00AE' },
+    { char: '™', name: 'Trade Mark Sign', code: 'U+2122' },
+    { char: '℠', name: 'Service Mark', code: 'U+2120' },
+    { char: '№', name: 'Numero Sign', code: 'U+2116' },
+    { char: '℗', name: 'Sound Recording Copyright', code: 'U+2117' },
+    { char: '←', name: 'Leftwards Arrow', code: 'U+2190' },
+    { char: '→', name: 'Rightwards Arrow', code: 'U+2192' },
+    { char: '↑', name: 'Upwards Arrow', code: 'U+2191' },
+    { char: '↓', name: 'Downwards Arrow', code: 'U+2193' },
+    { char: '↔', name: 'Left Right Arrow', code: 'U+2194' },
+    { char: '↕', name: 'Up Down Arrow', code: 'U+2195' },
+    { char: '⇐', name: 'Leftwards Double Arrow', code: 'U+21D0' },
+    { char: '⇒', name: 'Rightwards Double Arrow', code: 'U+21D2' },
+    { char: '⇔', name: 'Left Right Double Arrow', code: 'U+21D4' },
+    { char: '➔', name: 'Heavy Rightwards Arrow', code: 'U+2794' },
+    { char: '↵', name: 'Downwards Arrow with Corner Leftwards', code: 'U+21B5' },
+    { char: '✓', name: 'Check Mark', code: 'U+2713' },
+    { char: '✔', name: 'Heavy Check Mark', code: 'U+2714' },
+    { char: '✕', name: 'Multiplication X', code: 'U+2715' },
+    { char: '✗', name: 'Ballot X', code: 'U+2717' },
+    { char: '★', name: 'Black Star', code: 'U+2605' },
+    { char: '☆', name: 'White Star', code: 'U+2606' },
+    { char: '✦', name: 'Black Four Pointed Star', code: 'U+2726' },
+    { char: '✧', name: 'White Four Pointed Star', code: 'U+2727' },
+    { char: '◆', name: 'Black Diamond', code: 'U+25C6' },
+    { char: '◇', name: 'White Diamond', code: 'U+25C7' },
+    { char: '■', name: 'Black Square', code: 'U+25A0' },
+    { char: '▲', name: 'Black Up-Pointing Triangle', code: 'U+25B2' },
+    { char: '▼', name: 'Black Down-Pointing Triangle', code: 'U+25BC' },
+    { char: '♩', name: 'Quarter Note', code: 'U+2669' },
+    { char: '♪', name: 'Eighth Note', code: 'U+266A' },
+    { char: '♫', name: 'Beamed Eighth Notes', code: 'U+266B' },
+    { char: '♭', name: 'Music Flat Sign', code: 'U+266D' },
+    { char: '♯', name: 'Music Sharp Sign', code: 'U+266F' },
+  ],
+  currency: [
+    { char: '€', name: 'Euro Sign', code: 'U+20AC' },
+    { char: '$', name: 'Dollar Sign', code: 'U+0024' },
+    { char: '£', name: 'Pound Sign', code: 'U+00A3' },
+    { char: '¥', name: 'Yen Sign', code: 'U+00A5' },
+    { char: '¢', name: 'Cent Sign', code: 'U+00A2' },
+    { char: '₹', name: 'Indian Rupee Sign', code: 'U+20B9' },
+    { char: '₩', name: 'Won Sign', code: 'U+20A9' },
+    { char: '₿', name: 'Bitcoin Sign', code: 'U+20BF' },
+    { char: '₺', name: 'Turkish Lira Sign', code: 'U+20BA' },
+    { char: '₽', name: 'Russian Ruble Sign', code: 'U+20BD' },
+    { char: '₴', name: 'Hryvnia Sign', code: 'U+20B4' },
+    { char: '¤', name: 'Currency Sign (Símbolo genérico)', code: 'U+00A4' },
+    { char: '₫', name: 'Dong Sign', code: 'U+20AB' },
+    { char: '₸', name: 'Tenge Sign', code: 'U+20B8' },
+    { char: '₣', name: 'French Franc Sign', code: 'U+20A3' },
+  ],
+};
+
+const RECENT_SYMBOLS_STORAGE_KEY = 'foliant_recent_symbols_v1';
+const DEFAULT_RECENTS = ['—', '«', '»', '…', '“', '”', '¿', '¡', '†', '©', '™', '€', '§', '¶', '•', 'α'];
+
+interface WordSymbolModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onInsertSymbol: (symbol: string) => void;
+}
+
+export default function WordSymbolModal({
+  isOpen,
+  onClose,
+  onInsertSymbol,
+}: WordSymbolModalProps) {
+  const [activeTab, setActiveTab] = useState<SymbolCategory>('dialogue');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSymbol, setSelectedSymbol] = useState<SymbolItem>(() => SYMBOLS_DATA.dialogue[0]);
+  const [recentSymbols, setRecentSymbols] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return DEFAULT_RECENTS;
+    try {
+      const stored = localStorage.getItem(RECENT_SYMBOLS_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : DEFAULT_RECENTS;
+    } catch {
+      return DEFAULT_RECENTS;
+    }
+  });
+
+  // Handle escape to close
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  // Filtered symbols based on active tab and search query
+  const displayedSymbols = useMemo(() => {
+    const trimmed = searchQuery.trim().toLowerCase();
+    if (!trimmed) {
+      return SYMBOLS_DATA[activeTab];
+    }
+    // Search across all categories if user typed something
+    const all = Object.values(SYMBOLS_DATA).flat();
+    return all.filter(
+      (s) =>
+        s.char.toLowerCase().includes(trimmed) ||
+        s.name.toLowerCase().includes(trimmed) ||
+        s.code.toLowerCase().includes(trimmed)
+    );
+  }, [activeTab, searchQuery]);
+
+  const handleSelect = (symbol: SymbolItem) => {
+    setSelectedSymbol(symbol);
+  };
+
+  const handleInsert = (char: string) => {
+    onInsertSymbol(char);
+
+    // Update recent symbols without duplicates
+    setRecentSymbols((prev) => {
+      const filtered = prev.filter((c) => c !== char);
+      const next = [char, ...filtered].slice(0, 16);
+      try {
+        localStorage.setItem(RECENT_SYMBOLS_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // localStorage write non-fatal
+      }
+      return next;
+    });
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-xs select-none">
+      <div
+        className="bg-zinc-900 border border-zinc-750 rounded-sm shadow-2xl flex flex-col w-full max-w-2xl max-h-[85vh] overflow-hidden text-zinc-200 animate-in fade-in zoom-in-95 duration-150"
+        role="dialog"
+        aria-modal="true"
+      >
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800 bg-zinc-950 shrink-0">
+          <div className="flex items-center gap-2">
+            <Omega className="w-4 h-4 text-emerald-400" />
+            <span className="text-sm font-semibold text-zinc-100 font-mono tracking-tight">
+              Insert Symbol (Word Palette)
+            </span>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="p-1 rounded-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition"
+            title="Close (Esc)"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Search Bar & Tabs Navigation */}
+        <div className="px-5 pt-3 border-b border-zinc-800 bg-zinc-950/70 space-y-3 shrink-0">
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search symbol by name, character or unicode (e.g., dash, quote, alpha)..."
+              className="w-full bg-zinc-900 border border-zinc-750 rounded-sm pl-8 pr-3 py-1.5 text-xs text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-500 transition"
+              autoFocus
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
+          {/* Category Tabs (disabled if global searching) */}
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+            {SYMBOL_CATEGORIES.map((cat) => {
+              const isActive = activeTab === cat.id && !searchQuery;
+              return (
+                <button
+                  key={cat.id}
+                  disabled={!!searchQuery}
+                  onClick={() => setActiveTab(cat.id)}
+                  className={`px-3 py-1.5 text-xs font-medium border-b-2 transition -mb-[1px] whitespace-nowrap cursor-pointer ${
+                    isActive
+                      ? 'border-zinc-200 text-zinc-100 font-semibold'
+                      : searchQuery
+                      ? 'border-transparent text-zinc-600 cursor-not-allowed'
+                      : 'border-transparent text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Symbols Grid Body */}
+        <div className="p-4 overflow-y-auto flex-1 min-h-[220px] bg-zinc-950/40">
+          {displayedSymbols.length === 0 ? (
+            <div className="h-40 flex flex-col items-center justify-center text-zinc-500 text-xs">
+              No symbols matching &quot;{searchQuery}&quot;
+            </div>
+          ) : (
+            <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 gap-1.5">
+              {displayedSymbols.map((item, idx) => {
+                const isSelected = selectedSymbol?.char === item.char;
+                return (
+                  <button
+                    key={`${item.char}-${idx}`}
+                    type="button"
+                    onClick={() => handleSelect(item)}
+                    onDoubleClick={() => handleInsert(item.char)}
+                    title={`${item.name} (${item.code})`}
+                    className={`h-10 rounded-sm border flex items-center justify-center text-base font-serif transition select-none cursor-pointer group ${
+                      isSelected
+                        ? 'border-emerald-500 bg-emerald-950/40 text-emerald-200 ring-1 ring-emerald-500/50 shadow-sm'
+                        : 'border-zinc-800 bg-zinc-900/60 hover:border-zinc-600 hover:bg-zinc-800 text-zinc-200 hover:text-white'
+                    }`}
+                  >
+                    <span className="group-hover:scale-115 transition-transform duration-100">
+                      {item.char}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Recently Used Symbols Strip (Word Style) */}
+        <div className="px-5 py-2.5 border-t border-zinc-800 bg-zinc-900/80 shrink-0">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+              <Clock className="w-3 h-3 text-zinc-400" />
+              <span>Recently Used Symbols</span>
+            </span>
+            <span className="text-[10px] text-zinc-400">Click to insert directly</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            {recentSymbols.map((char, i) => (
+              <button
+                key={`${char}-${i}`}
+                type="button"
+                onClick={() => handleInsert(char)}
+                title={`Insert '${char}'`}
+                className="w-7 h-7 rounded-xs bg-zinc-950 border border-zinc-800 hover:border-zinc-650 hover:bg-zinc-800 text-zinc-200 hover:text-white flex items-center justify-center text-sm font-serif transition shrink-0 cursor-pointer active:scale-95"
+              >
+                {char}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom Inspection & Actions Bar */}
+        <div className="px-5 py-3 border-t border-zinc-800 bg-zinc-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+          {/* Selected symbol preview */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-sm bg-zinc-900 border border-zinc-800 flex items-center justify-center text-2xl font-serif text-white shrink-0 shadow-inner">
+              {selectedSymbol?.char || '—'}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-semibold text-zinc-100 truncate max-w-xs sm:max-w-md">
+                {selectedSymbol?.name || 'Em Dash'}
+              </span>
+              <span className="text-[10px] text-zinc-400 font-mono">
+                Unicode: {selectedSymbol?.code || 'U+2014'} (Double-click symbol or press Insert)
+              </span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850 rounded-sm transition cursor-pointer"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (selectedSymbol) {
+                  handleInsert(selectedSymbol.char);
+                }
+              }}
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs rounded-sm transition shadow-xs cursor-pointer active:scale-95"
+            >
+              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>Insert</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

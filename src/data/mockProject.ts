@@ -457,7 +457,6 @@ export const DEFAULT_PROJECT: FoliantProject = {
       color: 'purple',
       description: 'Unraveling who orchestrated the magical murder of High King Voron and why.',
       linkedChapterIds: ['scene-1-1', 'scene-1-2', 'scene-1-4', 'scene-2-5', 'scene-4-4'],
-      status: 'Active',
       fields: [
         { id: 'sf-1', label: 'Primary Stakes', value: 'Legitimacy of the Crown & Imperial Survival' },
         { id: 'sf-2', label: 'Key Clue', value: 'The burning cipher ledger found on the royal corpse' },
@@ -469,7 +468,6 @@ export const DEFAULT_PROJECT: FoliantProject = {
       color: 'cyan',
       description: 'Aurelia learning to control the abyssal glyphs without succumbing to oceanic madness.',
       linkedChapterIds: ['scene-1-3', 'scene-2-1', 'scene-2-2', 'scene-3-2', 'scene-4-2'],
-      status: 'Active',
       fields: [
         { id: 'sf-3', label: 'Magic Cost', value: 'Drains physical vitality upon each invocation' },
       ],
@@ -480,7 +478,6 @@ export const DEFAULT_PROJECT: FoliantProject = {
       color: 'amber',
       description: 'Securing the military loyalty of Seraphina’s mercenaries against Morvath’s purifiers.',
       linkedChapterIds: ['scene-2-1', 'scene-3-1', 'scene-3-3', 'scene-4-1'],
-      status: 'Active',
     },
     {
       id: 'story-4',
@@ -488,7 +485,6 @@ export const DEFAULT_PROJECT: FoliantProject = {
       color: 'rose',
       description: 'Morvath’s inquisitorial crusade to establish theocratic martial law over Oakhaven.',
       linkedChapterIds: ['scene-1-2', 'scene-2-4', 'scene-3-1', 'scene-3-3', 'scene-3-5'],
-      status: 'Active',
     },
     {
       id: 'story-5',
@@ -496,7 +492,6 @@ export const DEFAULT_PROJECT: FoliantProject = {
       color: 'emerald',
       description: 'Navigating the subterranean floodplains to forge the replacement crown of ocean glass.',
       linkedChapterIds: ['scene-2-1', 'scene-2-2', 'scene-2-3', 'scene-4-2'],
-      status: 'Active',
     },
     {
       id: 'story-6',
@@ -504,7 +499,6 @@ export const DEFAULT_PROJECT: FoliantProject = {
       color: 'blue',
       description: 'Envoy Nolan’s deceptive naval diplomacy and the threat of coastal bombardment.',
       linkedChapterIds: ['scene-2-5', 'scene-3-4', 'scene-4-3'],
-      status: 'Active',
     },
   ],
 
