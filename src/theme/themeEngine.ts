@@ -83,9 +83,14 @@ const MANAGED_VARIABLES = [
 ];
 
 /**
- * Injects CSS variables directly onto document.documentElement (:root)
- * allowing Tailwind v4 classes (bg-zinc-*, border-zinc-*, text-zinc-*)
- * and dynamic UI styles to reflect current theme instantly.
+ * Injects dynamic CSS Custom Properties directly onto `document.documentElement` (`:root`).
+ *
+ * ### Architectural Rationale:
+ * Tailwind CSS v4 compiles utility classes (e.g. `bg-zinc-950`, `text-zinc-400`, `border-zinc-800`)
+ * to CSS variables defined in `@theme`. By overriding these exact variable names at runtime on `:root`,
+ * the entire UI (sidebars, editors, cards, borders, buttons) adapts instantaneously to Light Mode,
+ * High-Contrast Dark Mode, or Custom Color Palettes without requiring full component tree re-renders
+ * or clumsy multi-class toggling across hundreds of components.
  */
 export function applyTheme(
   themeMode: ThemeMode = 'dark',

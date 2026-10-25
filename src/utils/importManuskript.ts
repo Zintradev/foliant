@@ -62,8 +62,14 @@ export function cleanTitle(rawName: string): string {
 }
 
 /**
- * Alphanumerically compares names based on their leading numeric prefix to preserve chronological order.
- * Example: '0-' precedes '1-', and '2-' precedes '10-'.
+ * Numerically compares file and folder names based on their leading digit prefixes.
+ *
+ * ### Narrative Integrity Rationale:
+ * Manuskript serializes outline chapters to disk using numeric prefixes (e.g., `00/`, `01/`, `2/`, `10/`).
+ * Standard ASCII/UTF-8 alphabetical sorting (`Array.prototype.sort()`) sorts lexicographically, which
+ * inadvertently places chapter `10/` immediately after `1/` and before `2/`, destroying the author's
+ * intended narrative chronology. This comparator extracts the leading integer radix to guarantee true
+ * chronological sequence.
  */
 export function compareNumericPrefixes(a: string, b: string): number {
   const matchA = a.match(/^(\d+)/);

@@ -34,6 +34,15 @@ export interface MoodboardSection {
   name: string;
 }
 
+interface CachedReferenceImage {
+  id?: string;
+  path: string;
+  src?: string;
+  name?: string;
+  sectionId?: string;
+  base64?: string;
+}
+
 interface MoodboardBlockProps {
   title?: string;
   collapsible?: boolean;
@@ -313,7 +322,7 @@ export default function MoodboardBlock({
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((c: any) => ({
+          return parsed.map((c: CachedReferenceImage) => ({
             id: c.id || `img-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
             path: c.path,
             src: c.base64 || '',
@@ -441,7 +450,7 @@ export default function MoodboardBlock({
         if (stored) {
           const cached = JSON.parse(stored);
           setImages(
-            cached.map((c: any) => ({
+            cached.map((c: CachedReferenceImage) => ({
               ...c,
               src: c.base64 || '',
             }))
@@ -464,7 +473,7 @@ export default function MoodboardBlock({
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
           setImages(
-            parsed.map((c: any) => ({
+            parsed.map((c: CachedReferenceImage) => ({
               id: c.id || `img-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
               path: c.path,
               src: c.base64 || '',
@@ -544,13 +553,6 @@ export default function MoodboardBlock({
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('[D&D - MoodboardBlock - onDragOver]', {
-      target: e.target,
-      currentTarget: e.currentTarget,
-      draggedId: draggedImageId,
-      dataTransferTypes: e.dataTransfer?.types ? Array.from(e.dataTransfer.types) : [],
-      preventDefaultExecuted: true,
-    });
     const types = e.dataTransfer?.types ? Array.from(e.dataTransfer.types) : [];
     if (types.includes('Files')) {
       setIsCanvasDragging(true);
@@ -560,12 +562,6 @@ export default function MoodboardBlock({
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('[D&D - MoodboardBlock - onDragEnter]', {
-      target: e.target,
-      currentTarget: e.currentTarget,
-      draggedId: draggedImageId,
-      dataTransferTypes: e.dataTransfer?.types ? Array.from(e.dataTransfer.types) : [],
-    });
     const types = e.dataTransfer?.types ? Array.from(e.dataTransfer.types) : [];
     if (types.includes('Files')) {
       setIsCanvasDragging(true);
@@ -575,12 +571,6 @@ export default function MoodboardBlock({
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('[D&D - MoodboardBlock - onDragLeave]', {
-      target: e.target,
-      currentTarget: e.currentTarget,
-      draggedId: draggedImageId,
-      dataTransferTypes: e.dataTransfer?.types ? Array.from(e.dataTransfer.types) : [],
-    });
     setIsCanvasDragging(false);
   };
 
@@ -588,15 +578,6 @@ export default function MoodboardBlock({
     e.preventDefault();
     e.stopPropagation();
     setIsCanvasDragging(false);
-
-    const payload = e.dataTransfer?.getData?.('text/plain') ?? '';
-    console.log('[D&D - MoodboardBlock - onDrop]', {
-      target: e.target,
-      currentTarget: e.currentTarget,
-      draggedId: draggedImageId,
-      payload,
-      dataTransferTypes: e.dataTransfer?.types ? Array.from(e.dataTransfer.types) : [],
-    });
 
     try {
       const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
@@ -692,24 +673,11 @@ export default function MoodboardBlock({
     e.dataTransfer.setData('text/plain', img.id);
     e.dataTransfer.setData('text/image-id', img.id);
     e.dataTransfer.effectAllowed = 'move';
-    console.log('[D&D - MoodboardBlock - onDragStart]', {
-      target: e.target,
-      currentTarget: e.currentTarget,
-      draggedId: img.id,
-      dataTransferTypes: e.dataTransfer?.types ? Array.from(e.dataTransfer.types) : [],
-    });
   };
 
   const handleImageDragEnter = (e: React.DragEvent, targetImg: ReferenceImage) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('[D&D - MoodboardBlock - onDragEnter]', {
-      target: e.target,
-      currentTarget: e.currentTarget,
-      draggedId: draggedImageId,
-      targetId: targetImg.id,
-      dataTransferTypes: e.dataTransfer?.types ? Array.from(e.dataTransfer.types) : [],
-    });
     if (draggedImageId && draggedImageId !== targetImg.id) {
       setDragOverImageId(targetImg.id);
       setDragOverSectionId(targetImg.sectionId);
@@ -744,13 +712,6 @@ export default function MoodboardBlock({
     e.preventDefault();
     e.stopPropagation();
 
-    console.log('[D&D - MoodboardBlock - onDrop]', {
-      target: e.target,
-      currentTarget: e.currentTarget,
-      draggedId: draggedImageId,
-      displayImagesCount: displayImages.length,
-    });
-
     try {
       if (draggedImageId && displayImages && displayImages.length > 0) {
         commitImages(displayImages);
@@ -778,14 +739,6 @@ export default function MoodboardBlock({
   const handleSectionDrop = async (e: React.DragEvent, sectionId: string) => {
     e.preventDefault();
     e.stopPropagation();
-
-    console.log('[D&D - MoodboardBlock - onDrop]', {
-      target: e.target,
-      currentTarget: e.currentTarget,
-      draggedId: draggedImageId,
-      sectionId,
-      dataTransferTypes: e.dataTransfer?.types ? Array.from(e.dataTransfer.types) : [],
-    });
 
     try {
       // If external files dropped on this section

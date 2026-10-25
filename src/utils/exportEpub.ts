@@ -1,30 +1,62 @@
+/**
+ * @file exportEpub.ts
+ * @description Core EPUB 3.0 / EPUB 2.0 dual-mode compilation engine for Foliant.
+ *
+ * ## Architectural Design & Compliance Decisions:
+ * 1. **Dual Navigation Architecture (EPUB 3 + EPUB 2)**:
+ *    - Modern readers (Apple Books, Calibre, Kobo) rely on `nav.xhtml` (`properties="nav"`).
+ *    - Legacy e-ink readers (Kindle Paperwhite Gen 1-3, older Nook devices) require `toc.ncx`
+ *      per the OPF 2.0 compatibility spec. Both are packaged in parallel to maximize reach.
+ * 2. **Strict OCF (Open Container Format) Compliance**:
+ *    - The `mimetype` file MUST be the exact first entry in the ZIP package and MUST be
+ *      uncompressed (`compression: 'STORE'`). Any preceding bytes or compression will cause
+ *      hard validation failure in EPUBCheck (error PKG-006).
+ * 3. **Amazon KDP Enhanced Typesetting vs Standard Reading Profiles**:
+ *    - Standard: Uses CSS widows/orphans, generous paragraph margins, and gentle justification.
+ *    - Amazon: Kindle's KFX rendering engine aggressively purges inline `<br>` separators between
+ *      block elements to prevent unwanted page gaps and reflow jitter on E-Ink displays.
+ */
+
 import JSZip from 'jszip';
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeFile } from '@tauri-apps/plugin-fs';
 import { FoliantProject, TextNode } from '../types/project';
 
+/**
+ * Structural strategy for grouping folders and scenes into reading files:
+ * - `top-folders`: Top-level folders become distinct chapter files (`chapter_X.xhtml` with `<h1>`),
+ *   bundling all internal scenes separated by narrative break asterisks (`* * *`).
+ * - `sub-folders`: Preserves nested multi-tier hierarchy (Acts `<h1>`, Folders `<h2>`, Scenes `<h3>`).
+ * - `flatten`: Compiles all selected scenes sequentially into a single consolidated manuscript document.
+ */
 export type ChapterFormatting = 'top-folders' | 'sub-folders' | 'flatten';
 
+/**
+ * Rendering engine target profile:
+ * - `standard`: Balanced typography compliant with W3C EPUB 3.2 recommendations.
+ * - `amazon`: Strictly stripped of inter-block `<br>` tags and empty paragraph containers
+ *   to avoid Kindle Direct Publishing (KDP) validation warnings and formatting distortion.
+ */
 export type ExportProfile = 'standard' | 'amazon';
 
 export interface EpubExportOptions {
-  /** Book title override */
+  /** Book title override; falls back to `project.title` if omitted */
   title?: string;
-  /** Author name override */
+  /** Author name override; falls back to resolved project metadata/protagonist if omitted */
   author?: string;
-  /** Optional publisher or publication year */
+  /** Optional publishing house or publication year for OPF metadata `<dc:publisher>` */
   publisher?: string;
-  /** Book language code (e.g. 'es', 'en') for dictionary hyphenation and metadata */
+  /** ISO 639-1 language code (e.g. 'es', 'en') for dictionary hyphenation and TTS reading */
   language?: string;
-  /** Reading target / export profile: 'standard' or 'amazon' */
+  /** Reading engine target profile: 'standard' or 'amazon' */
   profile?: ExportProfile;
-  /** Cover image as Base64 data URL or pure Base64 string */
+  /** Base64-encoded cover image data URL or raw string */
   coverBase64?: string | null;
-  /** Filtered set of TextNode IDs to include in the export */
+  /** Explicit whitelist of TextNode IDs; if omitted, all project chapters are compiled */
   selectedIds?: string[];
-  /** How chapters and folders are structured in the EPUB */
+  /** Grouping hierarchy strategy for folders and scenes */
   chapterFormatting?: ChapterFormatting;
-  /** Whether to include a visual Table of Contents reading page (defaults to true) */
+  /** Whether to inject a dedicated visual Table of Contents reading page before chapter 1 */
   includeVisualToc?: boolean;
 }
 
@@ -161,9 +193,19 @@ export function getDescendantScenes(nodeId: string, chapters: TextNode[]): TextN
 }
 
 /**
- * Helper to clean TipTap HTML and ensure strictly valid XHTML without empty paragraphs
- * or stray break tags between blocks.
- * For the Amazon profile, aggressively eliminates ALL <br> tags and empty paragraphs.
+ * Sanitizes rich-text HTML produced by TipTap/ProseMirror into standard XML-well-formed XHTML.
+ *
+ * ### Why this transformation is necessary:
+ * 1. **ProseMirror Trailing Breaks**: TipTap appends `<br class="ProseMirror-trailingBreak">`
+ *    at the end of nodes to keep cursor positioning predictable in web browsers. If leaked into an
+ *    EPUB, this causes unsightly trailing whitespace and phantom blank lines.
+ * 2. **Amazon Kindle KDP Quirks**: Kindle's layout engine misinterprets `<br>` tags placed
+ *    outside or between paragraph tags, often treating them as un-indented block breaks or double-spaced
+ *    lines. For the `amazon` profile, all such breaks are flattened into spaces.
+ * 3. **Empty Paragraph Cascade**: Multiple consecutive `<p></p>` or `<p>&nbsp;</p>` tags result
+ *    in accidental blank pages on e-ink hardware with small viewports. They are purged recursively.
+ * 4. **Self-closing XML compliance**: Validates that all void tags (`<br />`, `<hr />`, `<img />`)
+ *    have the trailing slash required by the XML parser in strict XHTML 1.1 / EPUB 3.
  */
 function cleanTipTapHtml(html: string, isAmazon = false): string {
   let cleaned = html;
@@ -210,21 +252,34 @@ function cleanTipTapHtml(html: string, isAmazon = false): string {
   return cleaned.trim();
 }
 
+interface TipTapNode {
+  type?: string;
+  text?: string;
+  content?: TipTapNode[];
+  marks?: Array<{
+    type: string;
+    attrs?: Record<string, unknown>;
+  }>;
+  attrs?: Record<string, unknown> & {
+    level?: number;
+  };
+}
+
 /**
  * Renders TipTap JSON doc tree into clean XHTML without empty paragraphs or injected breaks.
  */
-function renderTipTapJson(doc: any, isAmazon = false): string {
+function renderTipTapJson(doc: TipTapNode | null | undefined, isAmazon = false): string {
   if (!doc || typeof doc !== 'object') return '';
   if (doc.type === 'doc' && Array.isArray(doc.content)) {
     return doc.content
-      .map((block: any) => renderTipTapBlock(block, isAmazon))
+      .map((block: TipTapNode) => renderTipTapBlock(block, isAmazon))
       .filter(Boolean)
       .join('\n');
   }
   return '';
 }
 
-function renderTipTapBlock(node: any, isAmazon = false): string {
+function renderTipTapBlock(node: TipTapNode | null | undefined, isAmazon = false): string {
   if (!node || typeof node !== 'object') return '';
 
   switch (node.type) {
@@ -232,7 +287,7 @@ function renderTipTapBlock(node: any, isAmazon = false): string {
       if (!node.content || !Array.isArray(node.content) || node.content.length === 0) {
         return '';
       }
-      const inlineContent = node.content.map((child: any) => renderTipTapInline(child, isAmazon)).join('');
+      const inlineContent = node.content.map((child: TipTapNode) => renderTipTapInline(child, isAmazon)).join('');
       const textOnly = inlineContent
         .replace(/<[^>]*>/g, '')
         .replace(/&nbsp;|&#160;|&#xA0;/g, '')
@@ -244,25 +299,25 @@ function renderTipTapBlock(node: any, isAmazon = false): string {
     }
     case 'heading': {
       const level = node.attrs?.level || 2;
-      const inlineContent = (node.content || []).map((child: any) => renderTipTapInline(child, isAmazon)).join('');
+      const inlineContent = (node.content || []).map((child: TipTapNode) => renderTipTapInline(child, isAmazon)).join('');
       if (!inlineContent.replace(/<[^>]*>/g, '').trim()) return '';
       return `<h${level}>${inlineContent}</h${level}>`;
     }
     case 'blockquote': {
-      const inner = (node.content || []).map((child: any) => renderTipTapBlock(child, isAmazon)).filter(Boolean).join('\n');
+      const inner = (node.content || []).map((child: TipTapNode) => renderTipTapBlock(child, isAmazon)).filter(Boolean).join('\n');
       if (!inner.trim()) return '';
       return `<blockquote>${inner}</blockquote>`;
     }
     case 'bulletList': {
-      const items = (node.content || []).map((child: any) => renderTipTapBlock(child, isAmazon)).filter(Boolean).join('\n');
+      const items = (node.content || []).map((child: TipTapNode) => renderTipTapBlock(child, isAmazon)).filter(Boolean).join('\n');
       return items ? `<ul>${items}</ul>` : '';
     }
     case 'orderedList': {
-      const items = (node.content || []).map((child: any) => renderTipTapBlock(child, isAmazon)).filter(Boolean).join('\n');
+      const items = (node.content || []).map((child: TipTapNode) => renderTipTapBlock(child, isAmazon)).filter(Boolean).join('\n');
       return items ? `<ol>${items}</ol>` : '';
     }
     case 'listItem': {
-      const inner = (node.content || []).map((child: any) => renderTipTapBlock(child, isAmazon)).filter(Boolean).join('\n');
+      const inner = (node.content || []).map((child: TipTapNode) => renderTipTapBlock(child, isAmazon)).filter(Boolean).join('\n');
       return `<li>${inner}</li>`;
     }
     case 'horizontalRule': {
@@ -270,13 +325,13 @@ function renderTipTapBlock(node: any, isAmazon = false): string {
     }
     default:
       if (node.content && Array.isArray(node.content)) {
-        return node.content.map((child: any) => renderTipTapBlock(child, isAmazon)).filter(Boolean).join('\n');
+        return node.content.map((child: TipTapNode) => renderTipTapBlock(child, isAmazon)).filter(Boolean).join('\n');
       }
       return '';
   }
 }
 
-function renderTipTapInline(node: any, isAmazon = false): string {
+function renderTipTapInline(node: TipTapNode | null | undefined, isAmazon = false): string {
   if (!node || typeof node !== 'object') return '';
   if (node.type === 'hardBreak') {
     return isAmazon ? ' ' : '<br />';
@@ -553,9 +608,17 @@ export interface TocNavEntry {
 }
 
 /**
- * Generates standard-compliant EPUB 2 NCX XML (toc.ncx) with a strictly sequential
- * global playOrder counter (1, 2, 3...) and verified target uniqueness.
- * Guarantees zero RSC-005 errors.
+ * Generates standard-compliant EPUB 2 Navigation Control file XML (`toc.ncx`).
+ *
+ * ### Architectural & Specification Rationale:
+ * - **Backward Compatibility**: While EPUB 3 uses XHTML5 `<nav>` elements, legacy e-readers
+ *   (e.g., Kindle Gen 1-3, older Sony Readers, Nook Simple Touch) rely solely on NCX.
+ * - **EPUBCheck Error RSC-005 Prevention**:
+ *   1. `playOrder` MUST be strictly ascending (1, 2, 3...) across the entire document tree,
+ *      regardless of nesting depth. Discontinuous or duplicated playOrder values fail validation.
+ *   2. Each `<navPoint>` content `src` must resolve to a distinct location. If two navigation points
+ *      target the same file, unique anchor identifiers (`#nav-point-X`) are generated dynamically
+ *      to maintain strict URI target uniqueness.
  */
 export function generateTocNcx(
   bookId: string,

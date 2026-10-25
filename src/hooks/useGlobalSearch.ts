@@ -21,8 +21,13 @@ export interface UseGlobalSearchOptions extends SearchOptions {
 }
 
 /**
- * Strips HTML tags and decodes common HTML entities to extract plain text.
- * Uses DOMParser in browser environments and regex as safe fallback.
+ * Strips HTML markup and decodes XML/HTML entities to produce searchable plain text.
+ *
+ * ### Search Accuracy Decision:
+ * Standard naive regex stripping (`/<[^>]+>/g`) causes word collisions at block boundaries:
+ * `<p>Sentence one.</p><p>Sentence two.</p>` becomes `"Sentence one.Sentence two."`, which breaks
+ * whole-word matching and multi-token queries. This function injects boundary spaces before closing
+ * block tags (`</p>`, `</div>`, `</h2>`, etc.) prior to parsing to preserve natural word spacing.
  */
 export function stripHtml(html: string): string {
   if (!html) return '';

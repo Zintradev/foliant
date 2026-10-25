@@ -23,12 +23,3 @@ export interface MainViewConfig {
   shortLabel: string;
   description: string;
 }
-
-export interface PlotBeat {
-  id: string;
-  act: 'Act I: The Hook' | 'Act II: The Confrontation' | 'Act III: The Climax' | 'Epilogue';
-  title: string;
-  summary: string;
-  thread: 'Main Conspiracy' | 'Protagonist Arc' | 'World & Lore';
-  status: 'Planned' | 'In Progress' | 'Completed';
-}

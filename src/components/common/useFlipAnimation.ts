@@ -3,7 +3,18 @@ import { useRef, useLayoutEffect, useCallback } from 'react';
 /**
  * useFlipAnimation:
  * High-performance First-Last-Invert-Play (FLIP) layout animation hook.
- * Smoothly floats elements to their new positions with hardware-accelerated transforms.
+ *
+ * ### Performance & Architecture Rationale:
+ * Animating CSS `top`, `left`, or grid dimensions causes browser layout recalculations (reflows)
+ * on every animation frame, dropping frame rates below 60fps when reordering dozens of cards.
+ *
+ * The FLIP technique circumvents layout thrashing by:
+ * 1. **First**: Remembering prior bounding rectangles in memory (`rectsRef`).
+ * 2. **Last**: Capturing the newly rendered position inside `useLayoutEffect` (before visual paint).
+ * 3. **Invert**: Applying an immediate `translate3d(deltaX, deltaY, 0)` transform without transitions,
+ *    snapping elements visually back to their original position without re-triggering layout.
+ * 4. **Play**: Gliding elements to `translate3d(0, 0, 0)` using hardware-accelerated GPU transforms
+ *    and a spring-like cubic bezier curve via `requestAnimationFrame`.
  */
 export function useFlipAnimation(isAnimating: boolean = true, draggedId?: string | null) {
   const rectsRef = useRef<Map<string, DOMRect>>(new Map());

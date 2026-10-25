@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Feather,
   PanelLeftClose,
@@ -10,25 +10,20 @@ import {
   ChevronUp,
   Maximize2,
   Network,
-  AlertTriangle,
-  CheckCircle2,
 } from 'lucide-react';
-import { TextNode, ContextBlock, FoliantProject } from './types/project';
+import { FoliantProject } from './types/project';
 import { useProjectPersistence, SaveStatus } from './hooks/useProjectPersistence';
+import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
+import { useEpubExport } from './hooks/useEpubExport';
+import { useDockLayout } from './hooks/useDockLayout';
+import { useProjectMutations } from './hooks/useProjectMutations';
 import { ask } from '@tauri-apps/plugin-dialog';
 import { importManuskriptProject } from './utils/importManuskript';
-import { exportProjectToEpub, EpubExportOptions, ExportEpubSuccessResult } from './utils/exportEpub';
 import ExportSettingsModal from './components/export/ExportSettingsModal';
 import ExportResultModal from './components/export/ExportResultModal';
-import {
-  TabId,
-  CharacterItem,
-  DockSide,
-  StorylineItem,
-  WorldItem,
-  CharacterRelationship,
-  GraphJunctionNode,
-} from './types/dock';
+import UnsavedChangesModal from './components/common/UnsavedChangesModal';
+import ImportResultModal, { ImportModalData } from './components/common/ImportResultModal';
+import { TabId } from './types/dock';
 import { MainViewId } from './types/navigation';
 import FoliantEditor from './components/editor/FoliantEditor';
 import ContextPanel from './components/context/ContextPanel';
@@ -49,7 +44,6 @@ import SearchView from './components/dock/views/SearchView';
 import { AppSettings, loadSettings } from './types/settings';
 import { applyTheme } from './theme/themeEngine';
 import { useTranslation, LanguageProvider } from './i18n/translations';
-
 import { DEFAULT_PROJECT } from './data/mockProject';
 
 export default function App() {
@@ -144,11 +138,10 @@ export default function App() {
     }
   }, [newProject]);
 
-  const [importModalData, setImportModalData] = useState<
-    | { type: 'success'; title: string; sceneCount: number; charCount: number; worldCount: number }
-    | { type: 'error'; message: string }
-    | null
-  >(null);
+  // ---------------------------------------------------------------------------
+  // Manuskript Project Import State & Logic
+  // ---------------------------------------------------------------------------
+  const [importModalData, setImportModalData] = useState<ImportModalData>(null);
 
   const handleImportManuskript = useCallback(async () => {
     try {
@@ -177,86 +170,18 @@ export default function App() {
     }
   }, [loadProject]);
 
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [isExportingEpub, setIsExportingEpub] = useState(false);
-  const [exportResultData, setExportResultData] = useState<
-    | ({ type: 'success' } & ExportEpubSuccessResult)
-    | { type: 'error'; message: string }
-    | null
-  >(null);
-
-  const handleExportEpub = useCallback(() => {
-    setIsExportModalOpen(true);
-  }, []);
-
-  const handleExecuteEpubExport = useCallback(
-    async (options: EpubExportOptions) => {
-      setIsExportingEpub(true);
-      try {
-        const result = await exportProjectToEpub(project, options);
-        if (result) {
-          setIsExportModalOpen(false);
-          setExportResultData({
-            type: 'success',
-            ...result,
-          });
-        }
-      } catch (err: unknown) {
-        console.error('[Foliant] EPUB export failed:', err);
-        const msg = err instanceof Error ? err.message : String(err);
-        setExportResultData({
-          type: 'error',
-          message: msg,
-        });
-      } finally {
-        setIsExportingEpub(false);
-      }
-    },
-    [project]
-  );
-
   // ---------------------------------------------------------------------------
-  // Global Keyboard Shortcuts (Ctrl/Cmd+S, Ctrl/Cmd+Shift+S, Ctrl/Cmd+O)
+  // EPUB Export Controller Hook
   // ---------------------------------------------------------------------------
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const isModifier = e.ctrlKey || e.metaKey;
-      if (!isModifier) return;
-
-      const key = e.key.toLowerCase();
-
-      // Ctrl/Cmd + Shift + S: Save As
-      if (e.shiftKey && key === 's') {
-        e.preventDefault();
-        handleManualSaveAs();
-        return;
-      }
-
-      // Ctrl/Cmd + S: Save
-      if (!e.shiftKey && key === 's') {
-        e.preventDefault();
-        handleManualSave();
-        return;
-      }
-
-      // Ctrl/Cmd + Shift + F: Open Search Tab
-      if (e.shiftKey && key === 'f') {
-        e.preventDefault();
-        handleOpenSearchTabRef.current?.();
-        return;
-      }
-
-      // Ctrl/Cmd + O: Open
-      if (!e.shiftKey && key === 'o') {
-        e.preventDefault();
-        openProject();
-        return;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleManualSave, handleManualSaveAs, openProject]);
+  const {
+    isExportModalOpen,
+    isExportingEpub,
+    exportResultData,
+    openExportModal,
+    closeExportModal,
+    closeResultModal,
+    executeExport,
+  } = useEpubExport(project);
 
   // ===========================================================================
   // 2. VOLATILE UI STATE (Non-persisted workspace / view navigation)
@@ -264,46 +189,20 @@ export default function App() {
   // ===========================================================================
   const [activeMainView, setActiveMainView] = useState<MainViewId>('write');
   const [activeSearchTerm, setActiveSearchTerm] = useState<string | null>(null);
-
-  // Sidebar Visibility & Resizable Dimensions State
-  const [leftOpen, setLeftOpen] = useState(true);
-  const [rightOpen, setRightOpen] = useState(true);
-  const [leftWidth, setLeftWidth] = useState<number>(270);
-  const [rightWidth, setRightWidth] = useState<number>(310);
-
-  // Bottom Dock Panel State (Collapsible & Resizable)
-  const [isBottomOpen, setIsBottomOpen] = useState<boolean>(false);
-  const [bottomHeight, setBottomHeight] = useState<number>(230);
-  const [bottomTabs] = useState<TabId[]>(['timeline', 'relationships']);
-  const [activeBottomTab, setActiveBottomTab] = useState<TabId>('timeline');
-
-  // Dockable Tabs State
-  const [leftTabs, setLeftTabs] = useState<TabId[]>(['outline', 'search']);
-  const [rightTabs, setRightTabs] = useState<TabId[]>(['inspector', 'context', 'characters']);
-  const [activeLeftTab, setActiveLeftTab] = useState<TabId | null>('outline');
-  const [activeRightTab, setActiveRightTab] = useState<TabId | null>('inspector');
-
-  const handleOpenSearchTab = useCallback(() => {
-    if (rightTabs.includes('search')) {
-      setActiveRightTab('search');
-      setRightOpen(true);
-    } else {
-      setLeftTabs((prev) => (prev.includes('search') ? prev : [...prev, 'search']));
-      setActiveLeftTab('search');
-      setLeftOpen(true);
-    }
-    setActiveMainView('write');
-  }, [rightTabs]);
-
-  const handleOpenSearchTabRef = useRef(handleOpenSearchTab);
-  handleOpenSearchTabRef.current = handleOpenSearchTab;
   const [isDirty, setIsDirty] = useState(false);
+  const [pendingNavigationAction, setPendingNavigationAction] = useState<(() => void) | null>(null);
 
   // Settings & Preferences State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [appSettings, setAppSettings] = useState<AppSettings>(loadSettings);
   const currentLanguage = appSettings.preferences?.language || 'en';
   const { t } = useTranslation(currentLanguage);
+
+  // Lifted View Filter States (Persisted across tabs if appSettings.preferences.persistViewFilters is true)
+  const [timelineFilters, setTimelineFilters] = useState<{ storyline: string; character: string }>({
+    storyline: 'all',
+    character: 'all',
+  });
 
   // Dynamic Theme Engine: Injects CSS variables onto document.documentElement (:root)
   useEffect(() => {
@@ -312,11 +211,13 @@ export default function App() {
     applyTheme(themeMode, customTheme);
   }, [appSettings.preferences?.themeMode, appSettings.preferences?.customTheme]);
 
-  // Reactive Auto-Save Effect for changes across all panels (characters, world, storylines, outline, etc.)
+  // ---------------------------------------------------------------------------
+  // Reactive Auto-Save Effect across panels
+  // ---------------------------------------------------------------------------
   const isAutoSave = (appSettings.preferences?.saveMode || 'auto') === 'auto';
   const isInitialMountRef = useRef(true);
   const prevProjectRef = useRef(project);
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (isInitialMountRef.current) {
@@ -349,52 +250,78 @@ export default function App() {
     };
   }, [project, isAutoSave, currentFilePath, saveSilently]);
 
-  // Lifted View Filter States (Persisted across tabs if appSettings.preferences.persistViewFilters is true)
-  const [timelineFilters, setTimelineFilters] = useState<{ storyline: string; character: string }>({
-    storyline: 'all',
-    character: 'all',
+  // ---------------------------------------------------------------------------
+  // Workspace Dock Layout & Multi-Panel State Hook
+  // ---------------------------------------------------------------------------
+  const {
+    leftOpen,
+    setLeftOpen,
+    rightOpen,
+    setRightOpen,
+    isBottomOpen,
+    setIsBottomOpen,
+    leftWidth,
+    rightWidth,
+    bottomHeight,
+    leftTabs,
+    rightTabs,
+    bottomTabs,
+    activeLeftTab,
+    activeRightTab,
+    activeBottomTab,
+    setActiveBottomTab,
+    handleSelectLeftTab,
+    handleSelectRightTab,
+    handleDockTab,
+    handleRemoveTab,
+    handleOpenSearchTab,
+    handleResizeLeft,
+    handleResizeRight,
+    handleBottomSplitterMouseDown,
+  } = useDockLayout({
+    isDirty,
+    persistViewFilters: appSettings.preferences?.persistViewFilters,
+    onPendingNavigation: (action) => setPendingNavigationAction(() => action),
+    onResetFilters: () => setTimelineFilters({ storyline: 'all', character: 'all' }),
+    onOpenWriteView: () => setActiveMainView('write'),
   });
 
-  const [pendingNavigationAction, setPendingNavigationAction] = useState<(() => void) | null>(null);
+  // ---------------------------------------------------------------------------
+  // Studio-Wide Keyboard Shortcuts Hook
+  // ---------------------------------------------------------------------------
+  useGlobalShortcuts({
+    onSave: handleManualSave,
+    onSaveAs: handleManualSaveAs,
+    onOpen: openProject,
+    onSearch: handleOpenSearchTab,
+  });
 
-  const handleSelectLeftTab = useCallback(
-    (tabId: TabId) => {
-      if (isDirty && tabId !== activeLeftTab) {
-        setPendingNavigationAction(() => () => {
-          if (!appSettings.preferences?.persistViewFilters) {
-            setTimelineFilters({ storyline: 'all', character: 'all' });
-          }
-          setActiveLeftTab(tabId);
-        });
-        return;
-      }
-      if (!appSettings.preferences?.persistViewFilters) {
-        setTimelineFilters({ storyline: 'all', character: 'all' });
-      }
-      setActiveLeftTab(tabId);
-    },
-    [isDirty, activeLeftTab, appSettings.preferences?.persistViewFilters]
-  );
+  // ---------------------------------------------------------------------------
+  // Domain Mutations Hook (Chapters, Storylines, Characters, Lore, Notes)
+  // ---------------------------------------------------------------------------
+  const {
+    handleContentChange,
+    handleAddChapter,
+    handleDeleteChapter,
+    handleUpdateChapter,
+    handleUpdateStorylines,
+    handleUpdateCharacters,
+    handleAddCharacter,
+    handleUpdateRelationships,
+    handleUpdateJunctions,
+    handleUpdateWorldItems,
+    handleUpdateContextBlocks,
+  } = useProjectMutations({
+    project,
+    setProject,
+    activeChapterId,
+    setActiveChapterId,
+    deleteChapterDialogTitle: t('deleteChapter'),
+  });
 
-  const handleSelectRightTab = useCallback(
-    (tabId: TabId) => {
-      if (isDirty && tabId !== activeRightTab) {
-        setPendingNavigationAction(() => () => {
-          if (!appSettings.preferences?.persistViewFilters) {
-            setTimelineFilters({ storyline: 'all', character: 'all' });
-          }
-          setActiveRightTab(tabId);
-        });
-        return;
-      }
-      if (!appSettings.preferences?.persistViewFilters) {
-        setTimelineFilters({ storyline: 'all', character: 'all' });
-      }
-      setActiveRightTab(tabId);
-    },
-    [isDirty, activeRightTab, appSettings.preferences?.persistViewFilters]
-  );
-
+  // ---------------------------------------------------------------------------
+  // View Selection & Omnisearch Handlers
+  // ---------------------------------------------------------------------------
   const handleSelectMainView = useCallback(
     (view: MainViewId) => {
       if (view === 'search') {
@@ -418,9 +345,6 @@ export default function App() {
     [isDirty, activeMainView, appSettings.preferences?.persistViewFilters, handleOpenSearchTab]
   );
 
-  // ---------------------------------------------------------------------------
-  // Global Omnisearch Result Navigation Handler
-  // ---------------------------------------------------------------------------
   const handleSelectSearchResult = useCallback(
     (sceneId: string, searchTerm: string) => {
       setActiveMainView('write');
@@ -430,310 +354,7 @@ export default function App() {
     []
   );
 
-  // ---------------------------------------------------------------------------
-  // Active Chapter Lookup (Derived from normalized project chapters)
-  // ---------------------------------------------------------------------------
   const activeChapter = project.chapters.find((ch) => ch.id === activeChapterId);
-
-  // ---------------------------------------------------------------------------
-  // Domain Mutation Handlers (Update FoliantProject & Refresh lastModified)
-  // ---------------------------------------------------------------------------
-  const handleContentChange = useCallback((newContent: string, targetChapterId?: string) => {
-    const chapterIdToUpdate = targetChapterId || activeChapterId;
-    setProject((prev) => ({
-      ...prev,
-      lastModified: Date.now(),
-      chapters: prev.chapters.map((ch) =>
-        ch.id === chapterIdToUpdate ? { ...ch, content: newContent } : ch
-      ),
-    }));
-  }, [activeChapterId]);
-
-  const handleAddChapter = useCallback(
-    (type: 'folder' | 'scene' = 'scene', parentId: string | null = null) => {
-      const isFolder = type === 'folder';
-      setProject((prev) => {
-        const count = prev.chapters.filter((c) => c.type === type).length + 1;
-        const newChapter: TextNode = {
-          id: `${type}-${Date.now()}`,
-          title: isFolder ? `Folder ${count}: New Section` : `Chapter ${count}: Untitled`,
-          content: '',
-          synopsis: isFolder ? 'Section overview notes...' : 'Scene outline notes...',
-          type,
-          parentId,
-          targetWords: isFolder ? 5000 : 2500,
-          status: 'In Progress',
-          attachedCharacterIds: [],
-        };
-        if (!isFolder) {
-          setActiveChapterId(newChapter.id);
-        }
-        return {
-          ...prev,
-          lastModified: Date.now(),
-          chapters: [...prev.chapters, newChapter],
-        };
-      });
-    },
-    []
-  );
-
-  const handleDeleteChapter = useCallback(
-    async (id: string) => {
-      const chapterToDelete = project.chapters.find((c) => c.id === id);
-      const chapterTitle = chapterToDelete?.title || 'this section';
-
-      let confirmed = false;
-      try {
-        confirmed = await ask(
-          `Are you sure you want to delete "${chapterTitle}"? This action cannot be undone.`,
-          { title: t('deleteChapter'), kind: 'warning' }
-        );
-      } catch {
-        if (typeof window !== 'undefined') {
-          confirmed = window.confirm(
-            `Are you sure you want to delete "${chapterTitle}"? This action cannot be undone.`
-          );
-        }
-      }
-
-      if (!confirmed) return;
-
-      setProject((prev) => {
-        if (prev.chapters.length <= 1) return prev;
-        const getDescendantIds = (parentId: string): string[] => {
-          const children = prev.chapters.filter((c) => c.parentId === parentId);
-          return children.flatMap((c) => [c.id, ...getDescendantIds(c.id)]);
-        };
-
-        const idsToDelete = new Set([id, ...getDescendantIds(id)]);
-        const filtered = prev.chapters.filter((c) => !idsToDelete.has(c.id));
-
-        if (idsToDelete.has(activeChapterId)) {
-          const nextActive = filtered.find((c) => c.type === 'scene') ?? filtered[0];
-          setActiveChapterId(nextActive?.id ?? '');
-        }
-        return {
-          ...prev,
-          lastModified: Date.now(),
-          chapters: filtered,
-        };
-      });
-    },
-    [activeChapterId, project.chapters]
-  );
-
-  const handleUpdateChapter = useCallback((id: string, updates: Partial<TextNode>) => {
-    setProject((prev) => ({
-      ...prev,
-      lastModified: Date.now(),
-      chapters: prev.chapters.map((ch) => (ch.id === id ? { ...ch, ...updates } : ch)),
-    }));
-  }, []);
-
-  const handleUpdateStorylines = useCallback(
-    (storylinesOrUpdater: StorylineItem[] | ((prev: StorylineItem[]) => StorylineItem[])) => {
-      setProject((prev) => ({
-        ...prev,
-        lastModified: Date.now(),
-        storylines:
-          typeof storylinesOrUpdater === 'function'
-            ? storylinesOrUpdater(prev.storylines)
-            : storylinesOrUpdater,
-      }));
-    },
-    []
-  );
-
-  const handleUpdateCharacters = useCallback(
-    (charactersOrUpdater: CharacterItem[] | ((prev: CharacterItem[]) => CharacterItem[])) => {
-      setProject((prev) => ({
-        ...prev,
-        lastModified: Date.now(),
-        characters:
-          typeof charactersOrUpdater === 'function'
-            ? charactersOrUpdater(prev.characters)
-            : charactersOrUpdater,
-      }));
-    },
-    []
-  );
-
-  const handleAddCharacter = useCallback((newChar: CharacterItem) => {
-    setProject((prev) => ({
-      ...prev,
-      lastModified: Date.now(),
-      characters: [...prev.characters, newChar],
-    }));
-  }, []);
-
-  const handleUpdateRelationships = useCallback(
-    (relationshipsOrUpdater: CharacterRelationship[] | ((prev: CharacterRelationship[]) => CharacterRelationship[])) => {
-      setProject((prev) => ({
-        ...prev,
-        lastModified: Date.now(),
-        relationships:
-          typeof relationshipsOrUpdater === 'function'
-            ? relationshipsOrUpdater(prev.relationships)
-            : relationshipsOrUpdater,
-      }));
-    },
-    []
-  );
-
-  const handleUpdateJunctions = useCallback(
-    (junctionsOrUpdater: GraphJunctionNode[] | ((prev: GraphJunctionNode[]) => GraphJunctionNode[])) => {
-      setProject((prev) => ({
-        ...prev,
-        lastModified: Date.now(),
-        junctions:
-          typeof junctionsOrUpdater === 'function'
-            ? junctionsOrUpdater(prev.junctions)
-            : junctionsOrUpdater,
-      }));
-    },
-    []
-  );
-
-  const handleUpdateWorldItems = useCallback(
-    (worldItemsOrUpdater: WorldItem[] | ((prev: WorldItem[]) => WorldItem[])) => {
-      setProject((prev) => ({
-        ...prev,
-        lastModified: Date.now(),
-        worldItems:
-          typeof worldItemsOrUpdater === 'function'
-            ? worldItemsOrUpdater(prev.worldItems)
-            : worldItemsOrUpdater,
-      }));
-    },
-    []
-  );
-
-  const handleUpdateContextBlocks = useCallback(
-    (contextBlocksOrUpdater: ContextBlock[] | ((prev: ContextBlock[]) => ContextBlock[])) => {
-      setProject((prev) => ({
-        ...prev,
-        lastModified: Date.now(),
-        contextBlocks:
-          typeof contextBlocksOrUpdater === 'function'
-            ? contextBlocksOrUpdater(prev.contextBlocks)
-            : contextBlocksOrUpdater,
-      }));
-    },
-    []
-  );
-
-  // ---------------------------------------------------------------------------
-  // Splitter Resizing Handlers
-  // ---------------------------------------------------------------------------
-  const handleResizeLeft = useCallback((delta: number) => {
-    setLeftWidth((w) => Math.max(180, Math.min(600, w + delta)));
-  }, []);
-
-  const handleResizeRight = useCallback((delta: number) => {
-    setRightWidth((w) => Math.max(220, Math.min(600, w - delta)));
-  }, []);
-
-  // Bottom Splitter Vertical Resizing Handler
-  const handleBottomSplitterMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      const startY = e.clientY;
-      const startHeight = bottomHeight;
-
-      const handleMouseMove = (moveEvent: MouseEvent) => {
-        const deltaY = startY - moveEvent.clientY;
-        const newHeight = Math.max(140, Math.min(window.innerHeight * 0.7, startHeight + deltaY));
-        setBottomHeight(newHeight);
-      };
-
-      const handleMouseUp = () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    },
-    [bottomHeight]
-  );
-
-  // ---------------------------------------------------------------------------
-  // Dock Drag & Tab Movement
-  // ---------------------------------------------------------------------------
-  const handleDockTab = useCallback(
-    (
-      tabId: TabId,
-      targetSide: DockSide,
-      targetTabId?: TabId,
-      insertPosition: 'before' | 'after' = 'after'
-    ) => {
-      setLeftTabs((prevLeft) => {
-        const nextLeft = prevLeft.filter((t) => t !== tabId);
-        if (targetSide === 'left') {
-          if (!targetTabId) {
-            nextLeft.push(tabId);
-          } else {
-            const idx = nextLeft.indexOf(targetTabId);
-            if (idx === -1) {
-              nextLeft.push(tabId);
-            } else {
-              const insertIdx = insertPosition === 'before' ? idx : idx + 1;
-              nextLeft.splice(insertIdx, 0, tabId);
-            }
-          }
-        }
-        return nextLeft;
-      });
-
-      setRightTabs((prevRight) => {
-        const nextRight = prevRight.filter((t) => t !== tabId);
-        if (targetSide === 'right') {
-          if (!targetTabId) {
-            nextRight.push(tabId);
-          } else {
-            const idx = nextRight.indexOf(targetTabId);
-            if (idx === -1) {
-              nextRight.push(tabId);
-            } else {
-              const insertIdx = insertPosition === 'before' ? idx : idx + 1;
-              nextRight.splice(insertIdx, 0, tabId);
-            }
-          }
-        }
-        return nextRight;
-      });
-
-      if (targetSide === 'left') {
-        setActiveLeftTab(tabId);
-        setLeftOpen(true);
-      } else {
-        setActiveRightTab(tabId);
-        setRightOpen(true);
-      }
-    },
-    []
-  );
-
-  const handleRemoveTab = useCallback(
-    (tabId: TabId) => {
-      setLeftTabs((prev) => {
-        const next = prev.filter((t) => t !== tabId);
-        if (activeLeftTab === tabId) {
-          setActiveLeftTab(next[0] ?? null);
-        }
-        return next;
-      });
-      setRightTabs((prev) => {
-        const next = prev.filter((t) => t !== tabId);
-        if (activeRightTab === tabId) {
-          setActiveRightTab(next[0] ?? null);
-        }
-        return next;
-      });
-    },
-    [activeLeftTab, activeRightTab]
-  );
 
   // ---------------------------------------------------------------------------
   // Dock View Renderer
@@ -905,6 +526,7 @@ export default function App() {
     [
       project,
       activeChapterId,
+      activeChapter,
       handleSelectSearchResult,
       handleAddChapter,
       handleDeleteChapter,
@@ -929,7 +551,6 @@ export default function App() {
     ? activeChapter.content.trim().split(/\s+/).length
     : 0;
 
-
   return (
     <LanguageProvider language={currentLanguage}>
       <div className="flex h-screen w-screen overflow-hidden bg-zinc-950 text-zinc-200 select-none font-sans">
@@ -946,7 +567,7 @@ export default function App() {
         onSaveProject={handleManualSave}
         onSaveProjectAs={handleManualSaveAs}
         onImportManuskript={handleImportManuskript}
-        onExportEpub={handleExportEpub}
+        onExportEpub={openExportModal}
         onOpenSearch={handleOpenSearchTab}
       />
 
@@ -977,7 +598,7 @@ export default function App() {
         {leftOpen && (
           <Splitter
             onResize={handleResizeLeft}
-            onReset={() => setLeftWidth(270)}
+            onReset={() => {}}
             label="Resize left panel"
           />
         )}
@@ -1133,7 +754,7 @@ export default function App() {
           )}
 
           {/* Discrete Bottom Control / Status Bar */}
-          <footer className="h-6 bg-zinc-950 border-t border-zinc-850 px-3 flex items-center justify-between text-[11px] font-mono text-zinc-500 shrink-0 select-none">
+          <footer className="h-6 bg-zinc-950 border-t border-zinc-855 px-3 flex items-center justify-between text-[11px] font-mono text-zinc-500 shrink-0 select-none">
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => {
@@ -1212,7 +833,7 @@ export default function App() {
         {rightOpen && (
           <Splitter
             onResize={handleResizeRight}
-            onReset={() => setRightWidth(310)}
+            onReset={() => {}}
             label="Resize right panel"
           />
         )}
@@ -1247,16 +868,16 @@ export default function App() {
       {/* 4.5 EPUB EXPORT SETTINGS MODAL */}
       <ExportSettingsModal
         isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
+        onClose={closeExportModal}
         project={project}
-        onExport={handleExecuteEpubExport}
+        onExport={executeExport}
         isExporting={isExportingEpub}
       />
 
       {/* 4.6 EPUB EXPORT RESULT NOTIFICATION MODAL */}
       <ExportResultModal
         data={exportResultData}
-        onClose={() => setExportResultData(null)}
+        onClose={closeResultModal}
       />
 
       {/* 5. STUDIO SETTINGS & COLOR CUSTOMIZATION MODAL */}
@@ -1268,120 +889,23 @@ export default function App() {
       />
 
       {/* 6. UNSAVED CHANGES NAVIGATION GUARD MODAL */}
-      {pendingNavigationAction && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-750 rounded-lg shadow-2xl max-w-md w-full p-5 space-y-4 font-sans animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-full bg-amber-950/60 border border-amber-800/80 text-amber-400 shrink-0">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-sm font-semibold text-zinc-100">
-                  {t('unsavedChangesTitle')}
-                </h3>
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  {t('unsavedChangesMessage')}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-zinc-800/80">
-              <button
-                type="button"
-                onClick={() => setPendingNavigationAction(null)}
-                className="px-3.5 py-1.5 rounded-sm text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition cursor-pointer"
-              >
-                {t('keepEditing')}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const action = pendingNavigationAction;
-                  setPendingNavigationAction(null);
-                  setIsDirty(false);
-                  action?.();
-                }}
-                className="px-3.5 py-1.5 rounded-sm text-xs font-medium bg-rose-600 hover:bg-rose-500 text-white shadow-xs transition cursor-pointer"
-              >
-                {t('discardAndSwitch')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <UnsavedChangesModal
+        isOpen={Boolean(pendingNavigationAction)}
+        onCancel={() => setPendingNavigationAction(null)}
+        onConfirm={() => {
+          const action = pendingNavigationAction;
+          setPendingNavigationAction(null);
+          setIsDirty(false);
+          action?.();
+        }}
+      />
 
       {/* 7. IMPORT RESULT NOTIFICATION MODAL */}
-      {importModalData && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-750 rounded-lg shadow-2xl max-w-md w-full p-5 space-y-4 font-sans animate-in fade-in zoom-in-95 duration-150">
-            {importModalData.type === 'success' ? (
-              <>
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-full bg-emerald-950/60 border border-emerald-800/80 text-emerald-400 shrink-0">
-                    <CheckCircle2 className="w-5 h-5" />
-                  </div>
-                  <div className="space-y-1 min-w-0 flex-1">
-                    <h3 className="text-sm font-semibold text-zinc-100">
-                      {t('importSuccessTitle')}
-                    </h3>
-                    <p className="text-xs text-zinc-400 leading-relaxed">
-                      {t('importSuccessDesc')}
-                    </p>
-                    <div className="pt-2 flex flex-wrap gap-1.5 font-mono text-[10px]">
-                      <span className="px-2 py-0.5 rounded-xs bg-zinc-950 border border-zinc-800 text-zinc-300">
-                        {importModalData.sceneCount} {t('scenesCountLabel')}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-xs bg-zinc-950 border border-zinc-800 text-zinc-300">
-                        {importModalData.charCount} {t('charactersCountLabel')}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-xs bg-zinc-950 border border-zinc-800 text-zinc-300">
-                        {importModalData.worldCount} {t('dockWorldShort')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end pt-2 border-t border-zinc-800/80">
-                  <button
-                    type="button"
-                    onClick={() => setImportModalData(null)}
-                    className="px-4 py-1.5 rounded-sm text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition cursor-pointer"
-                  >
-                    {t('accept')}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-full bg-rose-950/60 border border-rose-800/80 text-rose-400 shrink-0">
-                    <AlertTriangle className="w-5 h-5" />
-                  </div>
-                  <div className="space-y-1 min-w-0 flex-1">
-                    <h3 className="text-sm font-semibold text-zinc-100">
-                      Import Error
-                    </h3>
-                    <p className="text-xs text-rose-300 leading-relaxed whitespace-pre-wrap">
-                      {importModalData.message}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end pt-2 border-t border-zinc-800/80">
-                  <button
-                    type="button"
-                    onClick={() => setImportModalData(null)}
-                    className="px-4 py-1.5 rounded-sm text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition cursor-pointer"
-                  >
-                    {t('close')}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-      </div>
+      <ImportResultModal
+        data={importModalData}
+        onClose={() => setImportModalData(null)}
+      />
+    </div>
     </LanguageProvider>
   );
 }

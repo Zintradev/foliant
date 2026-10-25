@@ -66,10 +66,18 @@ function normalizeLoadedProject(data: unknown): FoliantProject {
 }
 
 /**
- * Serializes and writes the Foliant project into a modular folder bundle:
- * 1. Creates the base directory and the /scenes/ subdirectory.
- * 2. Writes each scene chapter as an independent file: /scenes/${chapter.id}.md.
- * 3. Strips scene content from the in-memory chapters list and writes project.json.
+ * Serializes and writes the novel into Foliant's industrial bundle directory architecture:
+ *
+ * ### Architectural Rationale:
+ * 1. **O(1) Incremental Auto-Save**: In a 100,000+ word manuscript, serializing a single giant JSON
+ *    string on every keystroke causes memory spikes and UI thread stutter. By storing structural
+ *    metadata in `project.json` and scene bodies in `/scenes/${chapter.id}.md`, individual scenes
+ *    can be flushed in isolation.
+ * 2. **Corruption Fault Tolerance**: If a crash or power failure occurs mid-write, only the current
+ *    scene's `.md` file is at risk; the project taxonomy, character registry, and other chapters remain
+ *    completely uncorrupted.
+ * 3. **Git & VCS Friendliness**: Authors using Git or cloud sync (Dropbox, OneDrive) get clean line-by-line
+ *    text diffs per scene rather than continuous merge conflicts on a monolithic JSON blob.
  */
 export async function writeProjectBundle(
   baseDirectory: string,
