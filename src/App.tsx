@@ -15,9 +15,11 @@ import {
 } from 'lucide-react';
 import { TextNode, ContextBlock, FoliantProject } from './types/project';
 import { useProjectPersistence, SaveStatus } from './hooks/useProjectPersistence';
-import { ask, message } from '@tauri-apps/plugin-dialog';
+import { ask } from '@tauri-apps/plugin-dialog';
 import { importManuskriptProject } from './utils/importManuskript';
-import { exportProjectToEpub } from './utils/exportEpub';
+import { exportProjectToEpub, EpubExportOptions, ExportEpubSuccessResult } from './utils/exportEpub';
+import ExportSettingsModal from './components/export/ExportSettingsModal';
+import ExportResultModal from './components/export/ExportResultModal';
 import {
   TabId,
   CharacterItem,
@@ -175,18 +177,43 @@ export default function App() {
     }
   }, [loadProject]);
 
-  const handleExportEpub = useCallback(async () => {
-    try {
-      await exportProjectToEpub(project);
-    } catch (err: unknown) {
-      console.error('[Foliant] EPUB export failed:', err);
-      const msg = err instanceof Error ? err.message : String(err);
-      await message(`Failed to export EPUB:\n${msg}`, {
-        title: 'Export Error',
-        kind: 'error',
-      });
-    }
-  }, [project]);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isExportingEpub, setIsExportingEpub] = useState(false);
+  const [exportResultData, setExportResultData] = useState<
+    | ({ type: 'success' } & ExportEpubSuccessResult)
+    | { type: 'error'; message: string }
+    | null
+  >(null);
+
+  const handleExportEpub = useCallback(() => {
+    setIsExportModalOpen(true);
+  }, []);
+
+  const handleExecuteEpubExport = useCallback(
+    async (options: EpubExportOptions) => {
+      setIsExportingEpub(true);
+      try {
+        const result = await exportProjectToEpub(project, options);
+        if (result) {
+          setIsExportModalOpen(false);
+          setExportResultData({
+            type: 'success',
+            ...result,
+          });
+        }
+      } catch (err: unknown) {
+        console.error('[Foliant] EPUB export failed:', err);
+        const msg = err instanceof Error ? err.message : String(err);
+        setExportResultData({
+          type: 'error',
+          message: msg,
+        });
+      } finally {
+        setIsExportingEpub(false);
+      }
+    },
+    [project]
+  );
 
   // ---------------------------------------------------------------------------
   // Global Keyboard Shortcuts (Ctrl/Cmd+S, Ctrl/Cmd+Shift+S, Ctrl/Cmd+O)
@@ -1216,6 +1243,21 @@ export default function App() {
           {renderDockView(activeMainView as import('./types/dock').TabId, true)}
         </div>
       )}
+
+      {/* 4.5 EPUB EXPORT SETTINGS MODAL */}
+      <ExportSettingsModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        project={project}
+        onExport={handleExecuteEpubExport}
+        isExporting={isExportingEpub}
+      />
+
+      {/* 4.6 EPUB EXPORT RESULT NOTIFICATION MODAL */}
+      <ExportResultModal
+        data={exportResultData}
+        onClose={() => setExportResultData(null)}
+      />
 
       {/* 5. STUDIO SETTINGS & COLOR CUSTOMIZATION MODAL */}
       <SettingsModal

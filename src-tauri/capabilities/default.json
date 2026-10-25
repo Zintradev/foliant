@@ -9,7 +9,30 @@
     "core:default",
     "opener:default",
     "dialog:default",
+    "dialog:allow-save",
     "fs:default",
+    "fs:allow-write-file",
+    "fs:allow-write-text-file",
+    {
+      "identifier": "fs:allow-write-file",
+      "allow": [
+        "$HOME/**",
+        "$DESKTOP/**",
+        "$DOCUMENT/**",
+        "$DOWNLOAD/**",
+        "**"
+      ]
+    },
+    {
+      "identifier": "fs:allow-write",
+      "allow": [
+        "$HOME/**",
+        "$DESKTOP/**",
+        "$DOCUMENT/**",
+        "$DOWNLOAD/**",
+        "**"
+      ]
+    },
     {
       "identifier": "fs:allow-read-dir",
       "allow": [
@@ -34,7 +57,8 @@
         "$HOME/**",
         "$DESKTOP/**",
         "$DOCUMENT/**",
-        "$DOWNLOAD/**"
+        "$DOWNLOAD/**",
+        "**"
       ]
     },
     {

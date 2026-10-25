@@ -23,6 +23,7 @@ export const dict = {
     customColor: 'Custom Color...',
     chooseColor: 'Pick Color',
     exactColor: 'Exact Color',
+    optional: 'Optional',
 
     // Settings Sidebar Categories
     categoryGeneral: 'General',
@@ -564,6 +565,7 @@ export const dict = {
     customColor: 'Color Personalizado...',
     chooseColor: 'Elegir Color',
     exactColor: 'Color Exacto',
+    optional: 'Opcional',
 
     // Settings Sidebar Categories
     categoryGeneral: 'General',
