@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback, memo } from 'react';
 import {
   Clock,
   GitMerge,
@@ -32,6 +32,7 @@ import {
 import { AppSettings, loadSettings } from '../../../types/settings';
 import { useFlipAnimation } from '../../common/useFlipAnimation';
 import { useTranslation, getRoleLabel } from '../../../i18n/translations';
+import { countWords } from '../../../utils/textMetrics';
 
 export interface TimelineFilters {
   storyline: string;
@@ -71,10 +72,6 @@ interface ActivePopover {
 interface ActiveMarkerPopoverState {
   sceneId: string;
   markerId: string;
-}
-
-function countWords(content: string): number {
-  return content.trim() ? content.trim().split(/\s+/).length : 0;
 }
 
 export const STORYLINE_COLOR_MAP: Record<
@@ -264,7 +261,7 @@ export type TimelineColumnItem = {
   originalIndex: number;
 };
 
-export default function TimelineView({
+function TimelineViewComponent({
   chapters,
   storylines,
   characters,
@@ -2488,3 +2485,5 @@ export default function TimelineView({
     </div>
   );
 }
+
+export default memo(TimelineViewComponent);

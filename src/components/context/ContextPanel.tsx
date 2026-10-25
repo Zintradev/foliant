@@ -258,7 +258,7 @@ const MemoizedContextBlockItem = memo(ContextBlockItem);
 let nextId = 100; // simple incrementing ID for new blocks
 const generateId = () => `block-${++nextId}`;
 
-export default function ContextPanel({
+function ContextPanelComponent({
   blocks,
   onChange,
   isExpanded = false,
@@ -417,3 +417,5 @@ export default function ContextPanel({
     </div>
   );
 }
+
+export default memo(ContextPanelComponent);

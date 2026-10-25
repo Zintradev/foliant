@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
 import { createPortal } from 'react-dom';
 import {
   BookOpen,
@@ -156,7 +156,7 @@ function HorizontalSplitter({
   );
 }
 
-export default function DockContainer({
+function DockContainerComponent({
   side,
   isOpen,
   onToggleOpen,
@@ -882,3 +882,5 @@ export default function DockContainer({
     </>
   );
 }
+
+export default memo(DockContainerComponent);

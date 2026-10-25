@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, memo } from 'react';
 import {
   GitMerge,
   Plus,
@@ -125,7 +125,7 @@ const COLOR_CLASSES: Record<
   },
 };
 
-export default function StorylineView({
+function StorylineViewComponent({
   storylines,
   chapters,
   worldItems = [],
@@ -1055,3 +1055,5 @@ export default function StorylineView({
     </div>
   );
 }
+
+export default memo(StorylineViewComponent);

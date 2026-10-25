@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useCallback, useMemo } from 'react';
 import { Language } from '../types/settings';
 
 export const dict = {
@@ -1109,16 +1109,19 @@ export function useTranslation(overrideLang?: Language) {
   const effectiveLang: Language = overrideLang || contextLang || 'en';
   const currentLang: Language = dict[effectiveLang] ? effectiveLang : 'en';
 
-  const t = (key: TranslationKey | string, fallback?: string): string => {
-    return (
-      (dict[currentLang] as Record<string, string>)?.[key] ||
-      (dict.en as Record<string, string>)?.[key] ||
-      fallback ||
-      key
-    );
-  };
+  const t = useCallback(
+    (key: TranslationKey | string, fallback?: string): string => {
+      return (
+        (dict[currentLang] as Record<string, string>)?.[key] ||
+        (dict.en as Record<string, string>)?.[key] ||
+        fallback ||
+        key
+      );
+    },
+    [currentLang]
+  );
 
-  return { t, lang: currentLang };
+  return useMemo(() => ({ t, lang: currentLang }), [t, currentLang]);
 }
 
 /**

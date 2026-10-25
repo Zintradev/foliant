@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { Search, X, Feather, Layers, FileText } from 'lucide-react';
 import { FoliantProject } from '../../../types/project';
 import { useGlobalSearch, SearchScope, SearchResult } from '../../../hooks/useGlobalSearch';
@@ -33,7 +33,7 @@ function renderHighlightedSnippet(snippet: string, query: string): React.ReactNo
   });
 }
 
-export default function SearchView({
+function SearchViewComponent({
   project,
   activeSceneId,
   onSelectResult,
@@ -190,3 +190,5 @@ export default function SearchView({
     </div>
   );
 }
+
+export default memo(SearchViewComponent);

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
 import {
   Feather,
   PanelLeftClose,
@@ -19,10 +19,7 @@ import { useDockLayout } from './hooks/useDockLayout';
 import { useProjectMutations } from './hooks/useProjectMutations';
 import { ask } from '@tauri-apps/plugin-dialog';
 import { importManuskriptProject } from './utils/importManuskript';
-import ExportSettingsModal from './components/export/ExportSettingsModal';
-import ExportResultModal from './components/export/ExportResultModal';
-import UnsavedChangesModal from './components/common/UnsavedChangesModal';
-import ImportResultModal, { ImportModalData } from './components/common/ImportResultModal';
+import { ImportModalData } from './components/common/ImportResultModal';
 import { TabId } from './types/dock';
 import { MainViewId } from './types/navigation';
 import FoliantEditor from './components/editor/FoliantEditor';
@@ -34,17 +31,24 @@ import StorylineView from './components/dock/views/StorylineView';
 import ManuscriptStatsView from './components/dock/views/ManuscriptStatsView';
 import CharactersView from './components/dock/views/CharactersView';
 import WorldbuildingView from './components/dock/views/WorldbuildingView';
-import TimelineView from './components/dock/views/TimelineView';
-import RelationshipGraphView from './components/dock/views/RelationshipGraphView';
 import SceneInspector from './components/dock/views/SceneInspector';
 import Splitter from './components/common/Splitter';
 import ActivityBar from './components/navigation/ActivityBar';
-import SettingsModal from './components/settings/SettingsModal';
 import SearchView from './components/dock/views/SearchView';
 import { AppSettings, loadSettings } from './types/settings';
 import { applyTheme } from './theme/themeEngine';
 import { useTranslation, LanguageProvider } from './i18n/translations';
+import { countWords } from './utils/textMetrics';
 import { DEFAULT_PROJECT } from './data/mockProject';
+
+// Lazy-loaded heavy views and modals to keep initial bundle ultra-light
+const TimelineView = lazy(() => import('./components/dock/views/TimelineView'));
+const RelationshipGraphView = lazy(() => import('./components/dock/views/RelationshipGraphView'));
+const ExportSettingsModal = lazy(() => import('./components/export/ExportSettingsModal'));
+const ExportResultModal = lazy(() => import('./components/export/ExportResultModal'));
+const SettingsModal = lazy(() => import('./components/settings/SettingsModal'));
+const UnsavedChangesModal = lazy(() => import('./components/common/UnsavedChangesModal'));
+const ImportResultModal = lazy(() => import('./components/common/ImportResultModal'));
 
 export default function App() {
   // ===========================================================================
@@ -391,55 +395,71 @@ export default function App() {
           );
         case 'timeline':
           return (
-            <TimelineView
-              chapters={project.chapters}
-              storylines={project.storylines}
-              characters={project.characters}
-              activeChapterId={activeChapterId}
-              onSelectChapter={setActiveChapterId}
-              onUpdateChapter={handleUpdateChapter}
-              onUpdateStorylines={handleUpdateStorylines}
-              onUpdateCharacters={handleUpdateCharacters}
-              isExpanded={isExpanded}
-              timelineDropMode={appSettings.preferences?.timelineDropMode}
-              appSettings={appSettings}
-              timelineFilters={
-                appSettings.preferences?.persistViewFilters ? timelineFilters : undefined
+            <Suspense
+              fallback={
+                <div className="flex-1 h-full w-full flex items-center justify-center text-xs text-zinc-500 font-mono">
+                  Loading Timeline...
+                </div>
               }
-              setTimelineFilters={
-                appSettings.preferences?.persistViewFilters ? setTimelineFilters : undefined
-              }
-              selectedStorylineFilter={
-                appSettings.preferences?.persistViewFilters ? timelineFilters.storyline : undefined
-              }
-              onStorylineFilterChange={
-                appSettings.preferences?.persistViewFilters
-                  ? (id) => setTimelineFilters((f) => ({ ...f, storyline: id }))
-                  : undefined
-              }
-              selectedCharacterFilter={
-                appSettings.preferences?.persistViewFilters ? timelineFilters.character : undefined
-              }
-              onCharacterFilterChange={
-                appSettings.preferences?.persistViewFilters
-                  ? (id) => setTimelineFilters((f) => ({ ...f, character: id }))
-                  : undefined
-              }
-            />
+            >
+              <TimelineView
+                chapters={project.chapters}
+                storylines={project.storylines}
+                characters={project.characters}
+                activeChapterId={activeChapterId}
+                onSelectChapter={setActiveChapterId}
+                onUpdateChapter={handleUpdateChapter}
+                onUpdateStorylines={handleUpdateStorylines}
+                onUpdateCharacters={handleUpdateCharacters}
+                isExpanded={isExpanded}
+                timelineDropMode={appSettings.preferences?.timelineDropMode}
+                appSettings={appSettings}
+                timelineFilters={
+                  appSettings.preferences?.persistViewFilters ? timelineFilters : undefined
+                }
+                setTimelineFilters={
+                  appSettings.preferences?.persistViewFilters ? setTimelineFilters : undefined
+                }
+                selectedStorylineFilter={
+                  appSettings.preferences?.persistViewFilters ? timelineFilters.storyline : undefined
+                }
+                onStorylineFilterChange={
+                  appSettings.preferences?.persistViewFilters
+                    ? (id) => setTimelineFilters((f) => ({ ...f, storyline: id }))
+                    : undefined
+                }
+                selectedCharacterFilter={
+                  appSettings.preferences?.persistViewFilters ? timelineFilters.character : undefined
+                }
+                onCharacterFilterChange={
+                  appSettings.preferences?.persistViewFilters
+                    ? (id) => setTimelineFilters((f) => ({ ...f, character: id }))
+                    : undefined
+                }
+              />
+            </Suspense>
           );
         case 'relationships':
           return (
-            <RelationshipGraphView
-              characters={project.characters}
-              relationships={project.relationships}
-              junctions={project.junctions}
-              storylines={project.storylines}
-              onUpdateRelationships={handleUpdateRelationships}
-              onUpdateCharacters={handleUpdateCharacters}
-              onUpdateJunctions={handleUpdateJunctions}
-              onAddCharacter={handleAddCharacter}
-              isExpanded={isExpanded}
-            />
+            <Suspense
+              fallback={
+                <div className="flex-1 h-full w-full flex items-center justify-center text-xs text-zinc-500 font-mono">
+                  Loading Graph...
+                </div>
+              }
+            >
+              <RelationshipGraphView
+                characters={project.characters}
+                relationships={project.relationships}
+                junctions={project.junctions}
+                storylines={project.storylines}
+                onUpdateRelationships={handleUpdateRelationships}
+                onUpdateCharacters={handleUpdateCharacters}
+                onUpdateJunctions={handleUpdateJunctions}
+                onAddCharacter={handleAddCharacter}
+                isExpanded={isExpanded}
+              />
+            </Suspense>
           );
         case 'inspector':
           return (
@@ -545,11 +565,23 @@ export default function App() {
   );
 
   // ---------------------------------------------------------------------------
-  // Editor Metrics
+  // Editor Metrics & Stable Callback References
   // ---------------------------------------------------------------------------
-  const wordCount = activeChapter?.content.trim()
-    ? activeChapter.content.trim().split(/\s+/).length
-    : 0;
+  const wordCount = useMemo(
+    () => countWords(activeChapter?.content),
+    [activeChapter?.content]
+  );
+
+  const handleCloseLeft = useCallback(() => setLeftOpen(false), [setLeftOpen]);
+  const handleCloseRight = useCallback(() => setRightOpen(false), [setRightOpen]);
+  const handleToggleLeft = useCallback(() => setLeftOpen((prev) => !prev), [setLeftOpen]);
+  const handleToggleRight = useCallback(() => setRightOpen((prev) => !prev), [setRightOpen]);
+  const handleCloseBottom = useCallback(() => setIsBottomOpen(false), [setIsBottomOpen]);
+  const handleToggleBottom = useCallback(() => setIsBottomOpen((prev) => !prev), [setIsBottomOpen]);
+  const handleOpenSettings = useCallback(() => setIsSettingsOpen(true), []);
+  const handleCloseSettings = useCallback(() => setIsSettingsOpen(false), []);
+  const handleCloseImportResult = useCallback(() => setImportModalData(null), []);
+  const noop = useCallback(() => {}, []);
 
   return (
     <LanguageProvider language={currentLanguage}>
@@ -561,7 +593,7 @@ export default function App() {
         language={appSettings.preferences?.language || 'en'}
         saveStatus={editorSaveStatus}
         isAutoSave={isAutoSave}
-        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenSettings={handleOpenSettings}
         onNewProject={handleNewProject}
         onOpenProject={openProject}
         onSaveProject={handleManualSave}
@@ -581,7 +613,7 @@ export default function App() {
         <DockContainer
           side="left"
           isOpen={leftOpen}
-          onToggleOpen={() => setLeftOpen(false)}
+          onToggleOpen={handleCloseLeft}
           tabs={leftTabs}
           activeTab={activeLeftTab}
           onSelectTab={handleSelectLeftTab}
@@ -598,7 +630,7 @@ export default function App() {
         {leftOpen && (
           <Splitter
             onResize={handleResizeLeft}
-            onReset={() => {}}
+            onReset={noop}
             label="Resize left panel"
           />
         )}
@@ -609,7 +641,7 @@ export default function App() {
           <header className="h-9 border-b border-zinc-800 flex items-center justify-between px-3 bg-zinc-900/60 select-none shrink-0">
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setLeftOpen(!leftOpen)}
+                onClick={handleToggleLeft}
                 title={leftOpen ? t('collapseLeftDock') : t('expandLeftDock')}
                 className="p-1 hover:bg-zinc-800 rounded-sm text-zinc-400 hover:text-white transition"
               >
@@ -640,7 +672,7 @@ export default function App() {
               </span>
 
               <button
-                onClick={() => setRightOpen(!rightOpen)}
+                onClick={handleToggleRight}
                 title={rightOpen ? t('collapseRightDock') : t('expandRightDock')}
                 className="p-1 hover:bg-zinc-800 rounded-sm text-zinc-400 hover:text-white transition cursor-pointer"
               >
@@ -737,7 +769,7 @@ export default function App() {
                     <Maximize2 className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={() => setIsBottomOpen(false)}
+                    onClick={handleCloseBottom}
                     title={t('collapsePanel')}
                     className="p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-xs transition"
                   >
@@ -792,7 +824,7 @@ export default function App() {
               </button>
 
               <button
-                onClick={() => setIsBottomOpen((prev) => !prev)}
+                onClick={handleToggleBottom}
                 className="p-0.5 text-zinc-500 hover:text-zinc-300 ml-0.5"
                 title={isBottomOpen ? t('collapsePanel') : t('expandPanel')}
               >
@@ -833,7 +865,7 @@ export default function App() {
         {rightOpen && (
           <Splitter
             onResize={handleResizeRight}
-            onReset={() => {}}
+            onReset={noop}
             label="Resize right panel"
           />
         )}
@@ -842,7 +874,7 @@ export default function App() {
         <DockContainer
           side="right"
           isOpen={rightOpen}
-          onToggleOpen={() => setRightOpen(false)}
+          onToggleOpen={handleCloseRight}
           tabs={rightTabs}
           activeTab={activeRightTab}
           onSelectTab={handleSelectRightTab}
@@ -866,45 +898,55 @@ export default function App() {
       )}
 
       {/* 4.5 EPUB EXPORT SETTINGS MODAL */}
-      <ExportSettingsModal
-        isOpen={isExportModalOpen}
-        onClose={closeExportModal}
-        project={project}
-        onExport={executeExport}
-        isExporting={isExportingEpub}
-      />
+      <Suspense fallback={null}>
+        <ExportSettingsModal
+          isOpen={isExportModalOpen}
+          onClose={closeExportModal}
+          project={project}
+          onExport={executeExport}
+          isExporting={isExportingEpub}
+        />
+      </Suspense>
 
       {/* 4.6 EPUB EXPORT RESULT NOTIFICATION MODAL */}
-      <ExportResultModal
-        data={exportResultData}
-        onClose={closeResultModal}
-      />
+      <Suspense fallback={null}>
+        <ExportResultModal
+          data={exportResultData}
+          onClose={closeResultModal}
+        />
+      </Suspense>
 
       {/* 5. STUDIO SETTINGS & COLOR CUSTOMIZATION MODAL */}
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        settings={appSettings}
-        onUpdateSettings={setAppSettings}
-      />
+      <Suspense fallback={null}>
+        <SettingsModal
+          isOpen={isSettingsOpen}
+          onClose={handleCloseSettings}
+          settings={appSettings}
+          onUpdateSettings={setAppSettings}
+        />
+      </Suspense>
 
       {/* 6. UNSAVED CHANGES NAVIGATION GUARD MODAL */}
-      <UnsavedChangesModal
-        isOpen={Boolean(pendingNavigationAction)}
-        onCancel={() => setPendingNavigationAction(null)}
-        onConfirm={() => {
-          const action = pendingNavigationAction;
-          setPendingNavigationAction(null);
-          setIsDirty(false);
-          action?.();
-        }}
-      />
+      <Suspense fallback={null}>
+        <UnsavedChangesModal
+          isOpen={Boolean(pendingNavigationAction)}
+          onCancel={() => setPendingNavigationAction(null)}
+          onConfirm={() => {
+            const action = pendingNavigationAction;
+            setPendingNavigationAction(null);
+            setIsDirty(false);
+            action?.();
+          }}
+        />
+      </Suspense>
 
       {/* 7. IMPORT RESULT NOTIFICATION MODAL */}
-      <ImportResultModal
-        data={importModalData}
-        onClose={() => setImportModalData(null)}
-      />
+      <Suspense fallback={null}>
+        <ImportResultModal
+          data={importModalData}
+          onClose={handleCloseImportResult}
+        />
+      </Suspense>
     </div>
     </LanguageProvider>
   );

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, memo } from 'react';
 
 interface SplitterProps {
   /** Called with delta in pixels whenever dragged. */
@@ -13,7 +13,7 @@ interface SplitterProps {
   label?: string;
 }
 
-export default function Splitter({
+function SplitterComponent({
   onResize,
   onResizeStart,
   onResizeEnd,
@@ -85,3 +85,5 @@ export default function Splitter({
     </div>
   );
 }
+
+export default memo(SplitterComponent);

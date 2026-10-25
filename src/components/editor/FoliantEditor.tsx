@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState, memo, lazy, Suspense } from 'react';
 import { useEditor, EditorContent, Editor, Mark } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -21,8 +21,11 @@ import {
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { EditorFontFamily } from '../../types/settings';
-import WordSymbolModal from './WordSymbolModal';
-import { DarkColorPicker } from '../common/DarkColorPicker';
+
+const WordSymbolModal = lazy(() => import('./WordSymbolModal'));
+const DarkColorPicker = lazy(() =>
+  import('../common/DarkColorPicker').then((m) => ({ default: m.DarkColorPicker }))
+);
 
 export type SaveStatus = 'idle' | 'unsaved' | 'saving' | 'saved';
 
@@ -125,7 +128,13 @@ interface ToolbarButtonProps {
   children: React.ReactNode;
 }
 
-function ToolbarButton({ onClick, isActive, disabled, title, children }: ToolbarButtonProps) {
+const ToolbarButton = memo(function ToolbarButton({
+  onClick,
+  isActive,
+  disabled,
+  title,
+  children,
+}: ToolbarButtonProps) {
   return (
     <button
       type="button"
@@ -143,7 +152,7 @@ function ToolbarButton({ onClick, isActive, disabled, title, children }: Toolbar
       {children}
     </button>
   );
-}
+});
 
 interface EditorToolbarProps {
   editor: Editor | null;
@@ -152,7 +161,12 @@ interface EditorToolbarProps {
   onFontChange: (font: EditorFontFamily) => void;
 }
 
-function EditorToolbar({ editor, onOpenSymbols, currentFont, onFontChange }: EditorToolbarProps) {
+const EditorToolbar = memo(function EditorToolbar({
+  editor,
+  onOpenSymbols,
+  currentFont,
+  onFontChange,
+}: EditorToolbarProps) {
   const isEditorReady = !!editor && !editor.isDestroyed;
 
   // Underline and Highlight color state
@@ -360,15 +374,17 @@ function EditorToolbar({ editor, onOpenSymbols, currentFont, onFontChange }: Edi
 
             {/* In-App Exact Dark Color Picker Popover */}
             {isUnderlineCustomOpen && (
-              <DarkColorPicker
-                color={underlineColor}
-                title="Exact Underline Color"
-                onChange={(hex) => {
-                  setUnderlineColor(hex);
-                  editor?.chain().focus().setMark('underline', { color: hex }).run();
-                }}
-                onClose={() => setIsUnderlineCustomOpen(false)}
-              />
+              <Suspense fallback={null}>
+                <DarkColorPicker
+                  color={underlineColor}
+                  title="Exact Underline Color"
+                  onChange={(hex) => {
+                    setUnderlineColor(hex);
+                    editor?.chain().focus().setMark('underline', { color: hex }).run();
+                  }}
+                  onClose={() => setIsUnderlineCustomOpen(false)}
+                />
+              </Suspense>
             )}
           </div>
         )}
@@ -489,15 +505,17 @@ function EditorToolbar({ editor, onOpenSymbols, currentFont, onFontChange }: Edi
 
             {/* In-App Exact Dark Color Picker Popover */}
             {isHighlightCustomOpen && (
-              <DarkColorPicker
-                color={highlightColor}
-                title="Exact Highlight Color"
-                onChange={(hex) => {
-                  setHighlightColor(hex);
-                  editor?.chain().focus().setHighlight({ color: hex }).run();
-                }}
-                onClose={() => setIsHighlightCustomOpen(false)}
-              />
+              <Suspense fallback={null}>
+                <DarkColorPicker
+                  color={highlightColor}
+                  title="Exact Highlight Color"
+                  onChange={(hex) => {
+                    setHighlightColor(hex);
+                    editor?.chain().focus().setHighlight({ color: hex }).run();
+                  }}
+                  onClose={() => setIsHighlightCustomOpen(false)}
+                />
+              </Suspense>
             )}
           </div>
         )}
@@ -566,9 +584,9 @@ function EditorToolbar({ editor, onOpenSymbols, currentFont, onFontChange }: Edi
       </ToolbarButton>
     </div>
   );
-}
+});
 
-export default function FoliantEditor({
+function FoliantEditorComponent({
   chapterId,
   content,
   onChange,
@@ -906,11 +924,15 @@ export default function FoliantEditor({
       <EditorContent editor={editor} />
 
       {/* Microsoft Word-like Comprehensive Symbols Modal */}
-      <WordSymbolModal
-        isOpen={isSymbolsModalOpen}
-        onClose={() => setIsSymbolsModalOpen(false)}
-        onInsertSymbol={handleInsertSymbolFromModal}
-      />
+      <Suspense fallback={null}>
+        <WordSymbolModal
+          isOpen={isSymbolsModalOpen}
+          onClose={() => setIsSymbolsModalOpen(false)}
+          onInsertSymbol={handleInsertSymbolFromModal}
+        />
+      </Suspense>
     </div>
   );
 }
+
+export default memo(FoliantEditorComponent);

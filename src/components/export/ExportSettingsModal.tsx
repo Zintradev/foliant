@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, memo } from 'react';
 import {
   BookOpen,
   User,
@@ -27,6 +27,7 @@ import {
   ExportProfile,
 } from '../../utils/exportEpub';
 import { useTranslation } from '../../i18n/translations';
+import { countWords } from '../../utils/textMetrics';
 
 export interface ExportSettingsModalProps {
   isOpen: boolean;
@@ -40,10 +41,6 @@ interface TreeItem {
   node: TextNode;
   children: TreeItem[];
   depth: number;
-}
-
-function countWords(content: string): number {
-  return content.trim() ? content.trim().split(/\s+/).length : 0;
 }
 
 /**
@@ -80,7 +77,7 @@ function IndeterminateCheckbox({
   );
 }
 
-export default function ExportSettingsModal({
+function ExportSettingsModalComponent({
   isOpen,
   onClose,
   project,
@@ -856,3 +853,5 @@ export default function ExportSettingsModal({
     </div>
   );
 }
+
+export default memo(ExportSettingsModalComponent);

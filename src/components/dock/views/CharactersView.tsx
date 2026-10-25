@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import {
   Plus,
   Trash2,
@@ -86,7 +86,7 @@ export const PRESET_CHARACTER_FIELDS = [
   'Appearance',
 ] as const;
 
-export default function CharactersView({
+function CharactersViewComponent({
   characters,
   onChange,
   isExpanded = false,
@@ -893,3 +893,5 @@ export default function CharactersView({
     </div>
   );
 }
+
+export default memo(CharactersViewComponent);

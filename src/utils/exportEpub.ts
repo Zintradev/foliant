@@ -227,13 +227,15 @@ function cleanTipTapHtml(html: string, isAmazon = false): string {
   cleaned = cleaned.replace(/^(?:\s*<br\s*\/?>)+/gi, '');
   cleaned = cleaned.replace(/(?:<br\s*\/?>\s*)+$/gi, '');
 
-  // Strip empty paragraphs repeatedly until stable
+  // Strip empty paragraphs repeatedly until stable (with iteration guard to protect CPU)
   let prev = '';
-  while (prev !== cleaned) {
+  let iterations = 0;
+  while (prev !== cleaned && iterations++ < 5) {
     prev = cleaned;
     // Eliminates <p></p>, <p><br /></p>, <p>&nbsp;</p>, <p>&#160;</p>, <p><span></span></p>, etc.
+    // Uses unnested linear-time tokens to prevent V8 catastrophic backtracking.
     cleaned = cleaned.replace(
-      /<p[^>]*>(?:(?:\s|&nbsp;|&#160;|&#xA0;|<br\s*\/?>|<\/?span[^>]*>|<\/?strong>|<\/?em>)*)<\/p>/gi,
+      /<p[^>]*>(?:[\s\u00a0]|&nbsp;|&#160;|&#xA0;|<br\s*\/?>|<\/?(?:span|strong|em)[^>]*>)*<\/p>/gi,
       ''
     );
   }

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback, memo } from 'react';
 import {
   Network,
   Users,
@@ -223,7 +223,7 @@ function getPerimeterAnchor(
   };
 }
 
-export default function RelationshipGraphView({
+function RelationshipGraphViewComponent({
   characters,
   relationships,
   storylines = [],
@@ -2359,3 +2359,5 @@ export default function RelationshipGraphView({
     </div>
   );
 }
+
+export default memo(RelationshipGraphViewComponent);

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, memo } from 'react';
 import {
   Globe,
   Plus,
@@ -71,7 +71,7 @@ function getCategoryConfig(category: string): {
   );
 }
 
-export default function WorldbuildingView({
+function WorldbuildingViewComponent({
   items,
   onChange,
   isExpanded = false,
@@ -644,3 +644,5 @@ export default function WorldbuildingView({
     </div>
   );
 }
+
+export default memo(WorldbuildingViewComponent);

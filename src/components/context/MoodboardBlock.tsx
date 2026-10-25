@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo, memo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useFlipAnimation } from '../common/useFlipAnimation';
 import { useTranslation } from '../../i18n/translations';
@@ -298,7 +298,7 @@ function ThumbnailCard({
 // MoodboardBlock Main Component
 // ---------------------------------------------------------------------------
 
-export default function MoodboardBlock({
+function MoodboardBlockComponent({
   title,
   collapsible = true,
   defaultCollapsed = false,
@@ -1061,3 +1061,5 @@ export default function MoodboardBlock({
     </>
   );
 }
+
+export default memo(MoodboardBlockComponent);

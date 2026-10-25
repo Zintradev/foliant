@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo, useState } from 'react';
+import React, { useRef, useEffect, useMemo, useState, memo } from 'react';
 import {
   FileText,
   Folder,
@@ -18,6 +18,7 @@ import { TextNode, ChapterStatus, PlotStatus, ScenePlotState } from '../../../ty
 import { CharacterItem, WorldItem, StorylineItem } from '../../../types/dock';
 import { STATUS_OPTIONS, getStatusBadgeStyle } from './ManuscriptStatsView';
 import { useTranslation, getRoleLabel } from '../../../i18n/translations';
+import { countWords } from '../../../utils/textMetrics';
 
 export interface SceneInspectorProps {
   activeNodeId: string;
@@ -30,11 +31,7 @@ export interface SceneInspectorProps {
   onSelectChapter?: (id: string) => void;
 }
 
-function countWords(content: string = ''): number {
-  return content.trim() ? content.trim().split(/\s+/).length : 0;
-}
-
-export default function SceneInspector({
+function SceneInspectorComponent({
   activeNodeId,
   activeNode,
   chapters = [],
@@ -624,3 +621,5 @@ export default function SceneInspector({
     </div>
   );
 }
+
+export default memo(SceneInspectorComponent);

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, memo } from 'react';
 import {
   BarChart3,
   Folder,
@@ -16,6 +16,7 @@ import {
 import { TextNode, ChapterStatus } from '../../../types/project';
 import { StorylineItem } from '../../../types/dock';
 import { useTranslation } from '../../../i18n/translations';
+import { countWords } from '../../../utils/textMetrics';
 
 export const STATUS_OPTIONS: ChapterStatus[] = [
   'Not Started',
@@ -43,10 +44,6 @@ interface TreeStatItem {
   currentWords: number;
   targetWords: number;
   completionPercent: number;
-}
-
-function countWords(content: string): number {
-  return content.trim() ? content.trim().split(/\s+/).length : 0;
 }
 
 function formatReadingTime(words: number): string {
@@ -131,7 +128,7 @@ export function getStatusBadgeStyle(status: ChapterStatus): string {
   }
 }
 
-export default function ManuscriptStatsView({
+function ManuscriptStatsViewComponent({
   chapters,
   storylines: _storylines = [],
   activeChapterId,
@@ -216,7 +213,7 @@ export default function ManuscriptStatsView({
         node,
         children: [],
         depth: 0,
-        currentWords: node.type === 'scene' ? countWords(node.content) : 0,
+        currentWords: 0,
         targetWords: node.targetWords || 0,
         completionPercent: 0,
       });
@@ -962,3 +959,5 @@ export default function ManuscriptStatsView({
     </div>
   );
 }
+
+export default memo(ManuscriptStatsViewComponent);

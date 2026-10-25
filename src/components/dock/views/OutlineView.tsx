@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
 import {
   FilePlus,
   FolderPlus,
@@ -19,6 +19,7 @@ import { TextNode } from '../../../types/project';
 import { StorylineItem } from '../../../types/dock';
 import ManuscriptStatsView from './ManuscriptStatsView';
 import { useTranslation } from '../../../i18n/translations';
+import { countWords } from '../../../utils/textMetrics';
 
 type LayoutMode = '1col' | '2col' | 'split';
 
@@ -48,11 +49,7 @@ interface ContextMenuState {
   node: TextNode;
 }
 
-function countWords(content: string): number {
-  return content.trim() ? content.trim().split(/\s+/).length : 0;
-}
-
-export default function OutlineView({
+function OutlineViewComponent({
   chapters,
   activeChapterId,
   onSelectChapter,
@@ -251,7 +248,7 @@ export default function OutlineView({
         node,
         children: [],
         depth: 0,
-        wordCount: node.type === 'scene' ? countWords(node.content) : 0,
+        wordCount: 0,
       });
     });
 
@@ -735,3 +732,5 @@ export default function OutlineView({
     </div>
   );
 }
+
+export default memo(OutlineViewComponent);

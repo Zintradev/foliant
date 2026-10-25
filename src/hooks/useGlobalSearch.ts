@@ -20,6 +20,9 @@ export interface UseGlobalSearchOptions extends SearchOptions {
   manuscript: FoliantProject | TextNode[];
 }
 
+const MAX_STRIP_CACHE_SIZE = 500;
+const plainTextCache = new Map<string, string>();
+
 /**
  * Strips HTML markup and decodes XML/HTML entities to produce searchable plain text.
  *
@@ -28,32 +31,54 @@ export interface UseGlobalSearchOptions extends SearchOptions {
  * `<p>Sentence one.</p><p>Sentence two.</p>` becomes `"Sentence one.Sentence two."`, which breaks
  * whole-word matching and multi-token queries. This function injects boundary spaces before closing
  * block tags (`</p>`, `</div>`, `</h2>`, etc.) prior to parsing to preserve natural word spacing.
+ *
+ * ### Performance Decision:
+ * Employs a bounded LRU memory cache for stripped plain text strings to avoid creating thousands of
+ * DOMParser document trees across manuscript scenes on every query keystroke.
  */
 export function stripHtml(html: string): string {
   if (!html) return '';
 
+  const cached = plainTextCache.get(html);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  let text = '';
   // Insert space before block closing tags so adjacent paragraphs don't concatenate into single words
   const spaced = html.replace(/<\/(p|div|h[1-6]|li|blockquote|tr)>/gi, ' </$1> ');
 
   if (typeof DOMParser !== 'undefined') {
     try {
       const doc = new DOMParser().parseFromString(spaced, 'text/html');
-      return (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
+      text = (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
     } catch {
       // Fallback to regex below
     }
   }
 
-  return spaced
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, ' ')
-    .trim();
+  if (!text) {
+    text = spaced
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  if (plainTextCache.size >= MAX_STRIP_CACHE_SIZE) {
+    const firstKey = plainTextCache.keys().next().value;
+    if (firstKey !== undefined) {
+      plainTextCache.delete(firstKey);
+    }
+  }
+  plainTextCache.set(html, text);
+
+  return text;
 }
 
 /**

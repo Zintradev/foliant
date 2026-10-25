@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import {
   Feather,
   BookOpen,
@@ -141,7 +141,7 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-export default function ActivityBar({
+function ActivityBarComponent({
   activeView,
   onSelectView,
   language = 'en',
@@ -414,3 +414,5 @@ export default function ActivityBar({
     </aside>
   );
 }
+
+export default memo(ActivityBarComponent);
