@@ -1,7 +1,7 @@
 import { FoliantProject } from '../types/project';
 
 /**
- * DEFAULT_PROJECT: Massive High-Stakes Dark Fantasy Epic Manuscript
+ * DEFAULT_PROJECT: Massive High-Stakes Dark Fantasy Epic Project
  * Title: "The Sunken Crown: Chronicles of the Obsidian Veil"
  * Designed for extensive performance, UI stress-testing, and relationship graph benchmarking.
  */
@@ -343,7 +343,7 @@ export const DEFAULT_PROJECT: FoliantProject = {
         { id: 'tag-10', label: 'Inquisitor', color: 'purple' },
       ],
       fields: [
-        { id: 'cf-8', label: 'Motivation', value: 'Cleanse Oakhaven of heresy and burn all forbidden runic manuscripts' },
+        { id: 'cf-8', label: 'Motivation', value: 'Cleanse Oakhaven of heresy and burn all forbidden runic projects' },
         { id: 'cf-9', label: 'Psychology', value: 'Considers collateral civilian deaths as holy martyrdom' },
       ],
     },

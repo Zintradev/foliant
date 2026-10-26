@@ -93,9 +93,11 @@ export interface CharacterRelationship {
   label?: string;
   style?: LineStrokeStyle;
   color?: RelationshipColor;
+  customColor?: string;
   direction?: RelationshipDirection;
   notes?: string;
   controlOffset?: { x: number; y: number };
+  labelT?: number;
 }
 
 export interface CharacterNodePosition {
@@ -143,6 +145,12 @@ export interface TimelineMarker {
 
 export type WorldCategory = 'Location' | 'Faction' | 'Lore' | 'Artifact' | string;
 
+export interface WorldCustomField {
+  id: string;
+  label: string;
+  value: string;
+}
+
 export interface WorldItem {
   id: string;
   title: string;
@@ -153,4 +161,5 @@ export interface WorldItem {
   imageUrl?: string;
   imagePath?: string;
   avatarUrl?: string;
+  fields?: WorldCustomField[];
 }

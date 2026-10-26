@@ -99,4 +99,72 @@ describe('WorldbuildingView Component', () => {
       }),
     ]);
   });
+
+  it('reorders world items via drag and drop', () => {
+    const onChange = vi.fn();
+    render(<WorldbuildingView items={mockItems} onChange={onChange} />);
+
+    const draggableCards = document.querySelectorAll('div[draggable="true"]');
+    expect(draggableCards.length).toBe(2);
+
+    // Drag first item (world-1) over second item (world-2) and drop
+    const dataTransfer = {
+      setData: vi.fn(),
+      getData: vi.fn(() => 'world-1'),
+      effectAllowed: 'move',
+      dropEffect: 'move',
+    };
+
+    fireEvent.dragStart(draggableCards[0], { dataTransfer });
+    fireEvent.dragOver(draggableCards[1], { dataTransfer });
+    fireEvent.drop(draggableCards[1], { dataTransfer });
+
+    // Should swap or move world-1 after world-2
+    expect(onChange).toHaveBeenCalledWith([
+      expect.objectContaining({ id: 'world-2' }),
+      expect.objectContaining({ id: 'world-1' }),
+    ]);
+  });
+
+  it('allows adding and editing custom fields on world items', () => {
+    const onChange = vi.fn();
+    render(<WorldbuildingView items={mockItems} onChange={onChange} />);
+
+    // Click "+ History" preset button
+    const historyPresetBtn = screen.getByText('+ History');
+    fireEvent.click(historyPresetBtn);
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'world-1',
+          fields: expect.arrayContaining([
+            expect.objectContaining({ label: 'History', value: '' }),
+          ]),
+        }),
+      ])
+    );
+  });
+
+  it('swaps world items when worldDropMode is swap', () => {
+    const onChange = vi.fn();
+    render(<WorldbuildingView items={mockItems} onChange={onChange} worldDropMode="swap" />);
+
+    const draggableCards = document.querySelectorAll('div[draggable="true"]');
+    const dataTransfer = {
+      setData: vi.fn(),
+      getData: vi.fn(() => 'world-1'),
+      effectAllowed: 'move',
+      dropEffect: 'move',
+    };
+
+    fireEvent.dragStart(draggableCards[0], { dataTransfer });
+    fireEvent.dragOver(draggableCards[1], { dataTransfer });
+    fireEvent.drop(draggableCards[1], { dataTransfer });
+
+    expect(onChange).toHaveBeenCalledWith([
+      expect.objectContaining({ id: 'world-2' }),
+      expect.objectContaining({ id: 'world-1' }),
+    ]);
+  });
 });

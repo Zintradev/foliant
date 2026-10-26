@@ -169,8 +169,10 @@ export const DEFAULT_CUSTOM_THEME: CustomThemeColors = {
 
 export interface AppPreferences {
   timelineDropMode: 'shift' | 'swap';
+  worldDropMode?: 'shift' | 'swap';
   persistViewFilters: boolean;
   preserveManualSceneWidth?: boolean;
+  preserveManualPlotHeight?: boolean;
   editorIndentFirstLine?: boolean;
   editorFontFamily?: EditorFontFamily;
   language?: Language;
@@ -186,8 +188,10 @@ export interface AppSettings extends AppColorSettings {
 
 export const DEFAULT_PREFERENCES: AppPreferences = {
   timelineDropMode: 'shift',
+  worldDropMode: 'shift',
   persistViewFilters: false,
   preserveManualSceneWidth: false,
+  preserveManualPlotHeight: false,
   editorIndentFirstLine: true,
   editorFontFamily: 'serif',
   language: 'en',
@@ -238,26 +242,4 @@ export function saveSettings(settings: AppSettings): void {
   } catch {
     // Non-fatal if localStorage is unavailable
   }
-}
-
-export function loadColorSettings(): AppColorSettings {
-  return loadSettings();
-}
-
-export function saveColorSettings(settings: AppColorSettings): void {
-  const current = loadSettings();
-  saveSettings({
-    ...current,
-    ...settings,
-    preferences: current.preferences || DEFAULT_PREFERENCES,
-  });
-}
-
-export function getRoleColorKey(role: string, settings?: AppColorSettings): ColorThemeKey | string {
-  if (!settings) {
-    return (
-      (DEFAULT_COLOR_SETTINGS.roles as Record<string, ColorThemeKey>)[role] || 'zinc'
-    );
-  }
-  return settings.roles[role] || (DEFAULT_COLOR_SETTINGS.roles as Record<string, ColorThemeKey>)[role] || 'zinc';
 }

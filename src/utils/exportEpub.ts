@@ -27,7 +27,7 @@ import { FoliantProject, TextNode } from '../types/project';
  * - `top-folders`: Top-level folders become distinct chapter files (`chapter_X.xhtml` with `<h1>`),
  *   bundling all internal scenes separated by narrative break asterisks (`* * *`).
  * - `sub-folders`: Preserves nested multi-tier hierarchy (Acts `<h1>`, Folders `<h2>`, Scenes `<h3>`).
- * - `flatten`: Compiles all selected scenes sequentially into a single consolidated manuscript document.
+ * - `flatten`: Compiles all selected scenes sequentially into a single consolidated project document.
  */
 export type ChapterFormatting = 'top-folders' | 'sub-folders' | 'flatten';
 
@@ -753,7 +753,7 @@ export function buildEpubArchive(
   options?: EpubExportOptions
 ): BuiltEpubResult {
   const author = options?.author?.trim() || resolveProjectAuthor(project);
-  const bookTitle = options?.title?.trim() || project.title || 'Untitled Manuscript';
+  const bookTitle = options?.title?.trim() || project.title || 'Untitled Project';
   const bookLanguage = options?.language?.trim() || 'es';
   const profile: ExportProfile = options?.profile || 'standard';
   const generatedUuid = generateUuidV4();
@@ -782,7 +782,7 @@ export function buildEpubArchive(
           {
             id: 'scene-default',
             title: 'Chapter 1',
-            content: '<p>Manuscript has no selected scenes.</p>',
+            content: '<p>Project has no selected scenes.</p>',
             type: 'scene' as const,
           },
         ];
@@ -941,9 +941,9 @@ export function buildEpubArchive(
       return `${sceneTitleHtml}${formatChapterBody(s.content, profile)}`;
     });
 
-    const manuscriptBody = formattedScenes.join('\n\n<p class="scene-break">* * *</p>\n\n');
+    const projectBody = formattedScenes.join('\n\n<p class="scene-break">* * *</p>\n\n');
 
-    const manuscriptHtml = `<?xml version="1.0" encoding="UTF-8"?>
+    const projectHtml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="${escapeXml(bookLanguage)}" xml:lang="${escapeXml(bookLanguage)}">
 <head>
@@ -952,15 +952,15 @@ export function buildEpubArchive(
 </head>
 <body>
   <h1>${escapeXml(bookTitle)}</h1>
-  ${manuscriptBody}
+  ${projectBody}
 </body>
 </html>`;
 
-    oebps.file('manuscript.xhtml', manuscriptHtml);
-    contentFiles.push({ id: 'manuscript', filename: 'manuscript.xhtml' });
+    oebps.file('project.xhtml', projectHtml);
+    contentFiles.push({ id: 'project', filename: 'project.xhtml' });
     tocNavEntries.push({
       title: bookTitle,
-      src: 'manuscript.xhtml',
+      src: 'project.xhtml',
     });
   }
 
@@ -1339,7 +1339,7 @@ export async function exportProjectToEpub(
   project: FoliantProject,
   options?: EpubExportOptions
 ): Promise<ExportEpubSuccessResult | null> {
-  const bookTitle = options?.title?.trim() || project.title || 'Untitled Manuscript';
+  const bookTitle = options?.title?.trim() || project.title || 'Untitled Project';
 
   // 1. Prompt user for save destination with native Tauri dialog
   const defaultFileName = `${bookTitle
@@ -1356,7 +1356,7 @@ export async function exportProjectToEpub(
         extensions: ['epub'],
       },
     ],
-    title: 'Export Manuscript to EPUB',
+    title: 'Export Project to EPUB',
   });
 
   if (!destinationPath) {

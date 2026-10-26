@@ -4,6 +4,7 @@ import {
   CharacterItem,
   CharacterRelationship,
   GraphJunctionNode,
+  CharacterNodePosition,
   WorldItem,
 } from './dock';
 
@@ -64,6 +65,7 @@ export interface FoliantProject {
   characters: CharacterItem[];
   relationships: CharacterRelationship[];
   junctions: GraphJunctionNode[];
+  characterPositions?: CharacterNodePosition[];
   worldItems: WorldItem[];
   contextBlocks: ContextBlock[];
 }
@@ -73,7 +75,7 @@ export interface FoliantProject {
  */
 export function createEmptyProject(
   id: string = `project-${Date.now()}`,
-  title: string = 'Untitled Manuscript'
+  title: string = 'Untitled Project'
 ): FoliantProject {
   return {
     id,
@@ -85,6 +87,7 @@ export function createEmptyProject(
     characters: [],
     relationships: [],
     junctions: [],
+    characterPositions: [],
     worldItems: [],
     contextBlocks: [],
   };

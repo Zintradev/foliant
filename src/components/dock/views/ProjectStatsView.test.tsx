@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import ManuscriptStatsView from './ManuscriptStatsView';
+import ProjectStatsView from './ProjectStatsView';
 import { TextNode } from '../../../types/project';
 
 const mockChapters: TextNode[] = [
@@ -27,11 +27,11 @@ const mockChapters: TextNode[] = [
   },
 ];
 
-describe('ManuscriptStatsView', () => {
+describe('ProjectStatsView', () => {
   it('renders status dropdown selector with options and defaults to In Progress', () => {
     const handleUpdate = vi.fn();
     render(
-      <ManuscriptStatsView
+      <ProjectStatsView
         chapters={mockChapters}
         activeChapterId="scene-1"
         onSelectChapter={vi.fn()}

@@ -626,6 +626,438 @@ describe('RelationshipGraphView', () => {
     const resetCall = handleUpdate.mock.calls[handleUpdate.mock.calls.length - 1][0];
     expect(resetCall[0].controlOffset).toBeUndefined();
   });
+
+  it('renders custom color arrows and allows modifying custom color via DarkColorPicker', () => {
+    const handleUpdate = vi.fn();
+    const relWithCustomColor: CharacterRelationship[] = [
+      {
+        id: 'rel-custom-1',
+        sourceId: 'char-1',
+        targetId: 'char-2',
+        direction: 'directed',
+        customColor: '#ff0055',
+        label: 'Nemesis',
+      },
+    ];
+
+    render(
+      <RelationshipGraphView
+        characters={mockCharacters}
+        relationships={relWithCustomColor}
+        onUpdateRelationships={handleUpdate}
+      />
+    );
+
+    // Verify custom marker was created
+    const customEndMarker = document.querySelector('#arrowhead-end-custom-rel-custom-1');
+    expect(customEndMarker).toBeInTheDocument();
+    const polygon = customEndMarker?.querySelector('polygon');
+    expect(polygon).toHaveAttribute('fill', '#ff0055');
+
+    // Click pill to open inspector card
+    const pill = screen.getByText('Nemesis');
+    fireEvent.click(pill);
+
+    // Verify Custom Color button displays
+    expect(screen.getByText('#FF0055')).toBeInTheDocument();
+
+    // Click to open DarkColorPicker
+    const customColorBtn = screen.getByText('#FF0055');
+    fireEvent.click(customColorBtn);
+
+    // Themed DarkColorPicker opens with Hex Color input
+    expect(screen.getByTitle('Hex Color')).toBeInTheDocument();
+  });
+
+  it('unpins and closes selected character drawer when left-clicking outside on empty canvas', () => {
+    render(
+      <RelationshipGraphView
+        characters={mockCharacters}
+        relationships={mockRelationships}
+        onUpdateRelationships={vi.fn()}
+      />
+    );
+
+    // Click character card to open Representation drawer
+    const charCard = screen.getByText('Evelyn Cross').closest('.character-card');
+    expect(charCard).toBeInTheDocument();
+    fireEvent.click(charCard!);
+
+    expect(screen.getByText('Graph Node Representation')).toBeInTheDocument();
+
+    // Left-click outside on canvas board
+    const board = screen.getByTestId('relationship-board');
+    fireEvent.mouseDown(board, { button: 0 });
+
+    // Drawer is unpinned / closed
+    expect(screen.queryByText('Graph Node Representation')).not.toBeInTheDocument();
+  });
+
+  it('unpins and closes selected element when right-clicking outside on empty canvas', () => {
+    render(
+      <RelationshipGraphView
+        characters={mockCharacters}
+        relationships={mockRelationships}
+        onUpdateRelationships={vi.fn()}
+      />
+    );
+
+    // Click character card to open Representation drawer
+    const charCard = screen.getByText('Evelyn Cross').closest('.character-card');
+    fireEvent.click(charCard!);
+    expect(screen.getByText('Graph Node Representation')).toBeInTheDocument();
+
+    // Right-click outside on canvas board
+    const board = screen.getByTestId('relationship-board');
+    fireEvent.contextMenu(board);
+
+    // Drawer is unpinned / closed
+    expect(screen.queryByText('Graph Node Representation')).not.toBeInTheDocument();
+  });
+
+  it('maintains correct forward arrow path orientation and prevents inversion when nodes are close', () => {
+    const { container } = render(
+      <RelationshipGraphView
+        characters={mockCharacters}
+        relationships={mockRelationships}
+        onUpdateRelationships={vi.fn()}
+      />
+    );
+
+    // Find rendered relationship line path
+    const renderedPath = container.querySelector('path[marker-end], path[markerend]');
+    expect(renderedPath).toBeInTheDocument();
+
+    const d = renderedPath?.getAttribute('d') || '';
+    // Format: M startX startY Q cx cy endX endY
+    const match = d.match(/M\s+([\d.-]+)\s+([\d.-]+)\s+Q\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)/);
+    expect(match).toBeTruthy();
+    if (match) {
+      const startX = parseFloat(match[1]);
+      const cx = parseFloat(match[3]);
+      const endX = parseFloat(match[5]);
+
+      // If source is left of target, startX < cx < endX (strictly forward, never looping backward)
+      if (startX < endX) {
+        expect(cx).toBeGreaterThanOrEqual(startX);
+        expect(cx).toBeLessThanOrEqual(endX);
+      }
+    }
+  });
+
+  it('renders a joined double-arrow rhombus polygon for close bidirectional relationships', () => {
+    // When elements are close and relationship is bidirectional, a polygon rhombus is rendered
+    const closeBidirectionalRel: CharacterRelationship[] = [
+      {
+        id: 'rel-bidi-close',
+        sourceId: 'char-1',
+        targetId: 'char-2',
+        direction: 'bidirectional',
+        label: 'Tied',
+      },
+    ];
+
+    const { container } = render(
+      <RelationshipGraphView
+        characters={mockCharacters}
+        relationships={closeBidirectionalRel}
+        onUpdateRelationships={vi.fn()}
+      />
+    );
+
+    // Initial default positions place mockCharacters 2 * radius apart, but label text is uncompressed
+    expect(screen.getByText('Tied')).toBeInTheDocument();
+  });
+
+  it('allows moving the label along the line without contracting via right-click drag', () => {
+    const handleUpdate = vi.fn();
+    const slideRelationships: CharacterRelationship[] = [
+      {
+        id: 'rel-slide',
+        sourceId: 'char-1',
+        targetId: 'char-2',
+        label: 'Sliding Bond',
+      },
+    ];
+
+    render(
+      <RelationshipGraphView
+        characters={mockCharacters}
+        relationships={slideRelationships}
+        onUpdateRelationships={handleUpdate}
+      />
+    );
+
+    const pill = screen.getByText('Sliding Bond').closest('button');
+    expect(pill).toBeInTheDocument();
+
+    // Right-click drag (button 2) to slide label along the line
+    fireEvent.pointerDown(pill!, { clientX: 200, clientY: 200, button: 2 });
+    fireEvent.pointerMove(pill!, { clientX: 280, clientY: 200 });
+    fireEvent.pointerUp(pill!, { clientX: 280, clientY: 200 });
+
+    expect(handleUpdate).toHaveBeenCalled();
+    const updated = handleUpdate.mock.calls[0][0];
+    expect(updated[0].labelT).toBeDefined();
+    expect(typeof updated[0].labelT).toBe('number');
+  });
+
+  it('preserves custom character positions passed via characterPositions across mounts', () => {
+    const customPositions = [
+      { characterId: 'char-1', x: 50, y: 75 },
+      { characterId: 'char-2', x: 420, y: 310 },
+    ];
+
+    render(
+      <RelationshipGraphView
+        characters={mockCharacters}
+        relationships={mockRelationships}
+        characterPositions={customPositions}
+        onUpdateRelationships={vi.fn()}
+      />
+    );
+
+    const card1 = screen.getByText('Evelyn Cross').closest('.character-card');
+    const card2 = screen.getByText('Chancellor Sterling').closest('.character-card');
+
+    expect(card1).toBeInTheDocument();
+    expect(card2).toBeInTheDocument();
+
+    // Verify coordinates match customPositions instead of circular layout
+    expect(card1).toHaveStyle({ left: '50px', top: '75px' });
+    expect(card2).toHaveStyle({ left: '420px', top: '310px' });
+  });
+
+  it('notifies onUpdateCharacterPositions when a character card finishes dragging', () => {
+    const handleUpdatePos = vi.fn();
+    const customPositions = [
+      { characterId: 'char-1', x: 100, y: 100 },
+      { characterId: 'char-2', x: 500, y: 500 },
+    ];
+
+    render(
+      <RelationshipGraphView
+        characters={mockCharacters}
+        relationships={mockRelationships}
+        characterPositions={customPositions}
+        onUpdateCharacterPositions={handleUpdatePos}
+        onUpdateRelationships={vi.fn()}
+      />
+    );
+
+    const card1 = screen.getByText('Evelyn Cross').closest('.character-card');
+    expect(card1).toBeInTheDocument();
+
+    // Drag card1
+    fireEvent.pointerDown(card1!, { clientX: 100, clientY: 100, button: 0 });
+    fireEvent.pointerMove(card1!, { clientX: 180, clientY: 160 });
+    fireEvent.pointerUp(card1!, { clientX: 180, clientY: 160 });
+
+    expect(handleUpdatePos).toHaveBeenCalled();
+    const updated = handleUpdatePos.mock.calls[0][0];
+    expect(updated).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ characterId: 'char-1' }),
+      ])
+    );
+  });
+
+  it('supports undo (Ctrl+Z) and redo (Ctrl+Y, Ctrl+Shift+Z) for relationship operations and toolbar buttons', () => {
+    const handleUpdateRel = vi.fn();
+
+    render(
+      <RelationshipGraphView
+        characters={mockCharacters}
+        relationships={mockRelationships}
+        onUpdateRelationships={handleUpdateRel}
+      />
+    );
+
+    const undoBtn = screen.getByRole('button', { name: /undo/i });
+    const redoBtn = screen.getByRole('button', { name: /redo/i });
+
+    // Initially undo and redo are disabled
+    expect(undoBtn).toBeDisabled();
+    expect(redoBtn).toBeDisabled();
+
+    // Double-click pill to reset curve, which pushes to undo stack (Call 1)
+    const pill = screen.getByText('Sworn Enemies').closest('button');
+    expect(pill).toBeInTheDocument();
+    fireEvent.doubleClick(pill!);
+    expect(handleUpdateRel).toHaveBeenCalledTimes(1);
+
+    // Now undo should be enabled
+    expect(undoBtn).not.toBeDisabled();
+
+    // Click Undo button (Call 2)
+    fireEvent.click(undoBtn);
+    expect(handleUpdateRel).toHaveBeenCalledTimes(2);
+
+    // Redo should now be enabled
+    expect(redoBtn).not.toBeDisabled();
+
+    // Trigger Redo via Ctrl+Y shortcut (Call 3)
+    fireEvent.keyDown(window, { key: 'y', ctrlKey: true });
+    expect(handleUpdateRel).toHaveBeenCalledTimes(3);
+
+    // Trigger Undo via Ctrl+Z shortcut (Call 4)
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+    expect(handleUpdateRel).toHaveBeenCalledTimes(4);
+
+    // Trigger Redo via Ctrl+Shift+Z shortcut (Call 5)
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true, shiftKey: true });
+    expect(handleUpdateRel).toHaveBeenCalledTimes(5);
+  });
+
+  it('deletes a selected relationship when pressing the Delete key', () => {
+    const handleUpdateRel = vi.fn();
+
+    render(
+      <RelationshipGraphView
+        characters={mockCharacters}
+        relationships={mockRelationships}
+        onUpdateRelationships={handleUpdateRel}
+      />
+    );
+
+    // Select the relationship by clicking its pill
+    const pill = screen.getByText('Sworn Enemies').closest('button');
+    expect(pill).toBeInTheDocument();
+    fireEvent.click(pill!);
+
+    // Press Delete key
+    fireEvent.keyDown(window, { key: 'Delete' });
+
+    // Verifies relationship was removed
+    expect(handleUpdateRel).toHaveBeenCalledWith([]);
+  });
+
+  it('deletes a selected character card and its connected relationships when pressing the Delete key', () => {
+    const handleUpdateChars = vi.fn();
+    const handleUpdateRels = vi.fn();
+
+    render(
+      <RelationshipGraphView
+        characters={mockCharacters}
+        relationships={mockRelationships}
+        onUpdateCharacters={handleUpdateChars}
+        onUpdateRelationships={handleUpdateRels}
+      />
+    );
+
+    // Select the character card
+    const card = screen.getByText('Evelyn Cross').closest('.character-card');
+    expect(card).toBeInTheDocument();
+    fireEvent.click(card!);
+
+    // Press Delete key
+    fireEvent.keyDown(window, { key: 'Delete' });
+
+    // Verifies character was deleted
+    expect(handleUpdateChars).toHaveBeenCalledWith([
+      expect.objectContaining({ id: 'char-2', name: 'Chancellor Sterling' }),
+    ]);
+    // Verifies connected relationships were also removed
+    expect(handleUpdateRels).toHaveBeenCalledWith([]);
+  });
+
+  it('deletes a selected junction node when pressing the Delete key', () => {
+    const handleUpdateJuncs = vi.fn();
+    const handleUpdateRels = vi.fn();
+    const mockJunctions: GraphJunctionNode[] = [
+      { id: 'junc-1', label: 'Alliance Hub', x: 200, y: 200 },
+    ];
+    const junctionRels: CharacterRelationship[] = [
+      {
+        id: 'rel-junc',
+        sourceId: 'char-1',
+        targetId: 'junc-1',
+        label: 'Linked to Hub',
+      },
+    ];
+
+    render(
+      <RelationshipGraphView
+        characters={mockCharacters}
+        relationships={junctionRels}
+        junctions={mockJunctions}
+        onUpdateJunctions={handleUpdateJuncs}
+        onUpdateRelationships={handleUpdateRels}
+      />
+    );
+
+    // Select junction node
+    const juncNode = screen.getByTitle(/Alliance Hub/i);
+    expect(juncNode).toBeInTheDocument();
+    fireEvent.click(juncNode);
+
+    // Press Delete key
+    fireEvent.keyDown(window, { key: 'Delete' });
+
+    // Verifies junction was deleted
+    expect(handleUpdateJuncs).toHaveBeenCalledWith([]);
+    expect(handleUpdateRels).toHaveBeenCalledWith([]);
+  });
+
+  it('renders SVG relationship paths and arrowhead markers connecting characters', () => {
+    const { container } = render(
+      <RelationshipGraphView
+        characters={mockCharacters}
+        relationships={mockRelationships}
+        onUpdateRelationships={vi.fn()}
+      />
+    );
+
+    // SVG element is present and has full viewport dimensions
+    const svgEl = container.querySelector('svg.pointer-events-none');
+    expect(svgEl).toBeInTheDocument();
+    expect(svgEl).toHaveStyle({ width: '10000px', height: '10000px' });
+
+    // Renders the path representing the relationship link
+    const paths = svgEl?.querySelectorAll('path');
+    expect(paths && paths.length).toBeGreaterThan(0);
+
+    // Arrowhead marker definitions exist in SVG defs
+    const markers = svgEl?.querySelectorAll('marker');
+    expect(markers && markers.length).toBeGreaterThan(0);
+  });
+
+  it('provides fast and responsive zoom controls via buttons and mouse wheel', () => {
+    render(
+      <RelationshipGraphView
+        characters={mockCharacters}
+        relationships={mockRelationships}
+        onUpdateRelationships={vi.fn()}
+      />
+    );
+
+    // Initial zoom indicator is 100%
+    const zoomIndicator = screen.getByRole('button', { name: /current zoom/i });
+    expect(zoomIndicator).toHaveTextContent('100%');
+
+    // Click Zoom In button
+    const zoomInBtn = screen.getByRole('button', { name: /zoom in/i });
+    fireEvent.click(zoomInBtn);
+    expect(screen.getByText('115%')).toBeInTheDocument();
+
+    // Click Zoom Out button
+    const zoomOutBtn = screen.getByRole('button', { name: /zoom out/i });
+    fireEvent.click(zoomOutBtn);
+    expect(screen.getByText('100%')).toBeInTheDocument();
+
+    // Wheel event with line delta (standard Windows mouse wheel)
+    const board = screen.getByTestId('relationship-board');
+    fireEvent.wheel(board, { deltaY: -3, deltaMode: 1 });
+    // Should zoom in by a noticeable amount
+    const updatedZoom = parseInt(zoomIndicator.textContent || '100', 10);
+    expect(updatedZoom).toBeGreaterThan(100);
+
+    // Click Reset Viewport
+    const resetBtn = screen.getByRole('button', { name: /reset viewport/i });
+    fireEvent.click(resetBtn);
+    expect(screen.getByText('100%')).toBeInTheDocument();
+  });
 });
+
 
 

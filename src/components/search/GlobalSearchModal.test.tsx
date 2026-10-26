@@ -57,7 +57,7 @@ describe('GlobalSearchModal', () => {
     );
 
     // Verify input and select presence
-    const searchInput = screen.getByPlaceholderText(/Search across manuscript/i);
+    const searchInput = screen.getByPlaceholderText(/Search across project/i);
     expect(searchInput).toBeDefined();
 
     const scopeSelect = screen.getByLabelText(/Search Scope/i);
@@ -89,7 +89,7 @@ describe('GlobalSearchModal', () => {
       />
     );
 
-    const searchInput = screen.getByPlaceholderText(/Search across manuscript/i);
+    const searchInput = screen.getByPlaceholderText(/Search across project/i);
     fireEvent.change(searchInput, { target: { value: 'dagger' } });
 
     const resultCard = screen.getByText('Meeting at Dusk');
@@ -110,7 +110,7 @@ describe('GlobalSearchModal', () => {
       />
     );
 
-    const searchInput = screen.getByPlaceholderText(/Search across manuscript/i);
+    const searchInput = screen.getByPlaceholderText(/Search across project/i);
     fireEvent.change(searchInput, { target: { value: 'silver' } });
 
     // In global scope, both scenes appear

@@ -17,7 +17,7 @@ export interface SearchOptions {
 
 export interface UseGlobalSearchOptions extends SearchOptions {
   query: string;
-  manuscript: FoliantProject | TextNode[];
+  project: FoliantProject | TextNode[];
 }
 
 const MAX_STRIP_CACHE_SIZE = 500;
@@ -34,7 +34,7 @@ const plainTextCache = new Map<string, string>();
  *
  * ### Performance Decision:
  * Employs a bounded LRU memory cache for stripped plain text strings to avoid creating thousands of
- * DOMParser document trees across manuscript scenes on every query keystroke.
+ * DOMParser document trees across project scenes on every query keystroke.
  */
 export function stripHtml(html: string): string {
   if (!html) return '';
@@ -83,17 +83,17 @@ export function stripHtml(html: string): string {
 
 /**
  * Global search engine that finds case-insensitive matches across scenes
- * in the manuscript according to the specified scope.
+ * in the project according to the specified scope.
  */
-export function searchManuscript(
+export function searchProject(
   query: string,
-  manuscript: FoliantProject | TextNode[],
+  project: FoliantProject | TextNode[],
   options?: SearchOptions
 ): SearchResult[] {
   const trimmed = query.trim();
   if (!trimmed) return [];
 
-  const chapters: TextNode[] = Array.isArray(manuscript) ? manuscript : manuscript.chapters || [];
+  const chapters: TextNode[] = Array.isArray(project) ? project : project.chapters || [];
   const allScenes = chapters.filter((c) => c.type === 'scene');
   const scope: SearchScope = options?.scope || 'global';
   const activeSceneId = options?.activeSceneId;
@@ -177,23 +177,26 @@ export function searchManuscript(
 }
 
 /**
- * React hook for global omnisearch across the manuscript with scope filtering.
+ * React hook for global omnisearch across the project with scope filtering.
  * Overloaded to support both positional arguments and an options object.
  */
 export function useGlobalSearch(
   queryOrOptions: string | UseGlobalSearchOptions,
-  manuscriptParam?: FoliantProject | TextNode[],
+  projectParam?: FoliantProject | TextNode[],
   scopeParam: SearchScope = 'global',
   activeSceneIdParam?: string
 ): SearchResult[] {
   const query = typeof queryOrOptions === 'string' ? queryOrOptions : queryOrOptions.query;
-  const manuscript = typeof queryOrOptions === 'string' ? manuscriptParam! : queryOrOptions.manuscript;
+  const project =
+    typeof queryOrOptions === 'string'
+      ? projectParam!
+      : queryOrOptions.project;
   const scope = typeof queryOrOptions === 'string' ? scopeParam : queryOrOptions.scope || 'global';
   const activeSceneId =
     typeof queryOrOptions === 'string' ? activeSceneIdParam : queryOrOptions.activeSceneId;
 
   return useMemo(() => {
-    if (!manuscript) return [];
-    return searchManuscript(query, manuscript, { scope, activeSceneId });
-  }, [query, manuscript, scope, activeSceneId]);
+    if (!project) return [];
+    return searchProject(query, project, { scope, activeSceneId });
+  }, [query, project, scope, activeSceneId]);
 }

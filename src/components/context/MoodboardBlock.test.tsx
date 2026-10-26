@@ -87,10 +87,14 @@ describe('MoodboardBlock Component', () => {
       types: ['text/image-id'],
       effectAllowed: 'move',
     };
+    // Check initial counts
+    const atmosphereHeader = screen.getByText('Atmosphere').closest('div[role="button"]')!;
+    expect(atmosphereHeader).toHaveTextContent('0');
+
     fireEvent.dragStart(castleCard, { dataTransfer });
+    fireEvent.dragOver(atmosphereHeader, { dataTransfer });
 
     // Drop on Atmosphere folder
-    const atmosphereHeader = screen.getByText('Atmosphere').closest('div[role="button"]')!;
     fireEvent.drop(atmosphereHeader, {
       dataTransfer: {
         ...dataTransfer,
@@ -98,9 +102,9 @@ describe('MoodboardBlock Component', () => {
       },
     });
 
-    // Verify it updated section
+    // Verify Atmosphere folder count updated to 1
     await waitFor(() => {
-      expect(screen.getByText('castle.jpg')).toBeInTheDocument();
+      expect(atmosphereHeader).toHaveTextContent('1');
     });
   });
 

@@ -4,35 +4,14 @@ import { Search, X, Feather, CornerDownLeft, FileText, Layers } from 'lucide-rea
 import { FoliantProject } from '../../types/project';
 import { useGlobalSearch, SearchScope, SearchResult } from '../../hooks/useGlobalSearch';
 
+import { renderHighlightedSnippet } from '../../utils/searchHighlight';
+
 export interface GlobalSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   project: FoliantProject;
   activeSceneId: string;
   onSelectResult: (sceneId: string, searchTerm: string) => void;
-}
-
-/**
- * Highlights exact query occurrences within a snippet text using the specified yellow mark class.
- */
-function renderHighlightedSnippet(snippet: string, query: string): React.ReactNode {
-  const trimmed = query.trim();
-  if (!trimmed) return snippet;
-
-  const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escaped})`, 'gi');
-  const parts = snippet.split(regex);
-
-  return parts.map((part, index) => {
-    if (part.toLowerCase() === trimmed.toLowerCase()) {
-      return (
-        <mark key={index} className="bg-yellow-500/50 text-white font-medium rounded-xs px-0.5">
-          {part}
-        </mark>
-      );
-    }
-    return part;
-  });
 }
 
 export default function GlobalSearchModal({
@@ -140,7 +119,7 @@ export default function GlobalSearchModal({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search across manuscript (Ctrl+Shift+F)..."
+            placeholder="Search across project (Ctrl+Shift+F)..."
             className="flex-1 bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
           />
 
@@ -178,7 +157,7 @@ export default function GlobalSearchModal({
                 {results.length === 1 ? 'match' : 'matches'} found
               </>
             ) : (
-              'Type to search manuscript...'
+              'Type to search project...'
             )}
           </span>
           <div className="flex items-center gap-3 text-[10px] text-zinc-500">

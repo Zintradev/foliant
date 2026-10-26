@@ -41,9 +41,9 @@ describe('SearchView Component', () => {
       />
     );
 
-    expect(screen.getByPlaceholderText(/Search manuscript/i)).toBeDefined();
+    expect(screen.getByPlaceholderText(/Search project/i)).toBeDefined();
     expect(screen.getByLabelText(/Search Scope/i)).toBeDefined();
-    expect(screen.getByText(/Search your manuscript/i)).toBeDefined();
+    expect(screen.getByText(/Search your project/i)).toBeDefined();
   });
 
   it('searches across scenes and renders highlighted matches', () => {
@@ -55,7 +55,7 @@ describe('SearchView Component', () => {
       />
     );
 
-    const input = screen.getByPlaceholderText(/Search manuscript/i);
+    const input = screen.getByPlaceholderText(/Search project/i);
     fireEvent.change(input, { target: { value: 'silver' } });
 
     // Should render matching scene titles
@@ -78,7 +78,7 @@ describe('SearchView Component', () => {
       />
     );
 
-    const input = screen.getByPlaceholderText(/Search manuscript/i);
+    const input = screen.getByPlaceholderText(/Search project/i);
     fireEvent.change(input, { target: { value: 'dagger' } });
 
     const card = screen.getByText('Meeting at Dusk');
@@ -96,7 +96,7 @@ describe('SearchView Component', () => {
       />
     );
 
-    const input = screen.getByPlaceholderText(/Search manuscript/i);
+    const input = screen.getByPlaceholderText(/Search project/i);
     fireEvent.change(input, { target: { value: 'silver' } });
 
     expect(screen.getByText('Meeting at Dusk')).toBeDefined();

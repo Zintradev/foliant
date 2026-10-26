@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { Search, X, Feather, Layers, FileText } from 'lucide-react';
 import { FoliantProject } from '../../../types/project';
 import { useGlobalSearch, SearchScope, SearchResult } from '../../../hooks/useGlobalSearch';
@@ -10,28 +10,7 @@ export interface SearchViewProps {
   isExpanded?: boolean;
 }
 
-/**
- * Highlights exact query occurrences within a snippet text using the specified yellow mark class.
- */
-function renderHighlightedSnippet(snippet: string, query: string): React.ReactNode {
-  const trimmed = query.trim();
-  if (!trimmed) return snippet;
-
-  const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escaped})`, 'gi');
-  const parts = snippet.split(regex);
-
-  return parts.map((part, index) => {
-    if (part.toLowerCase() === trimmed.toLowerCase()) {
-      return (
-        <mark key={index} className="bg-yellow-500/50 text-white font-medium rounded-xs px-0.5">
-          {part}
-        </mark>
-      );
-    }
-    return part;
-  });
-}
+import { renderHighlightedSnippet } from '../../../utils/searchHighlight';
 
 function SearchViewComponent({
   project,
@@ -72,7 +51,7 @@ function SearchViewComponent({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search manuscript (Ctrl+Shift+F)..."
+            placeholder="Search project (Ctrl+Shift+F)..."
             className="w-full pl-8 pr-7 py-1.5 bg-zinc-900 border border-zinc-750 rounded-md text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 transition"
           />
           {query && (
@@ -143,7 +122,7 @@ function SearchViewComponent({
         {!query.trim() && (
           <div className="py-12 flex flex-col items-center justify-center text-center text-zinc-500 px-4">
             <Search className="w-7 h-7 mb-2 text-zinc-600 opacity-60" />
-            <p className="text-xs font-medium text-zinc-400">Search your manuscript</p>
+            <p className="text-xs font-medium text-zinc-400">Search your project</p>
             <p className="text-[11px] text-zinc-500 mt-1">
               Find occurrences across scenes with instant preview and jump.
             </p>

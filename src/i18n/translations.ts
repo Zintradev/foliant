@@ -65,10 +65,14 @@ export const dict = {
     // Timeline & Interaction
     timelineDropMode: 'Timeline Drag & Drop Behavior',
     timelineDropModeDesc: 'Select how cards reorder when dragging across columns.',
+    worldDropMode: 'World Items Drag & Drop Behavior',
+    worldDropModeDesc: 'Select how lore and world items reorder in the master list.',
     shiftMode: 'Shift Mode',
     swapMode: 'Swap Mode',
     preserveSceneWidth: 'Preserve Scene Card Widths on Zoom',
     preserveSceneWidthDesc: 'Keep individually resized card widths when adjusting horizontal zoom slider.',
+    preserveTrackHeight: 'Preserve Storyline Track Heights on Zoom',
+    preserveTrackHeightDesc: 'Keep individually resized track heights when adjusting vertical zoom slider.',
 
     // Tags & Taxonomy
     characterRoles: 'Character Roles',
@@ -268,6 +272,9 @@ export const dict = {
     itemDescriptionPlaceholder: 'In-depth history, secrets, notable inhabitants, sensory details, rumors...',
     deleteWorldItem: 'Delete World Item',
     noLoreYet: 'No lore items recorded yet.',
+    attachedImage: 'Attached Reference Image',
+    attachImage: 'Attach Reference Image',
+    changeImage: 'Change Image',
 
     // Views - Storylines
     storylinesAndPlots: 'Storylines & Plot Threads',
@@ -278,7 +285,7 @@ export const dict = {
     noStorylinesYet: 'No storylines created yet.',
 
     // Views - Outline
-    outlineAndManuscript: 'Outline & Manuscript',
+    outlineAndProject: 'Outline & Project',
     newScene: 'New Scene',
     newFolder: 'New Folder',
     untitledFolder: 'Untitled Folder',
@@ -299,7 +306,7 @@ export const dict = {
     currentWords: 'Current Words',
     targetWords: 'Target Words',
     synopsisAndNotes: 'Synopsis & Notes',
-    synopsisPlaceholder: 'Brief synopsis, scene objectives, conflict, or manuscript notes...',
+    synopsisPlaceholder: 'Brief synopsis, scene objectives, conflict, or project notes...',
     statusDraft: 'Draft',
     statusInProgress: 'In Progress',
     statusRevised: 'Revised',
@@ -311,8 +318,7 @@ export const dict = {
     plotsInScene: 'Plots & Storylines in Scene',
     readingTime: 'est. reading time',
 
-    // Views - Manuscript Stats
-    manuscriptAnalytics: 'Manuscript Analytics',
+    // Views - Project Stats
     projectAnalytics: 'Project Analytics',
     projectAnalyticsTracking: 'Project Analytics & Target Tracking',
     estReadingTimeTooltip: 'Estimated reading time at ~225 words per minute',
@@ -476,6 +482,8 @@ export const dict = {
     relContract: 'Contract / Trade (Cyan)',
     relNeutral: 'Neutral / Acquaintance (Zinc)',
     connect: 'Connect',
+    undo: 'Undo',
+    redo: 'Redo',
     autoArrangeTooltip: 'Auto-arrange character nodes in circular layout',
     clickTargetToConnect: 'Click target character to connect with',
     canvasActions: 'Canvas Actions',
@@ -607,10 +615,14 @@ export const dict = {
     // Timeline & Interaction
     timelineDropMode: 'Modo de Arrastre en Cronología',
     timelineDropModeDesc: 'Elige cómo se reorganizan las escenas al arrastrar entre columnas.',
+    worldDropMode: 'Modo de Arrastre en Elementos de Mundo',
+    worldDropModeDesc: 'Elige cómo se reorganizan los elementos de mundo en la lista lateral.',
     shiftMode: 'Modo Desplazar',
     swapMode: 'Modo Intercambiar',
     preserveSceneWidth: 'Preservar Ancho Manual al Hacer Zoom',
     preserveSceneWidthDesc: 'Conserva los anchos personalizados de tarjeta al mover el zoom horizontal.',
+    preserveTrackHeight: 'Preservar Alto Manual de Tramas al Hacer Zoom',
+    preserveTrackHeightDesc: 'Conserva las alturas personalizadas de trama al mover el zoom vertical.',
 
     // Tags & Taxonomy
     characterRoles: 'Roles de Personajes',
@@ -810,6 +822,9 @@ export const dict = {
     itemDescriptionPlaceholder: 'Historia detallada, secretos, habitantes célebres, detalles sensoriales...',
     deleteWorldItem: 'Eliminar Entrada',
     noLoreYet: 'Aún no hay entradas de lore registradas.',
+    attachedImage: 'Imagen de Referencia Adjunta',
+    attachImage: 'Adjuntar Imagen de Referencia',
+    changeImage: 'Cambiar Imagen',
 
     // Views - Storylines
     storylinesAndPlots: 'Tramas y Líneas Argumentales',
@@ -820,7 +835,7 @@ export const dict = {
     noStorylinesYet: 'Aún no se han creado tramas argumentales.',
 
     // Views - Outline
-    outlineAndManuscript: 'Estructura y Manuscrito',
+    outlineAndProject: 'Estructura y Proyecto',
     newScene: 'Nueva Escena',
     newFolder: 'Nueva Carpeta',
     untitledFolder: 'Carpeta sin título',
@@ -853,8 +868,7 @@ export const dict = {
     plotsInScene: 'Tramas en la Escena',
     readingTime: 'tiempo estimado de lectura',
 
-    // Views - Manuscript Stats
-    manuscriptAnalytics: 'Analíticas del Manuscrito',
+    // Views - Project Stats
     projectAnalytics: 'Analíticas del Proyecto',
     projectAnalyticsTracking: 'Analíticas y Metas del Proyecto',
     estReadingTimeTooltip: 'Tiempo estimado de lectura a ~225 palabras por minuto',
@@ -1018,6 +1032,8 @@ export const dict = {
     relContract: 'Contrato / Comercio (Cian)',
     relNeutral: 'Neutral / Conocido (Pizarra)',
     connect: 'Conectar',
+    undo: 'Deshacer',
+    redo: 'Rehacer',
     autoArrangeTooltip: 'Organizar nodos automáticamente en disposición circular',
     clickTargetToConnect: 'Haz clic en el personaje objetivo para conectar con',
     canvasActions: 'Acciones del Lienzo',
