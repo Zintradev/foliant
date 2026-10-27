@@ -32,3 +32,21 @@ If you want to run or build Foliant locally from the source code, ensure you hav
    ```bash
    git clone [https://github.com/Zintradev/foliant.git](https://github.com/Zintradev/foliant.git)
    cd foliant
+   
+2. **Install dependencies:**
+    ```Bash
+    npm install
+
+3. **Run the development server:**
+    ```Bash
+    npm run dev
+
+4. **Build for production:**
+    ```Bash
+   npm run build
+
+## 🛡️ License
+
+This project is licensed under the PolyForm Noncommercial License 1.0.0.
+
+You are free to use, study, and modify this software for personal, hobby, noncommercial, and educational purposes. Commercial exploitation is strictly prohibited without explicit permission. See the LICENSE file for more details.
