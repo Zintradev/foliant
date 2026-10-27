@@ -14,6 +14,11 @@ on:
 permissions:
   contents: write
 
+env:
+  CARGO_NET_RETRY: 10
+  CARGO_HTTP_MULTIPLEXING: false
+  CARGO_NET_GIT_FETCH_WITH_CLI: true
+
 jobs:
   build-windows:
     name: Build Windows (Installer & Portable)
@@ -35,7 +40,17 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: 'src-tauri'
+
+      - name: Pre-fetch cargo dependencies
+        shell: pwsh
+        run: |
+          for ($i = 1; $i -le 5; $i++) {
+            cargo fetch --manifest-path src-tauri/Cargo.toml
+            if ($LASTEXITCODE -eq 0) { break }
+            Write-Host "Cargo fetch retry $i in 5s..."
+            Start-Sleep -Seconds 5
+          }
 
       - name: Install frontend dependencies
         run: npm ci
@@ -52,18 +67,19 @@ jobs:
           New-Item -ItemType Directory -Force -Path release-assets | Out-Null
 
           # 1. NSIS Installer (.exe)
-          $nsis = Get-ChildItem -Path "src-tauri/target/release/bundle/nsis/*.exe" | Select-Object -First 1
+          $nsis = Get-ChildItem -Path "src-tauri/target" -Recurse -Filter "*.exe" | Where-Object { $_.FullName -like "*bundle\nsis\*" } | Select-Object -First 1
           if ($nsis) {
             Write-Host "Found NSIS installer: $($nsis.FullName)"
             Copy-Item $nsis.FullName "release-assets/$($nsis.Name)"
             # Permanent direct download name for landing page
             Copy-Item $nsis.FullName "release-assets/Foliant-Windows.exe"
           } else {
-            Write-Warning "No NSIS installer found in src-tauri/target/release/bundle/nsis/"
+            Write-Error "No NSIS installer found in src-tauri/target!"
+            exit 1
           }
 
           # 2. MSI Installer (.msi)
-          $msi = Get-ChildItem -Path "src-tauri/target/release/bundle/msi/*.msi" | Select-Object -First 1
+          $msi = Get-ChildItem -Path "src-tauri/target" -Recurse -Filter "*.msi" | Where-Object { $_.FullName -like "*bundle\msi\*" } | Select-Object -First 1
           if ($msi) {
             Write-Host "Found MSI installer: $($msi.FullName)"
             Copy-Item $msi.FullName "release-assets/$($msi.Name)"
@@ -78,7 +94,8 @@ jobs:
             Write-Host "Found standalone executable: $($exe.FullName)"
             Compress-Archive -Path $exe.FullName -DestinationPath "release-assets/Foliant-Windows-Portable.zip" -Force
           } else {
-            Write-Warning "No standalone Foliant.exe found in src-tauri/target/release/"
+            Write-Error "No standalone Foliant.exe found in src-tauri/target/release/!"
+            exit 1
           }
 
           Write-Host "Listing prepared Windows release assets:"
@@ -89,7 +106,7 @@ jobs:
         with:
           name: Foliant-Windows-Assets
           path: release-assets/*
-          if-no-files-found: warn
+          if-no-files-found: error
 
       - name: Publish Windows assets to GitHub Release
         uses: softprops/action-gh-release@v2
@@ -124,7 +141,13 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: 'src-tauri'
+
+      - name: Pre-fetch cargo dependencies with retry
+        run: |
+          for i in 1 2 3 4 5; do
+            cargo fetch --manifest-path src-tauri/Cargo.toml && break || (echo "Cargo fetch retry $i in 5s..." && sleep 5)
+          done
 
       - name: Install frontend dependencies
         run: npm ci
@@ -139,22 +162,30 @@ jobs:
         run: |
           mkdir -p release-assets
 
-          # 1. DMG installer (.dmg)
-          DMG_FILE=$(find src-tauri/target/release/bundle/dmg -name "*.dmg" 2>/dev/null | head -n 1)
-          if [ -n "$DMG_FILE" ] && [ -f "$DMG_FILE" ]; then
-            echo "Found DMG installer: $DMG_FILE"
-            cp "$DMG_FILE" "release-assets/$(basename "$DMG_FILE")"
-            # Permanent direct download name for landing page
-            cp "$DMG_FILE" "release-assets/Foliant-Mac.dmg"
-          else
-            echo "::warning ::No DMG installer found in src-tauri/target/release/bundle/dmg"
+          # 1. Locate DMG installer (.dmg) anywhere under src-tauri/target
+          DMG_FILE=$(find src-tauri/target -name "*.dmg" 2>/dev/null | head -n 1)
+          if [ -z "$DMG_FILE" ] || [ ! -f "$DMG_FILE" ]; then
+            echo "::error ::No DMG installer found in src-tauri/target!"
+            find src-tauri/target -maxdepth 5 2>/dev/null
+            exit 1
           fi
 
+          echo "Found DMG installer: $DMG_FILE"
+          cp "$DMG_FILE" "release-assets/$(basename "$DMG_FILE")"
+          # Permanent direct download name for landing page
+          cp "$DMG_FILE" "release-assets/Foliant-Mac.dmg"
+
           # 2. Standalone .app bundle compressed as ZIP
-          APP_DIR=$(find src-tauri/target/release/bundle/macos -name "*.app" 2>/dev/null | head -n 1)
+          APP_DIR=$(find src-tauri/target -name "*.app" -type d 2>/dev/null | head -n 1)
           if [ -n "$APP_DIR" ] && [ -d "$APP_DIR" ]; then
             echo "Found .app bundle: $APP_DIR"
             ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" release-assets/Foliant-macOS-Portable.zip
+          fi
+
+          # 3. Sanity check: Ensure Foliant-Mac.dmg is ready
+          if [ ! -f "release-assets/Foliant-Mac.dmg" ]; then
+            echo "::error ::release-assets/Foliant-Mac.dmg was not generated!"
+            exit 1
           fi
 
           echo "Listing prepared macOS release assets:"
@@ -165,7 +196,7 @@ jobs:
         with:
           name: Foliant-macOS-Assets
           path: release-assets/*
-          if-no-files-found: warn
+          if-no-files-found: error
 
       - name: Publish macOS assets to GitHub Release
         uses: softprops/action-gh-release@v2
@@ -179,4 +210,3 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
