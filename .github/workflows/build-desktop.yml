@@ -71,7 +71,6 @@ jobs:
           if ($nsis) {
             Write-Host "Found NSIS installer: $($nsis.FullName)"
             Copy-Item $nsis.FullName "release-assets/$($nsis.Name)"
-            # Permanent direct download name for landing page
             Copy-Item $nsis.FullName "release-assets/Foliant-Windows.exe"
           } else {
             Write-Error "No NSIS installer found in src-tauri/target!"
@@ -98,28 +97,12 @@ jobs:
             exit 1
           }
 
-          Write-Host "Listing prepared Windows release assets:"
-          Get-ChildItem -Path release-assets
-
       - name: Upload Windows workflow artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Foliant-Windows-Assets
           path: release-assets/*
           if-no-files-found: error
-
-      - name: Publish Windows assets to GitHub Release
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
-        with:
-          files: release-assets/*
-          tag_name: ${{ github.event.inputs.release_tag || github.ref_name }}
-          name: Foliant Release ${{ github.event.inputs.release_tag || github.ref_name }}
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-macos:
     name: Build macOS (DMG & App)
@@ -162,17 +145,15 @@ jobs:
         run: |
           mkdir -p release-assets
 
-          # 1. Locate DMG installer (.dmg) anywhere under src-tauri/target
+          # 1. Locate DMG installer (.dmg)
           DMG_FILE=$(find src-tauri/target -name "*.dmg" 2>/dev/null | head -n 1)
           if [ -z "$DMG_FILE" ] || [ ! -f "$DMG_FILE" ]; then
             echo "::error ::No DMG installer found in src-tauri/target!"
-            find src-tauri/target -maxdepth 5 2>/dev/null
             exit 1
-          fi
+          }
 
           echo "Found DMG installer: $DMG_FILE"
           cp "$DMG_FILE" "release-assets/$(basename "$DMG_FILE")"
-          # Permanent direct download name for landing page
           cp "$DMG_FILE" "release-assets/Foliant-Mac.dmg"
 
           # 2. Standalone .app bundle compressed as ZIP
@@ -182,14 +163,10 @@ jobs:
             ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" release-assets/Foliant-macOS-Portable.zip
           fi
 
-          # 3. Sanity check: Ensure Foliant-Mac.dmg is ready
           if [ ! -f "release-assets/Foliant-Mac.dmg" ]; then
             echo "::error ::release-assets/Foliant-Mac.dmg was not generated!"
             exit 1
-          fi
-
-          echo "Listing prepared macOS release assets:"
-          ls -la release-assets
+          }
 
       - name: Upload macOS workflow artifacts
         uses: actions/upload-artifact@v4
@@ -198,11 +175,22 @@ jobs:
           path: release-assets/*
           if-no-files-found: error
 
-      - name: Publish macOS assets to GitHub Release
+  release:
+    name: Create GitHub Release & Publish Assets
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all workflow artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-assets
+          merge-multiple: true
+
+      - name: Publish all assets to GitHub Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         with:
-          files: release-assets/*
+          files: all-assets/*
           tag_name: ${{ github.event.inputs.release_tag || github.ref_name }}
           name: Foliant Release ${{ github.event.inputs.release_tag || github.ref_name }}
           draft: false
