@@ -1,7 +1,34 @@
-# Tauri + React + Typescript
+# Foliant ✍️
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+> An intuitive, modern writing application designed for authors to structure novels, manage characters, track timelines, and weave interconnected stories without friction.
 
-## Recommended IDE Setup
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-blue.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0)
+[![GitHub Pages](https://img.shields.io/badge/Web%20App-Live-emerald)](https://zintradev.github.io/foliant/)
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+---
+
+## 🚀 Overview
+
+Foliant is built for writers who want a clean, powerful local-first experience to organize their creative work. Whether you want to jump straight into the web version or download the native desktop app, Foliant keeps your projects structured and safe.
+
+- **Modular Architecture:** Manage chapters, scenes, characters, locations, and timelines seamlessly.
+- **Cross-Platform:** Available as a web application (via GitHub Pages) and a native desktop experience.
+- **Privacy First:** Your data stays with you.
+
+---
+
+## 🌐 Try It Now
+
+- **Web App:** [Access Foliant on the Web](https://zintradev.github.io/foliant/)
+- **Desktop Downloads:** Get the latest installer for Windows or macOS directly from the [Releases Page](https://github.com/Zintradev/foliant/releases/latest).
+
+---
+
+## 🛠️ Development Setup
+
+If you want to run or build Foliant locally from the source code, ensure you have **Node.js** installed, then follow these steps:
+
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/Zintradev/foliant.git](https://github.com/Zintradev/foliant.git)
+   cd foliant
