@@ -49,6 +49,11 @@
     </style>
 
     <script>
+      // If opened inside Tauri desktop app, redirect immediately to the workspace studio
+      if (window.__TAURI_INTERNALS__) {
+        window.location.replace('./app/');
+      }
+
       function setLanguage(lang) {
         document.documentElement.setAttribute('data-lang', lang);
         document.documentElement.setAttribute('lang', lang);
