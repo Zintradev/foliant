@@ -697,4 +697,20 @@ describe('App Component', () => {
     const writeBtn = screen.getByTitle(dict.en.actWriteTooltip);
     fireEvent.click(writeBtn);
   });
+
+  it('dismisses splash screen with fade-out class and removes it on mount', async () => {
+    vi.useFakeTimers();
+    const splash = document.createElement('div');
+    splash.id = 'foliant-splash';
+    document.body.appendChild(splash);
+
+    render(<App />);
+
+    expect(splash.classList.contains('splash-hidden')).toBe(true);
+    act(() => {
+      vi.advanceTimersByTime(600);
+    });
+    expect(document.getElementById('foliant-splash')).toBeNull();
+    vi.useRealTimers();
+  });
 });

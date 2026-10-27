@@ -61,6 +61,18 @@ export default function App() {
     applyTheme(appSettings.preferences?.themeMode || 'dark', appSettings.preferences?.customTheme);
   }, [appSettings.preferences?.themeMode, appSettings.preferences?.customTheme]);
 
+  // Dismiss splash screen smoothly once the main application mounts
+  useEffect(() => {
+    const splash = document.getElementById('foliant-splash');
+    if (splash) {
+      splash.classList.add('splash-hidden');
+      const timer = setTimeout(() => {
+        splash.remove();
+      }, 550);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   useAppAutoSave({
     project,
     isAutoSave: (appSettings.preferences?.saveMode || 'auto') === 'auto',
