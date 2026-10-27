@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { Clock, Network, ChevronDown, ChevronUp } from 'lucide-react';
 import { TabId } from '../../types/dock';
 import { TAB_TRANSLATION_KEYS } from '../dock/DockContainer';

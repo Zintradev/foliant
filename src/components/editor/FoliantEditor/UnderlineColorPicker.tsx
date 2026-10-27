@@ -57,7 +57,7 @@ function UnderlineColorPicker({
         disabled={!isEditorReady}
         title={`Underline (Ctrl+U) - Current Color: ${underlineColor}`}
         onClick={() => {
-          if (!isEditorReady) return;
+          if (!isEditorReady || !editor) return;
           if (editor.isActive('underline')) {
             editor.chain().focus().unsetMark('underline').run();
           } else {
@@ -67,7 +67,7 @@ function UnderlineColorPicker({
         className={`h-7 px-1.5 rounded-l-xs transition flex flex-col items-center justify-center cursor-pointer select-none ${
           !isEditorReady
             ? 'opacity-30 cursor-not-allowed text-zinc-500'
-            : isEditorReady && editor.isActive('underline')
+            : isEditorReady && editor?.isActive('underline')
             ? 'bg-zinc-800 text-zinc-100 border-l border-t border-b border-zinc-700/80 shadow-xs'
             : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850/80 border border-transparent'
         }`}

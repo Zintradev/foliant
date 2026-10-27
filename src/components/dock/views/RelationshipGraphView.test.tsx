@@ -757,7 +757,7 @@ describe('RelationshipGraphView', () => {
       },
     ];
 
-    const { container } = render(
+    render(
       <RelationshipGraphView
         characters={mockCharacters}
         relationships={closeBidirectionalRel}

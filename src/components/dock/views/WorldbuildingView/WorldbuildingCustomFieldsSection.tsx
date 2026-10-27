@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { Layers, X } from 'lucide-react';
 import { WorldCustomField } from './types';
 import { useTranslation } from '../../../../i18n/translations';

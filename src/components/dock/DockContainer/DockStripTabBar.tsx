@@ -19,8 +19,6 @@ interface DockStripTabBarProps {
   activeStripTab: TabId | null;
   dragState: DragState | null;
   isSplit: boolean;
-  isModuleMenuOpen: boolean;
-  moduleMenuStrip: 'top' | 'bottom';
   menuButtonRef: React.RefObject<HTMLButtonElement | null>;
   onPointerDownTab: (
     e: React.PointerEvent<HTMLDivElement>,
@@ -39,8 +37,6 @@ function DockStripTabBar({
   activeStripTab,
   dragState,
   isSplit,
-  isModuleMenuOpen,
-  moduleMenuStrip,
   menuButtonRef,
   onPointerDownTab,
   onToggleSplit,

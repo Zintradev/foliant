@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { Omega, X, Search, Clock, Check } from 'lucide-react';
 import {
   SymbolItem,

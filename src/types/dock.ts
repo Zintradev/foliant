@@ -59,9 +59,12 @@ export interface CharacterItem {
   role: CharacterRole;
   summary: string;
   avatarUrl?: string;
+  notes?: string;
   tags?: CharacterTag[];
   fields?: CharacterCustomField[];
 }
+
+export type Character = CharacterItem;
 
 export type RelationshipType =
   | 'Alliance'
@@ -123,6 +126,8 @@ export interface StorylineItem {
   fields?: StorylineField[];
   linkedWorldItemIds?: string[];
 }
+
+export type Storyline = StorylineItem;
 
 // ---------------------------------------------------------------------------
 // Timeline Key Event Marker / Narrative Alert Types

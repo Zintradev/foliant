@@ -1,4 +1,4 @@
-import React from 'react';
+import { memo } from 'react';
 import { Plus } from 'lucide-react';
 import { useTranslation } from '../../../../i18n/translations';
 import { ViewMode } from './types';
@@ -8,16 +8,14 @@ interface StorylineHeaderProps {
   onViewModeChange: (mode: ViewMode) => void;
   storylinesCount: number;
   chaptersCount: number;
-  isAdding: boolean;
   onToggleAdd: () => void;
 }
 
-export const StorylineHeader = React.memo(function StorylineHeader({
+export const StorylineHeader = memo(function StorylineHeader({
   viewMode,
   onViewModeChange,
   storylinesCount,
   chaptersCount,
-  isAdding,
   onToggleAdd,
 }: StorylineHeaderProps) {
   const { t } = useTranslation();

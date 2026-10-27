@@ -1,11 +1,10 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { Plus, FileText, Check } from 'lucide-react';
 import { StorylineItem, CharacterItem } from '../../../../types/dock';
 import { PlotStatus } from '../../../../types/project';
 import { TimelineColumnItem } from './types';
 import { STORYLINE_COLOR_MAP, MARKER_COLOR_CONFIG, renderMarkerIcon } from './constants';
 import { TimelineAttachDropdown } from './TimelineAttachDropdown';
-import { useTranslation } from '../../../../i18n/translations';
 
 interface TimelineSubwaySceneColumnProps {
   col: TimelineColumnItem;
@@ -50,7 +49,6 @@ function TimelineSubwaySceneColumnComponent({
   onAttachStoryline,
   onAttachCharacter,
 }: TimelineSubwaySceneColumnProps) {
-  const { t } = useTranslation();
   const scene = col.scene;
   const isDropdownOpen = openAttachDropdown?.sceneId === scene.id;
 

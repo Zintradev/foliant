@@ -1,6 +1,6 @@
-import React, { memo } from 'react';
+import { memo, RefObject } from 'react';
 import { Chapter } from '../../../../types/project';
-import { Storyline, Character } from '../../../../types';
+import { Storyline, Character, TimelineMarker } from '../../../../types/dock';
 import { ActivePopover } from './types';
 import { TimelineMarkerModal } from './TimelineMarkerModal';
 import { TimelineEntityPopover } from './TimelineEntityPopover';
@@ -10,12 +10,12 @@ interface TimelinePopoversOverlayProps {
   storylines: Storyline[];
   characters: Character[];
   activeMarkerPopover: { sceneId: string; markerId: string } | null;
-  markerPopoverRef: React.RefObject<HTMLDivElement | null>;
+  markerPopoverRef: RefObject<HTMLDivElement | null>;
   onCloseMarkerPopover: () => void;
   onUpdateMarker: (sceneId: string, markerId: string, updates: any) => void;
   onDeleteMarker: (sceneId: string, markerId: string) => void;
   activePopover: ActivePopover | null;
-  popoverRef: React.RefObject<HTMLDivElement | null>;
+  popoverRef: RefObject<HTMLDivElement | null>;
   onCloseEntityPopover: () => void;
   onDetachStoryline: (sceneId: string, storylineId: string) => void;
   onDetachCharacter: (sceneId: string, characterId: string) => void;
@@ -39,7 +39,7 @@ function TimelinePopoversOverlayComponent({
   const activeMarker = activeMarkerPopover
     ? chapters
         .find((c) => c.id === activeMarkerPopover.sceneId)
-        ?.markers?.find((m) => m.id === activeMarkerPopover.markerId)
+        ?.markers?.find((m: TimelineMarker) => m.id === activeMarkerPopover.markerId)
     : null;
 
   const popoverStoryline =

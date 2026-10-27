@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { TextNode } from '../../../../types/project';
 import { TreeStatItem } from './types';
 import { ProjectStatsTableRow } from './ProjectStatsTableRow';

@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { Globe, ChevronDown, ChevronRight, Check } from 'lucide-react';
 import { WorldItem } from '../../../../types/dock';
 import { useTranslation } from '../../../../i18n/translations';

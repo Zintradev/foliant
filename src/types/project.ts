@@ -38,6 +38,9 @@ export interface TextNode {
   plotStates?: ScenePlotState[];
 }
 
+export type FoliantChapter = TextNode;
+export type Chapter = TextNode;
+
 /** A single modular block inside the context panel. */
 export interface ContextBlock {
   id: string;

@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { ChevronDown, ChevronRight, FileText, Folder, FolderOpen } from 'lucide-react';
 import { TextNode, ChapterStatus } from '../../../../types/project';
 import { TreeStatItem } from './types';

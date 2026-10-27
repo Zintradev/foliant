@@ -39,7 +39,6 @@ interface TimelineSubwayMapViewProps {
   onToggleAttachDropdown: (sceneId: string, type: 'character' | 'storyline') => void;
   onAttachStoryline: (sceneId: string, storylineId: string) => void;
   onAttachCharacter: (sceneId: string, characterId: string) => void;
-  onToggleStationStatus: (sceneId: string, storylineId: string) => void;
   onStorylineDragStart: (e: React.DragEvent, index: number, id: string) => void;
   onStorylineDragEnter: (e: React.DragEvent, index: number, id: string) => void;
   onSwimlanesDragOver: (e: React.DragEvent) => void;
@@ -60,7 +59,7 @@ function TimelineSubwayMapViewComponent(props: TimelineSubwayMapViewProps) {
     dragOverPlotId, shiftTargetIndex, timelineDropMode, openAttachDropdown, getSceneWidth,
     getRowHeight, manualSceneWidths, plotHeights, onSelectScene, onSceneResizeStart, onPlotResizeStart, onToggleStorylineCollapse,
     onAddMarker, onOpenMarkerModal, onOpenEntityPopover, onToggleAttachDropdown, onAttachStoryline,
-    onAttachCharacter, onToggleStationStatus, onStorylineDragStart, onStorylineDragEnter,
+    onAttachCharacter, onStorylineDragStart, onStorylineDragEnter,
     onSwimlanesDragOver, onStorylineDragOver, onStorylineDragLeave, onStorylineDrop,
     onStorylineDragEnd, registerTrack, sceneHeaderHeight = 140, onSceneHeaderResizeStart,
   } = props;
@@ -208,8 +207,8 @@ function TimelineSubwayMapViewComponent(props: TimelineSubwayMapViewProps) {
                     onDragEnter={onStorylineDragEnter}
                     onDragOver={onStorylineDragOver}
                     onDrop={onStorylineDrop}
+                    onDragEnd={onStorylineDragEnd}
                     onResizeStart={onPlotResizeStart}
-                    onToggleStationStatus={onToggleStationStatus}
                     onOpenEntityPopover={onOpenEntityPopover}
                     registerTrack={registerTrack}
                     rowTranslateY={rowTranslateY}

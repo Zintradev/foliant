@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { Feather, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight } from 'lucide-react';
 
 export interface EditorWorkspaceHeaderProps {

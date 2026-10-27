@@ -1,5 +1,5 @@
-import { CharacterItem, CharacterCustomField, CharacterTag } from '../../../types/dock';
-import { AppColorSettings } from '../../../types/settings';
+import { CharacterItem, CharacterCustomField, CharacterTag } from '../../../../types/dock';
+import { AppColorSettings } from '../../../../types/settings';
 
 export interface CharactersViewProps {
   characters: CharacterItem[];

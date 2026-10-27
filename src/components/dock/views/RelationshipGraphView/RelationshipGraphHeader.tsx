@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { Network, Plus, RotateCcw, Undo2, Redo2, Link, X } from 'lucide-react';
 import { COLOR_PALETTE } from './constants';
 import { useTranslation } from '../../../../i18n/translations';

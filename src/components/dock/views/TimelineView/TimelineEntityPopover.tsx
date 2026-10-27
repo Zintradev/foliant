@@ -1,5 +1,5 @@
-import React, { memo } from 'react';
-import { X, GitMerge, Users } from 'lucide-react';
+import { memo } from 'react';
+import { X, Users } from 'lucide-react';
 import { StorylineItem, CharacterItem } from '../../../../types/dock';
 import { ActivePopover } from './types';
 import { STORYLINE_COLOR_MAP } from './constants';

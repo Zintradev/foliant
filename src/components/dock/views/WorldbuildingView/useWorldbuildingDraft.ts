@@ -3,14 +3,12 @@ import { WorldItem } from './types';
 
 interface UseWorldbuildingDraftOptions {
   activeItem: WorldItem | null;
-  saveMode: 'auto' | 'manual';
   onDirtyChange?: (isDirty: boolean) => void;
   onUpdateActive: (updates: Partial<WorldItem>) => void;
 }
 
 export function useWorldbuildingDraft({
   activeItem,
-  saveMode,
   onDirtyChange,
   onUpdateActive,
 }: UseWorldbuildingDraftOptions) {
@@ -33,7 +31,7 @@ export function useWorldbuildingDraft({
 
   const handleSaveDraft = () => {
     if (!activeItem) return;
-    handleUpdateActive({
+    onUpdateActive({
       title: draftTitle,
       category: draftCategory,
       summary: draftSummary,

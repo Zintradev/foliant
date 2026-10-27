@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { Plus } from 'lucide-react';
 import { useTranslation } from '../../../../i18n/translations';
 import { StorylineViewProps, ViewMode } from './types';
@@ -70,7 +70,6 @@ export function StorylineViewComponent({
         onViewModeChange={setViewMode}
         storylinesCount={storylines.length}
         chaptersCount={validChapters.length}
-        isAdding={isAdding}
         onToggleAdd={() => setIsAdding(!isAdding)}
       />
 

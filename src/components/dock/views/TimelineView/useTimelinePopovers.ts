@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Chapter } from '../../../../types/project';
-import { Storyline, Character } from '../../../../types';
+import { useState, useRef, useEffect } from 'react';
+import { Chapter, ScenePlotState } from '../../../../types/project';
+import { Storyline, Character } from '../../../../types/dock';
 import { ActivePopover } from './types';
 
 interface UseTimelinePopoversProps {
@@ -89,7 +89,7 @@ export function useTimelinePopovers({
     const scene = chapters.find((c) => c.id === sceneId);
     if (!scene || !onUpdateChapter) return;
     onUpdateChapter(sceneId, {
-      attachedCharacterIds: (scene.attachedCharacterIds || []).filter((id) => id !== characterId),
+      attachedCharacterIds: (scene.attachedCharacterIds || []).filter((id: string) => id !== characterId),
     });
     setActivePopover(null);
   };
@@ -98,7 +98,7 @@ export function useTimelinePopovers({
     const scene = chapters.find((c) => c.id === sceneId);
     if (!scene || !onUpdateChapter) return;
     const currentPlotStates = scene.plotStates || [];
-    if (!currentPlotStates.some((p) => p.storylineId === storylineId)) {
+    if (!currentPlotStates.some((p: ScenePlotState) => p.storylineId === storylineId)) {
       onUpdateChapter(sceneId, {
         plotStates: [...currentPlotStates, { storylineId, status: 'Active' }],
       });
@@ -119,14 +119,14 @@ export function useTimelinePopovers({
     const scene = chapters.find((c) => c.id === sceneId);
     if (scene && onUpdateChapter) {
       onUpdateChapter(sceneId, {
-        plotStates: (scene.plotStates || []).filter((p) => p.storylineId !== storylineId),
+        plotStates: (scene.plotStates || []).filter((p: ScenePlotState) => p.storylineId !== storylineId),
       });
     }
     if (onUpdateStorylines) {
       onUpdateStorylines(
         storylines.map((s) =>
           s.id === storylineId
-            ? { ...s, linkedChapterIds: (s.linkedChapterIds || []).filter((id) => id !== sceneId) }
+            ? { ...s, linkedChapterIds: (s.linkedChapterIds || []).filter((id: string) => id !== sceneId) }
             : s
         )
       );

@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Pencil, Trash2, ChevronRight, ChevronDown, User } from 'lucide-react';
-import { CharacterItem } from './types';
+import { CharacterItem, CharacterCustomField, CharacterTag } from './types';
 import {
   AppColorSettings,
   COLOR_SWATCHES,
@@ -148,7 +148,7 @@ export const CharacterDisplayCard = memo(function CharacterDisplayCard({
           {/* Tags preview */}
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-1 pt-1">
-              {tags.map((tag) => (
+              {tags.map((tag: CharacterTag) => (
                 <CharacterTagBadge key={tag.id} tag={tag} />
               ))}
             </div>
@@ -157,7 +157,7 @@ export const CharacterDisplayCard = memo(function CharacterDisplayCard({
           {/* Custom Fields list */}
           {fields.length > 0 && (
             <div className="pt-2 border-t border-zinc-850/80 space-y-1">
-              {fields.map((f) => (
+              {fields.map((f: CharacterCustomField) => (
                 <div key={f.id} className="flex items-baseline justify-between gap-2 text-[10px] font-mono">
                   <span className="text-zinc-500">{f.label}:</span>
                   <span className="text-zinc-300 truncate max-w-[60%]">{f.value}</span>

@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { Globe, Plus } from 'lucide-react';
 import { useTranslation } from '../../../../i18n/translations';
 

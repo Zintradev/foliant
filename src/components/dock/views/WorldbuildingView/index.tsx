@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { WorldbuildingViewProps, WorldItem } from './types';
 import { DEFAULT_CATEGORIES } from './constants';
 import { useWorldbuildingDragDrop } from './useWorldbuildingDragDrop';
@@ -71,7 +71,6 @@ export function WorldbuildingViewComponent({
     handleDiscardDraft,
   } = useWorldbuildingDraft({
     activeItem,
-    saveMode,
     onDirtyChange,
     onUpdateActive: handleUpdateActive,
   });

@@ -39,7 +39,7 @@ function CreateRelationshipModalComponent({
   const [style, setStyle] = useState<LineStrokeStyle>('solid');
   const [color, setColor] = useState<RelationshipColor>('blue');
   const newDirection: RelationshipDirection = 'directed';
-  const [notes, setNotes] = useState<string>('');
+  const notes = '';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

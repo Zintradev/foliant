@@ -91,8 +91,6 @@ export function DockContainerComponent({
               activeStripTab={currentTopTab}
               dragState={dragState}
               isSplit={isSplit}
-              isModuleMenuOpen={isModuleMenuOpen}
-              moduleMenuStrip={moduleMenuStrip}
               menuButtonRef={topMenuButtonRef}
               onPointerDownTab={handlePointerDown}
               onToggleSplit={toggleSplit}
@@ -119,8 +117,6 @@ export function DockContainerComponent({
                 activeStripTab={currentTopTab}
                 dragState={dragState}
                 isSplit={isSplit}
-                isModuleMenuOpen={isModuleMenuOpen}
-                moduleMenuStrip={moduleMenuStrip}
                 menuButtonRef={topMenuButtonRef}
                 onPointerDownTab={handlePointerDown}
                 onToggleSplit={toggleSplit}
@@ -151,8 +147,6 @@ export function DockContainerComponent({
                 activeStripTab={currentBottomTab}
                 dragState={dragState}
                 isSplit={isSplit}
-                isModuleMenuOpen={isModuleMenuOpen}
-                moduleMenuStrip={moduleMenuStrip}
                 menuButtonRef={bottomMenuButtonRef}
                 onPointerDownTab={handlePointerDown}
                 onToggleSplit={toggleSplit}

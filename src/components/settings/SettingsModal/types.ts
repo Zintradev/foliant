@@ -1,4 +1,4 @@
-import { AppSettings, AppPreferences, CustomThemeColors } from '../../types/settings';
+import { AppSettings, AppPreferences, CustomThemeColors } from '../../../types/settings';
 
 export type SettingsSection = 'general' | 'appearance' | 'editor' | 'timeline' | 'taxonomy';
 export type TaxonomySubTab = 'roles' | 'storylines' | 'categories' | 'presets';

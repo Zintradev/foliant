@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { Clock, Layers, Target, TrendingUp } from 'lucide-react';
 import { ChapterStatus } from '../../../../types/project';
 import { ProgressStatus } from './types';

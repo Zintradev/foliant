@@ -1,7 +1,7 @@
-import React, { memo, useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { TabId } from '../../types/dock';
 import { FoliantChapter } from '../../types/project';
-import { AppSettings } from '../../types/settings';
+import { AppSettings, Language } from '../../types/settings';
 import { SaveStatus } from '../../hooks/useProjectPersistence';
 import { UseDockLayoutReturn } from '../../hooks/useDockLayout';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
@@ -29,7 +29,7 @@ export interface WritingWorkspaceProps {
   activeSearchTerm: string | null;
   editorSaveStatus: SaveStatus;
   isDirty: boolean;
-  currentLanguage: string;
+  currentLanguage: Language;
   t: (key: any, defaultVal?: string) => string;
 }
 

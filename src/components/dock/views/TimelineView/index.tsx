@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, memo, useCallback } from 'react';
+import { useState, useMemo, useRef, memo, useCallback } from 'react';
 import { loadSettings } from '../../../../types/settings';
 import { TimelineViewProps } from './types';
 import { useTimelineZoom } from './useTimelineZoom';
@@ -166,7 +166,6 @@ function TimelineViewComponent({
           onToggleAttachDropdown={handleToggleAttachDropdown}
           onAttachStoryline={popoversHook.handleAttachStoryline}
           onAttachCharacter={popoversHook.handleAttachCharacter}
-          onToggleStationStatus={dataMapsHook.handleToggleStationStatus}
           onStorylineDragStart={dragDropHook.handleStorylineDragStart}
           onStorylineDragEnter={dragDropHook.handleStorylineDragEnter}
           onSwimlanesDragOver={dragDropHook.handleSwimlanesDragOver}

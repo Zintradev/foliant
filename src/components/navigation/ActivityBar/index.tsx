@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, memo } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { Menu, Feather } from 'lucide-react';
 import { MainViewId } from '../../../types/navigation';
 import { Language } from '../../../types/settings';

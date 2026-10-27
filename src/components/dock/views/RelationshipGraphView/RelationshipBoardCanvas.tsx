@@ -192,7 +192,6 @@ function RelationshipBoardCanvasComponent({
 
         <RelationshipLabelPills
           visibleRelationships={visibleRelationships}
-          positions={positions}
           selectedRelId={selectedRelId}
           draggingRelId={draggingRelId}
           justDraggedRelRef={justDraggedRelRef}

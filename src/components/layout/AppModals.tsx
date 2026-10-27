@@ -2,7 +2,7 @@ import React, { memo, lazy, Suspense } from 'react';
 import { FoliantProject } from '../../types/project';
 import { AppSettings } from '../../types/settings';
 import { ImportModalData } from '../common/ImportResultModal';
-import { ExportResultData } from '../../hooks/useEpubExport';
+import { ExportResultModalData } from '../../hooks/useEpubExport';
 import ErrorBoundary from '../common/ErrorBoundary';
 
 const ExportSettingsModal = lazy(() => import('../export/ExportSettingsModal'));
@@ -20,7 +20,7 @@ export interface AppModalsProps {
   isExportingEpub: boolean;
 
   // Export Result
-  exportResultData: ExportResultData | null;
+  exportResultData: ExportResultModalData;
   onCloseExportResultModal: () => void;
 
   // App Settings

@@ -188,8 +188,8 @@ export function CharactersViewComponent({
                     }
                     onDeleteField={(fieldId) => handleDeleteField(char.id, fieldId)}
                     onSave={() => handleSaveEdit(char.id)}
-                    onCancel={() => handleCancelEdit(char)}
-                    onClose={() => handleCancelEdit(char)}
+                    onCancel={() => handleCancelEdit()}
+                    onClose={() => handleCancelEdit()}
                   />
                 );
               }

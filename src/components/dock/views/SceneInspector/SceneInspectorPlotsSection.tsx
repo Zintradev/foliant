@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { GitMerge, ChevronDown, ChevronRight, Check } from 'lucide-react';
 import { StorylineItem } from '../../../../types/dock';
 import { PlotStatus, ScenePlotState } from '../../../../types/project';

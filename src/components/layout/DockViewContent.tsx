@@ -1,5 +1,5 @@
 import React, { memo, lazy, Suspense } from 'react';
-import { TabId } from '../../types/dock';
+import { TabId, CharacterNodePosition } from '../../types/dock';
 import { FoliantProject, FoliantChapter } from '../../types/project';
 import { AppSettings } from '../../types/settings';
 import { SaveStatus } from '../../hooks/useProjectPersistence';
@@ -30,7 +30,7 @@ export interface DockViewContentProps {
   setIsDirty: (dirty: boolean) => void;
   setEditorSaveStatus: (status: SaveStatus) => void;
   onSelectSearchResult: (sceneId: string, searchTerm: string) => void;
-  handleAddChapter: (type?: 'chapter' | 'scene', parentId?: string | null) => void;
+  handleAddChapter: (type?: 'folder' | 'scene', parentId?: string | null) => void;
   handleDeleteChapter: (id: string) => Promise<void>;
   handleUpdateChapter: (id: string, updates: Partial<FoliantChapter>) => void;
   handleUpdateStorylines: (storylines: FoliantProject['storylines']) => void;
@@ -38,7 +38,9 @@ export interface DockViewContentProps {
   handleAddCharacter: (char: FoliantProject['characters'][0]) => void;
   handleUpdateRelationships: (relationships: FoliantProject['relationships']) => void;
   handleUpdateJunctions: (junctions: FoliantProject['junctions']) => void;
-  handleUpdateCharacterPositions: (positions: FoliantProject['characterPositions']) => void;
+  handleUpdateCharacterPositions: (
+    positionsOrUpdater: CharacterNodePosition[] | ((prev: CharacterNodePosition[]) => CharacterNodePosition[])
+  ) => void;
   handleUpdateWorldItems: (items: FoliantProject['worldItems']) => void;
   handleUpdateContextBlocks: (blocks: FoliantProject['contextBlocks']) => void;
 }

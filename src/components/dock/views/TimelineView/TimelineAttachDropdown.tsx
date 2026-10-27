@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { StorylineItem, CharacterItem } from '../../../../types/dock';
 import { STORYLINE_COLOR_MAP } from './constants';
 import { useTranslation } from '../../../../i18n/translations';

@@ -1,10 +1,6 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { X, Trash2 } from 'lucide-react';
-import {
-  TimelineMarker,
-  TimelineMarkerColor,
-  TimelineMarkerIcon,
-} from '../../../../types/dock';
+import { TimelineMarker } from '../../../../types/dock';
 import {
   MARKER_COLOR_CONFIG,
   MARKER_ICONS,

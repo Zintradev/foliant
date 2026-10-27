@@ -4,7 +4,6 @@ import {
   CharacterRelationship,
   RelationshipColor,
   LineStrokeStyle,
-  RelationshipDirection,
 } from '../../../../types/dock';
 import { COLOR_PALETTE } from './constants';
 import { DarkColorPicker } from '../../../common/DarkColorPicker';

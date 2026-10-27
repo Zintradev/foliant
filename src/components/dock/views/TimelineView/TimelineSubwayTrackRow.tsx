@@ -32,7 +32,6 @@ interface TimelineSubwayTrackRowProps {
   onDrop: (e: React.DragEvent, index?: number, id?: string) => void;
   onDragEnd: () => void;
   onResizeStart: (e: React.PointerEvent, id: string) => void;
-  onToggleStationStatus: (sceneId: string, storylineId: string) => void;
   onOpenEntityPopover: (e: React.MouseEvent, type: 'storyline' | 'character', id: string, sceneId: string) => void;
   registerTrack: (id: string, el: HTMLElement | null) => void;
   rowTranslateY?: number;
@@ -60,7 +59,6 @@ function TimelineSubwayTrackRowComponent({
   onDrop,
   onDragEnd,
   onResizeStart,
-  onToggleStationStatus,
   onOpenEntityPopover,
   registerTrack,
   rowTranslateY = 0,
