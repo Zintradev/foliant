@@ -172,6 +172,7 @@ export const dict = {
     exportEpub: 'Export to EPUB...',
     dataTransfer: 'Data Transfer',
     foliantProject: 'Foliant Project',
+    backToLanding: 'Back to Landing Page',
 
     // Canvas & Metrics
     noChapterSelected: 'No chapter selected',
@@ -722,6 +723,7 @@ export const dict = {
     exportEpub: 'Exportar a EPUB...',
     dataTransfer: 'Transferencia de Datos',
     foliantProject: 'Proyecto Foliant',
+    backToLanding: 'Volver a la portada',
 
     // Canvas & Metrics
     noChapterSelected: 'Ningún capítulo seleccionado',

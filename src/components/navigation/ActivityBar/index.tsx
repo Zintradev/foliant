@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, memo } from 'react';
-import { Menu, Feather } from 'lucide-react';
+import { Menu, Feather, ArrowLeft } from 'lucide-react';
 import { MainViewId } from '../../../types/navigation';
 import { Language } from '../../../types/settings';
 import { useTranslation } from '../../../i18n/translations';
@@ -75,6 +75,14 @@ const ActivityBarFooter = memo(function ActivityBarFooter({
 }) {
   return (
     <div className="flex flex-col items-center gap-1.5 w-full pt-2 pb-1">
+      <a
+        href="../"
+        title={translate('backToLanding', 'Volver a la portada')}
+        aria-label="Volver a la portada"
+        className="p-1.5 rounded-sm text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 transition flex items-center justify-center cursor-pointer"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" />
+      </a>
       {isAutoSave && (
         <span
           className="flex items-center justify-center p-1 cursor-default transition"

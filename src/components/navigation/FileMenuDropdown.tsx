@@ -7,6 +7,7 @@ import {
   BookUp,
   Search,
   Settings,
+  ArrowLeft,
 } from 'lucide-react';
 import { useTranslation } from '../../i18n/translations';
 import { Language } from '../../types/settings';
@@ -175,6 +176,20 @@ export default function FileMenuDropdown({
           </span>
         </button>
       )}
+
+      <div className="my-1.5 h-[1px] bg-zinc-800/80" />
+
+      <a
+        href="../"
+        className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer group text-zinc-300 no-underline"
+        title={t('backToLanding', 'Volver a la portada')}
+      >
+        <span className="flex items-center gap-2">
+          <ArrowLeft className="w-3.5 h-3.5 text-zinc-400 group-hover:text-emerald-400 transition" />
+          <span>{t('backToLanding', 'Volver a la portada')}</span>
+        </span>
+        <span className="text-[10px] text-zinc-500 font-mono">Web</span>
+      </a>
     </div>
   );
 }
