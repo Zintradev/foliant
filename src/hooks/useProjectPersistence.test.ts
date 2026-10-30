@@ -25,6 +25,7 @@ describe('useProjectPersistence (Folder Bundle Architecture)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ = { invoke: vi.fn() };
     mockProject = {
       ...createEmptyProject('proj-1', 'The Cipher Mystery'),
       lastModified: 1000,
@@ -335,5 +336,51 @@ describe('useProjectPersistence (Folder Bundle Architecture)', () => {
     );
     expect(consoleWarnSpy).toHaveBeenCalled();
     consoleWarnSpy.mockRestore();
+  });
+
+  it('in web mode (no Tauri IPC), saveProject saves strictly to sessionStorage for the session', async () => {
+    delete (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
+    sessionStorage.clear();
+
+    const { result } = renderHook(() =>
+      useProjectPersistence({
+        project: mockProject,
+        onProjectLoaded,
+      })
+    );
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.saveProject();
+    });
+
+    expect(success).toBe(true);
+    expect(result.current.saveStatus).toBe('saved');
+    const stored = sessionStorage.getItem('foliant_session_project');
+    expect(stored).not.toBeNull();
+    expect(JSON.parse(stored!).title).toBe('The Cipher Mystery');
+  });
+
+  it('in web mode, saveProjectAs downloads the file locally and updates sessionStorage', async () => {
+    delete (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
+    sessionStorage.clear();
+
+    const { result } = renderHook(() =>
+      useProjectPersistence({
+        project: mockProject,
+        onProjectLoaded,
+      })
+    );
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.saveProjectAs();
+    });
+
+    expect(success).toBe(true);
+    expect(result.current.saveStatus).toBe('saved');
+    expect(result.current.currentFilePath).toContain('.foliant.json');
+    const stored = sessionStorage.getItem('foliant_session_project');
+    expect(stored).not.toBeNull();
   });
 });

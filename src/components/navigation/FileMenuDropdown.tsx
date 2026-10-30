@@ -8,7 +8,11 @@ import {
   Search,
   Settings,
   ArrowLeft,
+  HelpCircle,
+  Coffee,
 } from 'lucide-react';
+import { openKofiUrl } from '../help/KofiButton';
+import { isWebPlatform } from '../../utils/platform';
 import { useTranslation } from '../../i18n/translations';
 import { Language } from '../../types/settings';
 
@@ -22,7 +26,9 @@ export interface FileMenuDropdownProps {
   onExportEpub?: () => void;
   onOpenSearch?: () => void;
   onOpenSettings?: () => void;
+  onOpenHelpGuide?: () => void;
   language?: Language;
+  isWeb?: boolean;
 }
 
 export default function FileMenuDropdown({
@@ -35,8 +41,11 @@ export default function FileMenuDropdown({
   onExportEpub,
   onOpenSearch,
   onOpenSettings,
+  onOpenHelpGuide,
   language = 'en',
+  isWeb,
 }: FileMenuDropdownProps) {
+  const showLandingLink = isWeb !== undefined ? isWeb : isWebPlatform();
   const { t } = useTranslation(language);
 
   return (
@@ -177,19 +186,53 @@ export default function FileMenuDropdown({
         </button>
       )}
 
-      <div className="my-1.5 h-[1px] bg-zinc-800/80" />
+      {onOpenHelpGuide && (
+        <button
+          onClick={() => {
+            onClose();
+            onOpenHelpGuide();
+          }}
+          className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer whitespace-nowrap"
+        >
+          <span className="flex items-center gap-2">
+            <HelpCircle className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+            <span className="whitespace-nowrap">{t('helpAndGuide', 'Ayuda y Guía')}</span>
+          </span>
+          <span className="text-[10px] text-zinc-500 font-mono">F1</span>
+        </button>
+      )}
 
-      <a
-        href="../"
-        className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer group text-zinc-300 no-underline"
-        title={t('backToLanding', 'Volver a la portada')}
+      <button
+        onClick={(e) => {
+          onClose();
+          openKofiUrl(e);
+        }}
+        className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer group text-zinc-300 whitespace-nowrap"
+        title={t('supportKofi', 'Apoyar en Ko-fi')}
       >
         <span className="flex items-center gap-2">
-          <ArrowLeft className="w-3.5 h-3.5 text-zinc-400 group-hover:text-emerald-400 transition" />
-          <span>{t('backToLanding', 'Volver a la portada')}</span>
+          <Coffee className="w-3.5 h-3.5 text-zinc-400 group-hover:text-amber-400 transition shrink-0" />
+          <span className="whitespace-nowrap">{t('supportKofi', 'Apoyar en Ko-fi')}</span>
         </span>
-        <span className="text-[10px] text-zinc-500 font-mono">Web</span>
-      </a>
+        <span className="text-[10px] text-zinc-500 font-mono">Ko-fi</span>
+      </button>
+
+      {showLandingLink && (
+        <>
+          <div className="my-1.5 h-[1px] bg-zinc-800/80" />
+          <a
+            href="../"
+            className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer group text-zinc-300 no-underline whitespace-nowrap"
+            title={t('backToLanding', 'Volver a la portada')}
+          >
+            <span className="flex items-center gap-2">
+              <ArrowLeft className="w-3.5 h-3.5 text-zinc-400 group-hover:text-emerald-400 transition shrink-0" />
+              <span className="whitespace-nowrap">{t('backToLanding', 'Volver a la portada')}</span>
+            </span>
+            <span className="text-[10px] text-zinc-500 font-mono">Web</span>
+          </a>
+        </>
+      )}
     </div>
   );
 }

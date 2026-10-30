@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import MoodboardBlock from './MoodboardBlock';
 import { invoke } from '@tauri-apps/api/core';
+import { MOODBOARD_CACHE_KEY } from './MoodboardBlock/constants';
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
@@ -13,6 +14,7 @@ describe('MoodboardBlock Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ = { invoke: vi.fn() };
     (invoke as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([
       'C:/images/castle.jpg',
       'C:/images/forest.png',
@@ -122,6 +124,27 @@ describe('MoodboardBlock Component', () => {
     expect(internalElements.length).toBeGreaterThan(0);
     internalElements.forEach((el) => {
       expect(el).toHaveClass('pointer-events-none');
+    });
+  });
+
+  it('falls back gracefully to localStorage when running on web (no Tauri IPC)', async () => {
+    delete (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
+    localStorage.setItem(
+      MOODBOARD_CACHE_KEY,
+      JSON.stringify([
+        {
+          id: 'web-1',
+          path: 'web-castle.jpg',
+          name: 'web-castle.jpg',
+          sectionId: 'general',
+          base64: 'data:image/png;base64,mockWebImg',
+        },
+      ])
+    );
+
+    render(<MoodboardBlock title="Moodboard" />);
+    await waitFor(() => {
+      expect(screen.getByText('web-castle.jpg')).toBeInTheDocument();
     });
   });
 });

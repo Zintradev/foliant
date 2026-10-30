@@ -128,6 +128,18 @@ describe('SettingsModal Component', () => {
         preferences: expect.objectContaining({ saveMode: 'auto' }),
       })
     );
+
+    // Modify autoSaveInterval in auto mode
+    const intervalSelect = screen.getByLabelText(dict.en.autoSaveInterval);
+    expect(intervalSelect).toBeInTheDocument();
+    expect(screen.getByText(dict.en.autoSaveShortNotice)).toBeInTheDocument();
+    fireEvent.change(intervalSelect, { target: { value: '300' } });
+
+    expect(mockOnUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({ autoSaveInterval: 300 }),
+      })
+    );
   });
 
   it('navigates to Appearance tab and switches themeMode (dark, light, custom)', () => {

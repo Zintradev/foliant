@@ -1,5 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { FoliantProject, createEmptyProject } from '../types/project';
+import { isTauriApp } from '../utils/platform';
+import { downloadFileInBrowser } from '../utils/browserDownload';
 import {
   extractFileName,
   writeProjectBundle,
@@ -89,6 +91,42 @@ export function useProjectPersistence({
       setSyncStatus('saving');
       setError(null);
 
+      if (!isTauriApp()) {
+        const now = Date.now();
+        const projectToSave: FoliantProject = {
+          ...project,
+          lastModified: now,
+        };
+        try {
+          if (typeof sessionStorage !== 'undefined') {
+            sessionStorage.setItem('foliant_session_project', JSON.stringify(projectToSave));
+          }
+        } catch {
+          // ignore session quota
+        }
+
+        const safeTitle =
+          (projectToSave.title || 'project')
+            .toLowerCase()
+            .replace(/[^a-z0-9_-]/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '') || 'project';
+        const fileNameToSave = `${safeTitle}.foliant.json`;
+
+        downloadFileInBrowser(
+          JSON.stringify(projectToSave, null, 2),
+          fileNameToSave,
+          'application/json'
+        );
+
+        setCurrentFilePath(fileNameToSave);
+        setLastSavedAt(now);
+        setSyncStatus('saved');
+        setIsSaving(false);
+        onProjectLoaded(projectToSave);
+        return true;
+      }
+
       const targetDirectory = await promptSelectDirectory(
         'Select Foliant Project Directory',
         currentFilePath
@@ -115,6 +153,37 @@ export function useProjectPersistence({
   }, [project, currentFilePath, onProjectLoaded, handlePersistenceError]);
 
   const saveProject = useCallback(async (): Promise<boolean> => {
+    if (!isTauriApp()) {
+      try {
+        setIsSaving(true);
+        setSyncStatus('saving');
+        setError(null);
+
+        const now = Date.now();
+        const projectToSave: FoliantProject = {
+          ...project,
+          lastModified: now,
+        };
+        try {
+          if (typeof sessionStorage !== 'undefined') {
+            sessionStorage.setItem('foliant_session_project', JSON.stringify(projectToSave));
+          }
+        } catch {
+          // ignore session quota
+        }
+
+        setLastSavedAt(now);
+        setSyncStatus('saved');
+        setIsSaving(false);
+        onProjectLoaded(projectToSave);
+        return true;
+      } catch (err: unknown) {
+        setIsSaving(false);
+        setSyncStatus('unsaved');
+        return false;
+      }
+    }
+
     const trimmedDirectory = currentFilePath?.trim().replace(/[/\\]+$/, '');
     if (!trimmedDirectory) {
       return saveProjectAs();
@@ -142,6 +211,49 @@ export function useProjectPersistence({
     try {
       setError(null);
 
+      if (!isTauriApp()) {
+        if (typeof document === 'undefined') return false;
+        return new Promise<boolean>((resolve) => {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = '.json,.foliant';
+          input.style.display = 'none';
+          input.onchange = async () => {
+            const file = input.files?.[0];
+            if (!file) {
+              resolve(false);
+              return;
+            }
+            try {
+              const text = await file.text();
+              const parsed = JSON.parse(text);
+              const loaded = normalizeLoadedProject(parsed);
+              onProjectLoaded(loaded);
+              setCurrentFilePath(file.name);
+              setLastSavedAt(loaded.lastModified);
+              setSyncStatus('saved');
+              try {
+                if (typeof sessionStorage !== 'undefined') {
+                  sessionStorage.setItem('foliant_session_project', JSON.stringify(loaded));
+                }
+              } catch {
+                // ignore
+              }
+              resolve(true);
+            } catch (readErr) {
+              console.error('Failed to parse uploaded project:', readErr);
+              resolve(false);
+            } finally {
+              if (input.parentNode) {
+                input.parentNode.removeChild(input);
+              }
+            }
+          };
+          document.body.appendChild(input);
+          input.click();
+        });
+      }
+
       const targetDirectory = await promptSelectDirectory(
         'Open Foliant Project Directory'
       );
@@ -164,6 +276,20 @@ export function useProjectPersistence({
   }, [onProjectLoaded, onError]);
 
   const saveSilently = useCallback(async (): Promise<boolean> => {
+    if (!isTauriApp()) {
+      const now = Date.now();
+      try {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('foliant_session_project', JSON.stringify({ ...project, lastModified: now }));
+        }
+        setLastSavedAt(now);
+        setSyncStatus('saved');
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
     const trimmedDirectory = currentFilePath?.trim().replace(/[/\\]+$/, '');
     if (!trimmedDirectory) return false;
 

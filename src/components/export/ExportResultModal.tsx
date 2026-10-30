@@ -11,6 +11,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
+import { isTauriApp } from '../../utils/platform';
 import { ChapterFormatting } from '../../utils/exportEpub';
 
 export interface ExportSuccessInfo {
@@ -47,6 +48,7 @@ export default function ExportResultModal({ data, onClose }: ExportResultModalPr
   };
 
   const handleOpenFolder = async (path: string) => {
+    if (!isTauriApp()) return;
     setOpeningFolder(true);
     try {
       await revealItemInDir(path);
@@ -169,15 +171,19 @@ export default function ExportResultModal({ data, onClose }: ExportResultModalPr
 
             {/* Footer Actions */}
             <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
-              <button
-                type="button"
-                onClick={() => handleOpenFolder(data.destinationPath)}
-                disabled={openingFolder}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-300 hover:text-zinc-100 bg-zinc-800/80 hover:bg-zinc-800 border border-zinc-700/60 transition cursor-pointer disabled:opacity-50"
-              >
-                <FolderOpen className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Mostrar en carpeta</span>
-              </button>
+              {isTauriApp() ? (
+                <button
+                  type="button"
+                  onClick={() => handleOpenFolder(data.destinationPath)}
+                  disabled={openingFolder}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-300 hover:text-zinc-100 bg-zinc-800/80 hover:bg-zinc-800 border border-zinc-700/60 transition cursor-pointer disabled:opacity-50"
+                >
+                  <FolderOpen className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Mostrar en carpeta</span>
+                </button>
+              ) : (
+                <div />
+              )}
 
               <button
                 type="button"

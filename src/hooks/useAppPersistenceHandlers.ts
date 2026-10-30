@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { ask } from '@tauri-apps/plugin-dialog';
+import { isTauriApp } from '../utils/platform';
 import { SaveStatus } from './useProjectPersistence';
 import { importManuskriptProject } from '../utils/importManuskript';
 import { ImportModalData } from '../components/common/ImportResultModal';
@@ -58,29 +59,36 @@ export function useAppPersistenceHandlers({
   }, [saveProjectAs]);
 
   const handleNewProject = useCallback(async () => {
-    try {
-      const confirmed = await ask(
-        'Are you sure you want to start a new project? All unsaved progress in the current workspace will be cleared.',
-        { title: 'New Project', kind: 'warning' }
-      );
-      if (confirmed) {
-        newProject('Untitled Project');
-        setActiveChapterId('');
+    const confirmMsg =
+      'Are you sure you want to start a new project? All unsaved progress in the current workspace will be cleared.';
+    let confirmed = false;
+
+    if (isTauriApp()) {
+      try {
+        confirmed = await ask(confirmMsg, { title: 'New Project', kind: 'warning' });
+      } catch {
+        confirmed = typeof window !== 'undefined' && window.confirm(confirmMsg);
       }
-    } catch {
-      if (
-        typeof window !== 'undefined' &&
-        window.confirm(
-          'Are you sure you want to start a new project? All unsaved progress in the current workspace will be cleared.'
-        )
-      ) {
-        newProject('Untitled Project');
-        setActiveChapterId('');
-      }
+    } else {
+      confirmed = typeof window !== 'undefined' && window.confirm(confirmMsg);
+    }
+
+    if (confirmed) {
+      newProject('Untitled Project');
+      setActiveChapterId('');
     }
   }, [newProject, setActiveChapterId]);
 
   const handleImportManuskript = useCallback(async () => {
+    if (!isTauriApp()) {
+      setImportModalData({
+        type: 'error',
+        message:
+          'La importación de proyectos Manuskript por carpetas nativas solo está disponible en la versión de escritorio de Foliant.',
+      });
+      return;
+    }
+
     try {
       const result = await importManuskriptProject();
       if (!result) return;

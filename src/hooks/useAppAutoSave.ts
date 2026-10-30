@@ -5,6 +5,7 @@ import { SaveStatus } from './useProjectPersistence';
 interface UseAppAutoSaveOptions {
   project: FoliantProject;
   isAutoSave: boolean;
+  autoSaveInterval?: number;
   currentFilePath: string | null;
   saveSilently: () => Promise<boolean>;
   setEditorSaveStatus: (status: SaveStatus) => void;
@@ -13,6 +14,7 @@ interface UseAppAutoSaveOptions {
 export function useAppAutoSave({
   project,
   isAutoSave,
+  autoSaveInterval,
   currentFilePath,
   saveSilently,
   setEditorSaveStatus,
@@ -33,21 +35,26 @@ export function useAppAutoSave({
     }
     prevProjectRef.current = project;
 
-    if (!isAutoSave) return;
+    if (!isAutoSave) {
+      setEditorSaveStatus('unsaved');
+      return;
+    }
 
     setEditorSaveStatus('saving');
 
     if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
+
+    const intervalMs = autoSaveInterval != null ? Math.max(300, autoSaveInterval * 1000) : 600;
 
     autoSaveTimeoutRef.current = setTimeout(async () => {
       if (currentFilePath) {
         await saveSilently();
       }
       setEditorSaveStatus('saved');
-    }, 600);
+    }, intervalMs);
 
     return () => {
       if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
     };
-  }, [project, isAutoSave, currentFilePath, saveSilently, setEditorSaveStatus]);
+  }, [project, isAutoSave, autoSaveInterval, currentFilePath, saveSilently, setEditorSaveStatus]);
 }

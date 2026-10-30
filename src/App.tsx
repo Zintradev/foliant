@@ -19,9 +19,24 @@ import { applyTheme } from './theme/themeEngine';
 import { useTranslation, LanguageProvider } from './i18n/translations';
 import { countWords } from './utils/textMetrics';
 import { DEFAULT_PROJECT } from './data/mockProject';
+import { useAppCloseGuard } from './hooks/useAppCloseGuard';
+import { isTauriApp, closeDesktopApp } from './utils/platform';
+import { normalizeLoadedProject } from './utils/projectBundle';
 
 export default function App() {
-  const [project, setProject] = useState<FoliantProject>(DEFAULT_PROJECT);
+  const [project, setProject] = useState<FoliantProject>(() => {
+    if (!isTauriApp() && typeof sessionStorage !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem('foliant_session_project');
+        if (stored) {
+          return normalizeLoadedProject(JSON.parse(stored));
+        }
+      } catch {
+        // fallback
+      }
+    }
+    return DEFAULT_PROJECT;
+  });
   const [activeChapterId, setActiveChapterId] = useState<string>(() => {
     return DEFAULT_PROJECT.chapters.find((c) => c.type === 'scene')?.id ?? '';
   });
@@ -49,6 +64,8 @@ export default function App() {
   const [activeSearchTerm, setActiveSearchTerm] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isHelpGuideOpen, setIsHelpGuideOpen] = useState(false);
+  const [isGuidedTourActive, setIsGuidedTourActive] = useState(false);
   const [appSettings, setAppSettings] = useState<AppSettings>(loadSettings);
   const currentLanguage = appSettings.preferences?.language || 'en';
   const { t } = useTranslation(currentLanguage);
@@ -76,9 +93,27 @@ export default function App() {
   useAppAutoSave({
     project,
     isAutoSave: (appSettings.preferences?.saveMode || 'auto') === 'auto',
+    autoSaveInterval: appSettings.preferences?.autoSaveInterval ?? 300,
     currentFilePath,
     saveSilently,
     setEditorSaveStatus: persistence.setEditorSaveStatus,
+  });
+
+  const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
+  const handleRequestCloseConfirm = useCallback(() => setIsCloseConfirmOpen(true), []);
+  const handleCancelCloseConfirm = useCallback(() => setIsCloseConfirmOpen(false), []);
+  const handleConfirmClose = useCallback(() => {
+    setIsCloseConfirmOpen(false);
+    void closeDesktopApp();
+  }, []);
+
+  useAppCloseGuard({
+    hasUnsavedChanges:
+      persistence.editorSaveStatus === 'unsaved' ||
+      persistence.editorSaveStatus === 'saving' ||
+      isDirty,
+    onRequestCloseConfirm: handleRequestCloseConfirm,
+    language: appSettings.preferences?.language || 'en',
   });
 
   const layout = useDockLayout({
@@ -97,11 +132,22 @@ export default function App() {
     setTimelineFilters, handleOpenSearchTab: layout.handleOpenSearchTab,
   });
 
+  const handleOpenSettings = useCallback(() => setIsSettingsOpen(true), []);
+  const handleCloseSettings = useCallback(() => setIsSettingsOpen(false), []);
+  const handleOpenHelpGuide = useCallback(() => setIsHelpGuideOpen(true), []);
+  const handleCloseHelpGuide = useCallback(() => setIsHelpGuideOpen(false), []);
+  const handleStartGuidedTour = useCallback(() => {
+    setIsHelpGuideOpen(false);
+    setIsGuidedTourActive(true);
+  }, []);
+  const handleCloseGuidedTour = useCallback(() => setIsGuidedTourActive(false), []);
+
   useGlobalShortcuts({
     onSave: persistence.handleManualSave,
     onSaveAs: persistence.handleManualSaveAs,
     onOpen: openProject,
     onSearch: layout.handleOpenSearchTab,
+    onHelp: handleOpenHelpGuide,
   });
 
   const mutations = useProjectMutations({
@@ -112,8 +158,6 @@ export default function App() {
   const activeChapter = project.chapters.find((ch) => ch.id === activeChapterId);
   const wordCount = useMemo(() => countWords(activeChapter?.content), [activeChapter?.content]);
 
-  const handleOpenSettings = useCallback(() => setIsSettingsOpen(true), []);
-  const handleCloseSettings = useCallback(() => setIsSettingsOpen(false), []);
   const handleCloseImportResult = useCallback(() => persistence.setImportModalData(null), [persistence]);
 
   const renderDockView = useCallback(
@@ -158,6 +202,7 @@ export default function App() {
           onImportManuskript={persistence.handleImportManuskript}
           onExportEpub={epub.openExportModal}
           onOpenSearch={layout.handleOpenSearchTab}
+          onOpenHelpGuide={handleOpenHelpGuide}
         />
 
         <WritingWorkspace
@@ -202,8 +247,17 @@ export default function App() {
           pendingNavigationAction={nav.pendingNavigationAction}
           onCancelPendingNavigation={nav.handleCancelPendingNavigation}
           onConfirmPendingNavigation={nav.handleConfirmPendingNavigation}
+          isCloseConfirmOpen={isCloseConfirmOpen}
+          onCancelCloseConfirm={handleCancelCloseConfirm}
+          onConfirmClose={handleConfirmClose}
           importModalData={persistence.importModalData}
           onCloseImportResult={handleCloseImportResult}
+          isHelpGuideOpen={isHelpGuideOpen}
+          onCloseHelpGuide={handleCloseHelpGuide}
+          onStartGuidedTour={handleStartGuidedTour}
+          isGuidedTourActive={isGuidedTourActive}
+          onCloseGuidedTour={handleCloseGuidedTour}
+          onSelectMainView={nav.handleSelectMainView}
         />
       </div>
     </LanguageProvider>

@@ -112,6 +112,7 @@ export const SettingsModal = React.memo(function SettingsModal({
               <SettingsGeneralSection
                 currentLang={prefs?.language || 'en'}
                 saveMode={prefs?.saveMode || 'auto'}
+                autoSaveInterval={prefs?.autoSaveInterval ?? 300}
                 timelineDropMode={prefs?.timelineDropMode || 'shift'}
                 worldDropMode={prefs?.worldDropMode || 'shift'}
                 preserveManualSceneWidth={prefs?.preserveManualSceneWidth ?? false}

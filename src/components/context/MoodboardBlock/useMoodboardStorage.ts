@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { isTauriApp } from '../../../utils/platform';
 import {
   ReferenceImage,
   MoodboardSection,
@@ -108,6 +109,20 @@ export function useMoodboardStorage() {
         // ignore
       }
 
+      // If running in a web browser without Tauri native IPC, use cache exclusively
+      if (!isTauriApp()) {
+        const reconciled: ReferenceImage[] = (Array.isArray(cached) ? cached : []).map((c) => ({
+          id: c.id || `img-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          path: c.path || c.name || `web-img-${Date.now()}`,
+          src: c.base64 || '',
+          name: c.name || extractFileName(c.path || 'image'),
+          sectionId: c.sectionId || 'general',
+          base64: c.base64,
+        }));
+        setImages(reconciled);
+        return;
+      }
+
       const paths = await invoke<string[]>('list_reference_images');
       const safePaths = Array.isArray(paths) ? paths : [];
       const reconciled: ReferenceImage[] = safePaths.map((p) => {
@@ -165,14 +180,16 @@ export function useMoodboardStorage() {
           reader.readAsDataURL(file);
         });
 
-        let savedPath: string;
-        try {
-          savedPath = await invoke<string>('save_reference_image_base64', {
-            fileName: file.name,
-            dataBase64: base64Data,
-          });
-        } catch {
-          savedPath = file.name;
+        let savedPath: string = file.name;
+        if (isTauriApp()) {
+          try {
+            savedPath = await invoke<string>('save_reference_image_base64', {
+              fileName: file.name,
+              dataBase64: base64Data,
+            });
+          } catch {
+            savedPath = file.name;
+          }
         }
 
         const newImg = toReferenceImage(savedPath, targetSectionId, base64Data);
@@ -181,7 +198,13 @@ export function useMoodboardStorage() {
           if (prev.some((img) => img.path === savedPath && img.name === file.name)) {
             return prev;
           }
-          return [...prev, newImg];
+          const updated = [...prev, newImg];
+          try {
+            localStorage.setItem(MOODBOARD_CACHE_KEY, JSON.stringify(updated));
+          } catch {
+            // ignore
+          }
+          return updated;
         });
       } catch (err) {
         console.error('Failed to upload image:', err);
@@ -196,8 +219,18 @@ export function useMoodboardStorage() {
   const handleDeleteImage = useCallback(async (image: ReferenceImage) => {
     setErrorMessage(null);
     try {
-      await invoke('delete_reference_image', { fileName: image.name });
-      setImages((prev) => prev.filter((item) => item.path !== image.path));
+      if (isTauriApp()) {
+        await invoke('delete_reference_image', { fileName: image.name });
+      }
+      setImages((prev) => {
+        const updated = prev.filter((item) => item.path !== image.path);
+        try {
+          localStorage.setItem(MOODBOARD_CACHE_KEY, JSON.stringify(updated));
+        } catch {
+          // ignore
+        }
+        return updated;
+      });
     } catch (err) {
       console.error('Failed to delete image:', err);
       setErrorMessage(String(err));

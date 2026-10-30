@@ -1,4 +1,5 @@
 import { open } from '@tauri-apps/plugin-dialog';
+import { isTauriApp } from '../utils/platform';
 import { FoliantProject } from '../types/project';
 import {
   writeProjectBundle,
@@ -13,6 +14,9 @@ export async function promptSelectDirectory(
   title: string,
   defaultPath?: string | null
 ): Promise<string | null> {
+  if (!isTauriApp()) {
+    return null;
+  }
   const selected = await open({
     directory: true,
     multiple: false,

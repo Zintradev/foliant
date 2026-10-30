@@ -1,4 +1,5 @@
 import { ask } from '@tauri-apps/plugin-dialog';
+import { isTauriApp } from '../utils/platform';
 import { TextNode } from '../types/project';
 import { getDescendantChapterIds } from '../utils/chapterTree';
 
@@ -34,19 +35,18 @@ export async function confirmChapterDeletion(
   chapterTitle: string,
   dialogTitle: string
 ): Promise<boolean> {
-  try {
-    return await ask(
-      `Are you sure you want to delete "${chapterTitle}"? This action cannot be undone.`,
-      { title: dialogTitle, kind: 'warning' }
-    );
-  } catch {
-    if (typeof window !== 'undefined') {
-      return window.confirm(
-        `Are you sure you want to delete "${chapterTitle}"? This action cannot be undone.`
-      );
+  const confirmMsg = `Are you sure you want to delete "${chapterTitle}"? This action cannot be undone.`;
+  if (isTauriApp()) {
+    try {
+      return await ask(confirmMsg, { title: dialogTitle, kind: 'warning' });
+    } catch {
+      // fallback
     }
-    return false;
   }
+  if (typeof window !== 'undefined') {
+    return window.confirm(confirmMsg);
+  }
+  return false;
 }
 
 export function deleteChapterFromList(

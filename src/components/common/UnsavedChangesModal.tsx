@@ -5,17 +5,25 @@ export interface UnsavedChangesModalProps {
   isOpen: boolean;
   onCancel: () => void;
   onConfirm: () => void;
+  title?: string;
+  message?: string;
+  cancelText?: string;
+  confirmText?: string;
 }
 
 /**
  * UnsavedChangesModal:
- * Navigation guard dialog shown when the user attempts to switch views or tabs
- * with unsaved modifications pending in the active inspector or editor.
+ * Navigation guard dialog shown when the user attempts to switch views or exit
+ * with unsaved modifications pending in the active inspector, editor, or project.
  */
 export default function UnsavedChangesModal({
   isOpen,
   onCancel,
   onConfirm,
+  title,
+  message,
+  cancelText,
+  confirmText,
 }: UnsavedChangesModalProps) {
   const { t } = useTranslation();
 
@@ -30,10 +38,10 @@ export default function UnsavedChangesModal({
           </div>
           <div className="space-y-1">
             <h3 className="text-sm font-semibold text-zinc-100">
-              {t('unsavedChangesTitle')}
+              {title || t('unsavedChangesTitle')}
             </h3>
             <p className="text-xs text-zinc-400 leading-relaxed">
-              {t('unsavedChangesMessage')}
+              {message || t('unsavedChangesMessage')}
             </p>
           </div>
         </div>
@@ -44,14 +52,14 @@ export default function UnsavedChangesModal({
             onClick={onCancel}
             className="px-3.5 py-1.5 rounded-sm text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition cursor-pointer"
           >
-            {t('keepEditing')}
+            {cancelText || t('keepEditing')}
           </button>
           <button
             type="button"
             onClick={onConfirm}
             className="px-3.5 py-1.5 rounded-sm text-xs font-medium bg-rose-600 hover:bg-rose-500 text-white shadow-xs transition cursor-pointer"
           >
-            {t('discardAndSwitch')}
+            {confirmText || t('discardAndSwitch')}
           </button>
         </div>
       </div>

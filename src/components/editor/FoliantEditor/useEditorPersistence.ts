@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { Editor } from '@tiptap/react';
 import { invoke } from '@tauri-apps/api/core';
+import { isTauriApp } from '../../../utils/platform';
 import { SaveStatus } from './types';
 
 interface UseEditorPersistenceParams {
@@ -9,6 +10,8 @@ interface UseEditorPersistenceParams {
   onChange?: (content: string, chapterId: string) => void;
   onStatusChange?: (status: SaveStatus) => void;
   editor: Editor | null;
+  isAutoSave?: boolean;
+  autoSaveInterval?: number;
 }
 
 export function useEditorPersistence({
@@ -17,6 +20,8 @@ export function useEditorPersistence({
   onChange,
   onStatusChange,
   editor,
+  isAutoSave = true,
+  autoSaveInterval,
 }: UseEditorPersistenceParams) {
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -47,17 +52,23 @@ export function useEditorPersistence({
       }
 
       try {
-        await invoke('save_chapter_file', {
-          path: `../${targetChapterId}.md`,
-          content: contentToSave,
-        });
+        if (isAutoSave && isTauriApp()) {
+          await invoke('save_chapter_file', {
+            path: `../${targetChapterId}.md`,
+            content: contentToSave,
+          });
+        }
 
         // Notify parent state of confirmed written content for this specific chapter
         onChangeRef.current?.(contentToSave, targetChapterId);
 
         if (isCurrentActive) {
           isDirtyRef.current = false;
-          onStatusChangeRef.current?.('saved');
+          if (isAutoSave) {
+            onStatusChangeRef.current?.('saved');
+          } else {
+            onStatusChangeRef.current?.('unsaved');
+          }
         }
       } catch (error) {
         console.error(`Failed to auto-save chapter [${targetChapterId}]:`, error);
@@ -66,24 +77,28 @@ export function useEditorPersistence({
         }
       }
     },
-    []
+    [isAutoSave]
   );
 
   const handleEditorUpdate = useCallback(
     (ed: Editor) => {
       isDirtyRef.current = true;
-      onStatusChangeRef.current?.('saving');
+      onStatusChangeRef.current?.(isAutoSave ? 'saving' : 'unsaved');
 
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+
+      const intervalMs = isAutoSave
+        ? (autoSaveInterval != null ? Math.max(300, autoSaveInterval * 1000) : 1000)
+        : 300;
 
       debounceTimerRef.current = setTimeout(() => {
         if (ed.isDestroyed) return;
         const freshContent = ed.getHTML();
         executeSave(activeChapterIdRef.current, freshContent);
-      }, 1000);
+      }, intervalMs);
     },
-    [executeSave]
+    [executeSave, isAutoSave, autoSaveInterval]
   );
 
   // Chapter Switch Effect: Non-blocking Background Flush
@@ -111,7 +126,9 @@ export function useEditorPersistence({
       executeSave(previousChapterId, previousContent);
     }
 
-    onStatusChangeRef.current?.('saved');
+    if (isAutoSave) {
+      onStatusChangeRef.current?.('saved');
+    }
 
     editor.commands.setContent(incomingContentRef.current, { emitUpdate: false });
   }, [chapterId, editor, executeSave]);
@@ -122,7 +139,7 @@ export function useEditorPersistence({
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
 
-      if (isDirtyRef.current && editor && !editor.isDestroyed) {
+      if (isDirtyRef.current && editor && !editor.isDestroyed && isTauriApp()) {
         const lastContent = editor.getHTML();
         invoke('save_chapter_file', {
           path: `../${activeChapterIdRef.current}.md`,

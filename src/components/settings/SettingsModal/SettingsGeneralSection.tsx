@@ -1,11 +1,13 @@
 import React from 'react';
-import { Languages, Save, Zap, Clock, Globe, Check } from 'lucide-react';
+import { Languages, Save, Zap, Clock, Globe, Check, AlertCircle } from 'lucide-react';
 import { Language } from '../../../types/settings';
 import { PreferenceChangeHandler } from './types';
+import { GbFlag, EsFlag } from '../../common/FlagIcons';
 
 interface SettingsGeneralSectionProps {
   currentLang: Language;
   saveMode: 'auto' | 'manual';
+  autoSaveInterval?: number;
   timelineDropMode: 'shift' | 'swap';
   worldDropMode: 'shift' | 'swap';
   preserveManualSceneWidth: boolean;
@@ -17,6 +19,7 @@ interface SettingsGeneralSectionProps {
 export const SettingsGeneralSection = React.memo(function SettingsGeneralSection({
   currentLang,
   saveMode,
+  autoSaveInterval = 300,
   timelineDropMode,
   worldDropMode,
   preserveManualSceneWidth,
@@ -24,6 +27,20 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
   onPreferenceChange,
   t,
 }: SettingsGeneralSectionProps) {
+  const getSelectToneClass = (interval: number) => {
+    switch (interval) {
+      case 5:
+        return 'border-red-900/80 text-red-300 bg-red-950/20 focus:ring-red-500';
+      case 15:
+        return 'border-orange-900/70 text-orange-300 bg-orange-950/20 focus:ring-orange-500';
+      case 30:
+        return 'border-amber-900/60 text-amber-200 bg-amber-950/20 focus:ring-amber-500';
+      case 300:
+        return 'border-emerald-800/70 text-emerald-300 bg-emerald-950/20 focus:ring-emerald-500';
+      default:
+        return 'border-zinc-750 text-zinc-200 bg-zinc-950 focus:ring-emerald-500';
+    }
+  };
   return (
     <div className="space-y-6 animate-in fade-in duration-100">
       <div>
@@ -49,7 +66,7 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
             }`}
           >
             <div className="flex items-center gap-2.5">
-              <span className="text-base">🇬🇧</span>
+              <GbFlag className="w-5 h-3.5" />
               <div className="text-left font-semibold">{t('english')}</div>
             </div>
             {currentLang === 'en' && <Check className="w-4 h-4 text-emerald-400" />}
@@ -64,7 +81,7 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
             }`}
           >
             <div className="flex items-center gap-2.5">
-              <span className="text-base">🇪🇸</span>
+              <EsFlag className="w-5 h-3.5" />
               <div className="text-left font-semibold">{t('spanish')}</div>
             </div>
             {currentLang === 'es' && <Check className="w-4 h-4 text-emerald-400" />}
@@ -124,6 +141,64 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
             </p>
           </button>
         </div>
+
+        {saveMode === 'auto' && (
+          <div className="pt-3 mt-1 border-t border-zinc-800/80 space-y-3 animate-in fade-in duration-150">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="space-y-0.5">
+                <label htmlFor="autosave-interval-select" className="text-xs font-medium text-zinc-200 flex items-center gap-1.5">
+                  <Clock className="w-3 h-3 text-emerald-400" />
+                  <span>{t('autoSaveInterval')}</span>
+                </label>
+                <p className="text-[11px] text-zinc-400">
+                  {t('autoSaveIntervalDesc')}
+                </p>
+              </div>
+              <div className="shrink-0">
+                <select
+                  id="autosave-interval-select"
+                  aria-label={t('autoSaveInterval')}
+                  value={autoSaveInterval}
+                  onChange={(e) => onPreferenceChange('autoSaveInterval', Number(e.target.value))}
+                  className={`px-3 py-1.5 border text-xs rounded-md focus:outline-none focus:ring-1 transition cursor-pointer font-sans ${getSelectToneClass(autoSaveInterval)}`}
+                >
+                  <option value={5} className="bg-zinc-900 text-red-400 font-medium">
+                    {t('interval5s')}
+                  </option>
+                  <option value={15} className="bg-zinc-900 text-orange-300">
+                    {t('interval15s')}
+                  </option>
+                  <option value={30} className="bg-zinc-900 text-amber-200">
+                    {t('interval30s')}
+                  </option>
+                  <option value={60} className="bg-zinc-900 text-zinc-300">
+                    {t('interval1m')}
+                  </option>
+                  <option value={300} className="bg-zinc-900 text-emerald-400 font-medium">
+                    {t('interval5m')}
+                  </option>
+                  <option value={600} className="bg-zinc-900 text-zinc-300">
+                    {t('interval10m')}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            {/* Informative notice explaining ultra-short frequency drawbacks */}
+            <div className={`p-2.5 rounded-md border text-xs flex items-start gap-2.5 transition-colors ${
+              autoSaveInterval <= 30
+                ? 'bg-red-950/20 border-red-900/40 text-red-200/90'
+                : 'bg-zinc-900/60 border-zinc-800/80 text-zinc-400'
+            }`}>
+              <AlertCircle className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${
+                autoSaveInterval <= 30 ? 'text-red-400' : 'text-zinc-500'
+              }`} />
+              <p className="text-[11px] leading-relaxed">
+                {t('autoSaveShortNotice')}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Timeline Drag & Drop Mode Card */}

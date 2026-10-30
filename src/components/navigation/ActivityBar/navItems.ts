@@ -10,7 +10,6 @@ import {
   Image as ImageIcon,
   Clock,
   Network,
-  Search,
 } from 'lucide-react';
 import { MainViewId } from '../../../types/navigation';
 import { TranslationKey } from '../../../i18n/translations';
@@ -40,14 +39,6 @@ export const NAV_ITEMS: NavItem[] = [
     defaultLabel: 'Outline',
     defaultTooltip: 'Project Structure & Outline',
     icon: BookOpen,
-  },
-  {
-    id: 'search',
-    labelKey: 'search',
-    tooltipKey: 'search',
-    defaultLabel: 'Search',
-    defaultTooltip: 'Search Project (Ctrl+Shift+F)',
-    icon: Search,
   },
   {
     id: 'timeline',

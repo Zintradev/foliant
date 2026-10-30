@@ -4,6 +4,7 @@
 
 [![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-blue.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0)
 [![GitHub Pages](https://img.shields.io/badge/Web%20App-Live-emerald)](https://zintradev.github.io/foliant/)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-29abe0?logo=ko-fi&logoColor=white)](https://ko-fi.com/zintradev)
 
 ---
 
@@ -14,6 +15,8 @@ Foliant is built for writers who want a clean, powerful local-first experience t
 - **Modular Architecture:** Manage chapters, scenes, characters, locations, and timelines seamlessly.
 - **Cross-Platform:** Available as a web application (via GitHub Pages) and a native desktop experience.
 - **Privacy First:** Your data stays with you.
+
+[![Architecture diagram](https://gitdiagram.com/diagram-badge.svg)](https://gitdiagram.com/zintradev/foliant?utm_source=readme&utm_medium=badge)
 
 ---
 
@@ -44,6 +47,12 @@ If you want to run or build Foliant locally from the source code, ensure you hav
 4. **Build for production:**
     ```Bash
    npm run build
+
+## ☕ Support
+
+If you enjoy Foliant and want to support its ongoing development, you can [buy me a coffee on Ko-fi](https://ko-fi.com/zintradev).
+
+---
 
 ## 🛡️ License
 

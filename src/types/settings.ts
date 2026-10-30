@@ -180,6 +180,7 @@ export interface AppPreferences {
   customTheme?: CustomThemeColors;
   colorPreset?: 'default' | 'monochrome' | 'warm' | 'cyber' | 'custom';
   saveMode?: 'auto' | 'manual';
+  autoSaveInterval?: number; // In seconds (default: 2)
 }
 
 export interface AppSettings extends AppColorSettings {
@@ -199,6 +200,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   customTheme: DEFAULT_CUSTOM_THEME,
   colorPreset: 'default',
   saveMode: 'auto',
+  autoSaveInterval: 300,
 };
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {

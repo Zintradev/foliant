@@ -113,6 +113,7 @@ describe('useProjectMutations Hook', () => {
   let setActiveChapterId: (id: string) => void;
 
   beforeEach(() => {
+    (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ = { invoke: vi.fn() };
     project = createMockProject();
     activeChapterId = 'scene-1';
     setActiveChapterId = vi.fn((id: string) => {

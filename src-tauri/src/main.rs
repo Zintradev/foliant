@@ -227,6 +227,12 @@ async fn save_chapter_file(path: String, content: String) -> Result<(), String> 
     fs::write(&path, content).map_err(|e| format!("Failed to write file to '{path}': {e}"))
 }
 
+/// Exits the application process cleanly.
+#[tauri::command]
+fn exit_app(app: tauri::AppHandle) {
+    app.exit(0);
+}
+
 // ---------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------
@@ -237,6 +243,7 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
+            exit_app,
             save_chapter_file,
             save_reference_image,
             save_reference_image_base64,

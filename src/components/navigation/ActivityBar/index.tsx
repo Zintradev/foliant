@@ -1,11 +1,13 @@
-import { useState, useRef, useEffect, memo } from 'react';
-import { Menu, Feather, ArrowLeft } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo, memo } from 'react';
+import { Menu, ArrowLeft } from 'lucide-react';
 import { MainViewId } from '../../../types/navigation';
 import { Language } from '../../../types/settings';
 import { useTranslation } from '../../../i18n/translations';
 import FileMenuDropdown from '../FileMenuDropdown';
 import { SaveStatus } from '../../editor/FoliantEditor';
 import { NAV_ITEMS } from './navItems';
+import logoUrl from '../../../assets/logo.svg';
+import { isWebPlatform } from '../../../utils/platform';
 
 export interface ActivityBarProps {
   activeView: MainViewId;
@@ -21,6 +23,8 @@ export interface ActivityBarProps {
   onImportManuskript?: () => void;
   onExportEpub?: () => void;
   onOpenSearch?: () => void;
+  onOpenHelpGuide?: () => void;
+  isWeb?: boolean;
 }
 
 const ActivityBarNavList = memo(function ActivityBarNavList({
@@ -65,41 +69,23 @@ const ActivityBarNavList = memo(function ActivityBarNavList({
 });
 
 const ActivityBarFooter = memo(function ActivityBarFooter({
-  isAutoSave = true,
-  saveStatus = 'idle',
   translate,
+  showLandingLink = false,
 }: {
-  isAutoSave?: boolean;
-  saveStatus?: SaveStatus;
   translate: (key: any, defaultVal: string) => string;
+  showLandingLink?: boolean;
 }) {
   return (
     <div className="flex flex-col items-center gap-1.5 w-full pt-2 pb-1">
-      <a
-        href="../"
-        title={translate('backToLanding', 'Volver a la portada')}
-        aria-label="Volver a la portada"
-        className="p-1.5 rounded-sm text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 transition flex items-center justify-center cursor-pointer"
-      >
-        <ArrowLeft className="w-3.5 h-3.5" />
-      </a>
-      {isAutoSave && (
-        <span
-          className="flex items-center justify-center p-1 cursor-default transition"
-          title={
-            saveStatus === 'saving' || saveStatus === 'unsaved'
-              ? translate('saving', 'Saving...')
-              : translate('saved', 'Saved')
-          }
+      {showLandingLink && (
+        <a
+          href="../"
+          title={translate('backToLanding', 'Volver a la portada')}
+          aria-label="Volver a la portada"
+          className="p-1.5 rounded-sm text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 transition flex items-center justify-center cursor-pointer"
         >
-          <span
-            className={`w-2 h-2 rounded-full transition-all duration-300 ${
-              saveStatus === 'saving' || saveStatus === 'unsaved'
-                ? 'bg-amber-400 animate-pulse shadow-[0_0_6px_rgba(251,191,36,0.6)]'
-                : 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]'
-            }`}
-          />
-        </span>
+          <ArrowLeft className="w-3.5 h-3.5" />
+        </a>
       )}
       <span className="text-[8px] font-mono text-zinc-600">v0.1</span>
     </div>
@@ -111,7 +97,7 @@ export const ActivityBar = memo(function ActivityBar({
   onSelectView,
   language = 'en',
   saveStatus = 'idle',
-  isAutoSave = true,
+  isAutoSave: _isAutoSave = true,
   onOpenSettings,
   onNewProject,
   onOpenProject,
@@ -120,7 +106,10 @@ export const ActivityBar = memo(function ActivityBar({
   onImportManuskript,
   onExportEpub,
   onOpenSearch,
+  onOpenHelpGuide,
+  isWeb,
 }: ActivityBarProps) {
+  const showLandingLink = isWeb !== undefined ? isWeb : isWebPlatform();
   const { t } = useTranslation(language);
   const [isFileMenuOpen, setIsFileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -142,6 +131,26 @@ export const ActivityBar = memo(function ActivityBar({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isFileMenuOpen]);
+
+  const logoAuraClasses = useMemo(() => {
+    if (saveStatus === 'saving' || saveStatus === 'unsaved') {
+      return 'border-amber-400/90 ring-2 ring-amber-400/50 shadow-[0_0_12px_rgba(251,191,36,0.5)] animate-pulse bg-zinc-900 text-amber-300';
+    }
+    if (saveStatus === 'saved') {
+      return 'border-emerald-500/80 ring-1 ring-emerald-400/40 shadow-[0_0_8px_rgba(52,211,153,0.4)] bg-zinc-900 text-emerald-300';
+    }
+    return 'border-zinc-800 bg-zinc-900 text-zinc-300';
+  }, [saveStatus]);
+
+  const logoTitle = useMemo(() => {
+    if (saveStatus === 'saving' || saveStatus === 'unsaved') {
+      return `Foliant - ${t('saving', 'Saving...')}`;
+    }
+    if (saveStatus === 'saved') {
+      return `Foliant - ${t('saved', 'Saved')}`;
+    }
+    return 'Foliant';
+  }, [saveStatus, t]);
 
   return (
     <aside
@@ -176,20 +185,21 @@ export const ActivityBar = memo(function ActivityBar({
               onExportEpub={onExportEpub}
               onOpenSearch={onOpenSearch}
               onOpenSettings={onOpenSettings}
+              onOpenHelpGuide={onOpenHelpGuide}
               language={language}
+              isWeb={showLandingLink}
             />
           )}
         </div>
 
-        <button
-          onClick={() => onSelectView('write')}
-          title="Foliant Workspace Studio"
-          aria-label="Foliant Workspace Studio"
-          className="p-2 rounded-sm bg-zinc-900 border border-zinc-800 text-zinc-100 hover:text-white hover:border-zinc-700 transition"
+        <div
+          title={logoTitle}
+          aria-label={logoTitle}
+          className={`p-1.5 rounded-sm transition-all duration-300 flex items-center justify-center select-none cursor-default border ${logoAuraClasses}`}
         >
-          <Feather className="w-4 h-4 text-zinc-200" />
+          <img src={logoUrl} alt="Foliant" className="w-5 h-5 object-contain select-none pointer-events-none" />
           <span className="sr-only">Foliant</span>
-        </button>
+        </div>
 
         <div className="w-6 h-[1px] bg-zinc-800" />
 
@@ -201,9 +211,8 @@ export const ActivityBar = memo(function ActivityBar({
       </div>
 
       <ActivityBarFooter
-        isAutoSave={isAutoSave}
-        saveStatus={saveStatus}
         translate={t}
+        showLandingLink={showLandingLink}
       />
     </aside>
   );

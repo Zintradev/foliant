@@ -118,6 +118,8 @@ export const WritingWorkspace = memo(function WritingWorkspace({
               indentFirstLine={appSettings.preferences?.editorIndentFirstLine}
               fontFamily={appSettings.preferences?.editorFontFamily}
               searchTerm={activeSearchTerm}
+              isAutoSave={(appSettings.preferences?.saveMode || 'auto') === 'auto'}
+              autoSaveInterval={appSettings.preferences?.autoSaveInterval}
             />
           </div>
         </div>

@@ -20,6 +20,8 @@
 import JSZip from 'jszip';
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeFile } from '@tauri-apps/plugin-fs';
+import { isTauriApp } from './platform';
+import { downloadFileInBrowser } from './browserDownload';
 import { FoliantProject, TextNode } from '../types/project';
 
 /**
@@ -1347,6 +1349,27 @@ export async function exportProjectToEpub(
     .replace(/[^a-z0-9_-]/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '') || 'my-novel'}.epub`;
+
+  if (!isTauriApp()) {
+    const built = buildEpubArchive(project, options);
+    const binaryZip = await built.zip.generateAsync({
+      type: 'uint8array',
+      mimeType: 'application/epub+zip',
+      compression: 'DEFLATE',
+      compressionOptions: {
+        level: 9,
+      },
+    });
+    downloadFileInBrowser(binaryZip, defaultFileName, 'application/epub+zip');
+    return {
+      destinationPath: defaultFileName,
+      bookTitle: built.bookTitle,
+      author: built.author,
+      scenesCount: built.scenesCount,
+      chapterFormatting: built.chapterFormatting,
+      hasCover: built.hasCover,
+    };
+  }
 
   const destinationPath = await save({
     defaultPath: defaultFileName,

@@ -5,6 +5,7 @@ export interface UseGlobalShortcutsOptions {
   onSaveAs: () => unknown;
   onOpen: () => unknown;
   onSearch: () => unknown;
+  onHelp?: () => unknown;
 }
 
 /**
@@ -22,15 +23,24 @@ export function useGlobalShortcuts({
   onSaveAs,
   onOpen,
   onSearch,
+  onHelp,
 }: UseGlobalShortcutsOptions): void {
-  const callbacksRef = useRef({ onSave, onSaveAs, onOpen, onSearch });
+  const callbacksRef = useRef({ onSave, onSaveAs, onOpen, onSearch, onHelp });
 
   useEffect(() => {
-    callbacksRef.current = { onSave, onSaveAs, onOpen, onSearch };
+    callbacksRef.current = { onSave, onSaveAs, onOpen, onSearch, onHelp };
   });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F1') {
+        if (callbacksRef.current.onHelp) {
+          e.preventDefault();
+          callbacksRef.current.onHelp();
+        }
+        return;
+      }
+
       const isModifier = e.ctrlKey || e.metaKey;
       if (!isModifier) return;
 

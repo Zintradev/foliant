@@ -16,6 +16,7 @@ describe('FoliantEditor Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ = { invoke: vi.fn() };
     mockInvoke.mockReset();
     mockInvoke.mockResolvedValue(undefined as never);
     mockOnChange = vi.fn();

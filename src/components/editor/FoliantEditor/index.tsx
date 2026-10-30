@@ -21,6 +21,8 @@ function FoliantEditorComponent({
   indentFirstLine = true,
   fontFamily = 'serif',
   searchTerm,
+  isAutoSave = true,
+  autoSaveInterval,
 }: FoliantEditorProps) {
   const [localFont, setLocalFont] = useState<EditorFontFamily>(fontFamily);
   const [isSymbolsModalOpen, setIsSymbolsModalOpen] = useState(false);
@@ -68,6 +70,8 @@ function FoliantEditorComponent({
     onChange,
     onStatusChange,
     editor,
+    isAutoSave,
+    autoSaveInterval,
   });
 
   updateHandlerRef.current = handleEditorUpdate;

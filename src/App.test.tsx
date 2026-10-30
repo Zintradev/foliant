@@ -27,6 +27,14 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({
   save: vi.fn(),
 }));
 
+// Mock Tauri window API
+vi.mock('@tauri-apps/api/window', () => ({
+  getCurrentWindow: vi.fn(() => ({
+    onCloseRequested: vi.fn().mockResolvedValue(vi.fn()),
+    destroy: vi.fn(),
+  })),
+}));
+
 // Mock importManuskript
 vi.mock('./utils/importManuskript', () => ({
   importManuskriptProject: vi.fn(),
@@ -127,22 +135,23 @@ describe('App Component', () => {
   beforeEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();
+    (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ = { invoke: vi.fn() };
     if (!Range.prototype.getClientRects) {
       Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
     }
     if (!Range.prototype.getBoundingClientRect) {
       Range.prototype.getBoundingClientRect = () =>
-        ({
-          top: 0,
-          bottom: 0,
-          left: 0,
-          right: 0,
-          width: 0,
-          height: 0,
-          x: 0,
-          y: 0,
-          toJSON: () => {},
-        } as DOMRect);
+      ({
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+        x: 0,
+        y: 0,
+        toJSON: () => { },
+      } as DOMRect);
     }
     if (!Element.prototype.scrollIntoView) {
       Element.prototype.scrollIntoView = vi.fn();
@@ -318,7 +327,7 @@ describe('App Component', () => {
   });
 
   it('handles Manuskript project import success and error flows', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
     render(<App />);
 
@@ -372,12 +381,12 @@ describe('App Component', () => {
     fireEvent.keyDown(window, { key: 'S', ctrlKey: true, shiftKey: true });
   });
 
-  it('switches to search tab when clicking Search in ActivityBar', () => {
+  it('switches to search tab when clicking Search in dock tabs', () => {
     render(<App />);
 
-    const searchNavBtns = screen.getAllByTitle('Search...');
-    expect(searchNavBtns.length).toBeGreaterThanOrEqual(1);
-    fireEvent.click(searchNavBtns[0]);
+    // Open search tab via shortcut
+    fireEvent.keyDown(window, { key: 'F', ctrlKey: true, shiftKey: true });
+    expect(screen.getByPlaceholderText(/Search project/i)).toBeInTheDocument();
   });
 
   it('handles bottom dock panel controls: maximize, collapse header button, footer toggle, and splitter drag', () => {
@@ -433,9 +442,8 @@ describe('App Component', () => {
   it('searches project and navigates directly to matching scene result', () => {
     render(<App />);
 
-    // Open search tab
-    const searchNavBtns = screen.getAllByTitle('Search...');
-    fireEvent.click(searchNavBtns[0]);
+    // Open search tab via shortcut
+    fireEvent.keyDown(window, { key: 'F', ctrlKey: true, shiftKey: true });
 
     // Type query into search input
     const searchInput = screen.getByPlaceholderText(/Search project/i);
@@ -649,7 +657,7 @@ describe('App Component', () => {
   });
 
   it('handles persistence error banner display and dismissal', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
     render(<App />);
 
@@ -712,5 +720,49 @@ describe('App Component', () => {
     });
     expect(document.getElementById('foliant-splash')).toBeNull();
     vi.useRealTimers();
+  });
+
+  it('opens Help & Guide from the File Menu and launches the guided tour', async () => {
+    render(<App />);
+
+    // Open File Menu
+    const fileMenuBtn = screen.getByLabelText('File Menu');
+    fireEvent.click(fileMenuBtn);
+
+    // Help & Guide button should be present in menu
+    const helpBtn = screen.getByText(dict.en.helpAndGuide);
+    expect(helpBtn).toBeInTheDocument();
+    fireEvent.click(helpBtn);
+
+    // HelpGuideModal appears
+    expect(await screen.findByRole('dialog', { name: /help & guide/i })).toBeInTheDocument();
+
+    // Ko-fi link is inside the modal
+    const kofiLink = screen.getByRole('link', { name: /support on ko-fi/i });
+    expect(kofiLink).toHaveAttribute('href', 'https://ko-fi.com/zintradev');
+
+    // Start Guided Tour button
+    const startTourBtn = screen.getByRole('button', { name: /start quick tour/i });
+    fireEvent.click(startTourBtn);
+
+    // GuidedTour floating interactive region appears
+    expect(await screen.findByRole('region', { name: /interactive guided tour/i })).toBeInTheDocument();
+
+    // Close / Skip tour
+    const skipTourBtn = screen.getByRole('button', { name: /skip/i });
+    fireEvent.click(skipTourBtn);
+
+    expect(screen.queryByRole('region', { name: /interactive guided tour/i })).not.toBeInTheDocument();
+  });
+
+  it('opens Help & Guide via F1 global keyboard shortcut', async () => {
+    render(<App />);
+
+    fireEvent.keyDown(window, { key: 'F1' });
+    expect(await screen.findByRole('dialog', { name: /help & guide/i })).toBeInTheDocument();
+
+    const closeBtn = screen.getByLabelText('Close Help');
+    fireEvent.click(closeBtn);
+    expect(screen.queryByRole('dialog', { name: /help & guide/i })).not.toBeInTheDocument();
   });
 });

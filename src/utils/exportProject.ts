@@ -1,5 +1,7 @@
 import { save, message } from '@tauri-apps/plugin-dialog';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
+import { isTauriApp } from './platform';
+import { downloadFileInBrowser } from './browserDownload';
 
 export type ProjectExportFormat = 'markdown' | 'txt';
 
@@ -28,6 +30,15 @@ export async function exportProject(
 ): Promise<string | null> {
   const extension = format === 'markdown' ? 'md' : 'txt';
   const defaultPath = options?.defaultFileName ?? `project.${extension}`;
+
+  if (!isTauriApp()) {
+    downloadFileInBrowser(
+      content,
+      defaultPath,
+      format === 'markdown' ? 'text/markdown' : 'text/plain'
+    );
+    return defaultPath;
+  }
 
   try {
     const filePath = await save({
