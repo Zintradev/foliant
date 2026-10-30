@@ -15,7 +15,117 @@
       rel="stylesheet"
     />
 
+    <script>
+      /* Immediate theme check before rendering to prevent flash in light mode or custom palettes */
+      (function() {
+        try {
+          var raw = localStorage.getItem('foliant_app_settings_v1') || localStorage.getItem('foliant_color_settings_v1');
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            var prefs = parsed && parsed.preferences;
+            var mode = prefs && prefs.themeMode;
+            var custom = prefs && prefs.customTheme;
+
+            function normHex(hex, fallback) {
+              if (!hex || typeof hex !== 'string') return fallback;
+              var c = hex.trim();
+              if (c.charAt(0) !== '#') c = '#' + c;
+              if (c.length === 4) {
+                c = '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3];
+              }
+              return c.length === 7 ? c : fallback;
+            }
+
+            if (mode === 'light') {
+              document.documentElement.classList.add('light-mode');
+            } else if (mode === 'custom' && custom) {
+              var bg = normHex(custom.background, '#09090b');
+              var surf = normHex(custom.surface, '#18181b');
+              var prim = normHex(custom.primary, '#10b981');
+              var txt = normHex(custom.text, '#f4f4f5');
+
+              var style = document.createElement('style');
+              style.id = 'foliant-startup-custom-theme';
+              style.textContent = `
+                body { background-color: ` + bg + ` !important; color: ` + txt + ` !important; }
+                #foliant-splash {
+                  background-color: ` + bg + ` !important;
+                  background-image: radial-gradient(circle at 50% 38%, ` + prim + `22 0%, ` + bg + `f0 65%), linear-gradient(to bottom, ` + bg + `, ` + bg + `) !important;
+                  color: ` + txt + ` !important;
+                }
+                #foliant-splash .splash-glow {
+                  background: radial-gradient(circle, ` + prim + `44 0%, ` + prim + `18 40%, transparent 70%) !important;
+                }
+                #foliant-splash .splash-logo-container {
+                  background: linear-gradient(135deg, ` + surf + ` 0%, ` + bg + ` 100%) !important;
+                  border-color: ` + surf + ` !important;
+                  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 0 20px -3px ` + prim + `44, inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
+                }
+                #foliant-splash .splash-logo {
+                  filter: drop-shadow(0 2px 10px ` + prim + `55) !important;
+                }
+                #foliant-splash .splash-blade-accent {
+                  background: linear-gradient(90deg, transparent, ` + prim + `, transparent) !important;
+                  box-shadow: 0 0 8px ` + prim + ` !important;
+                }
+                #foliant-splash .splash-title {
+                  background: linear-gradient(180deg, #ffffff 0%, ` + txt + ` 60%, ` + txt + `99 100%) !important;
+                  -webkit-background-clip: text !important;
+                  -webkit-text-fill-color: transparent !important;
+                }
+                #foliant-splash .splash-progress-track {
+                  background: ` + surf + ` !important;
+                }
+                #foliant-splash .splash-progress-bar {
+                  background: linear-gradient(90deg, transparent, ` + prim + ` 45%, ` + prim + ` 75%, #ffffff 100%) !important;
+                  box-shadow: 0 0 10px ` + prim + `, 0 0 4px rgba(255, 255, 255, 0.85) !important;
+                }
+                #foliant-splash .splash-status {
+                  color: ` + txt + `99 !important;
+                }
+              `;
+              document.head.appendChild(style);
+            }
+          }
+        } catch (_) {}
+      })();
+    </script>
+
     <style>
+      /* Light mode immediate startup background & splash styles */
+      html.light-mode body {
+        background-color: #f4f4f5 !important;
+        color: #18181b !important;
+      }
+      html.light-mode #foliant-splash {
+        background-color: #f4f4f5 !important;
+        background-image: 
+          radial-gradient(circle at 50% 38%, rgba(16, 185, 129, 0.08) 0%, rgba(244, 244, 245, 0.98) 65%),
+          linear-gradient(to bottom, #f4f4f5, #e4e4e7) !important;
+        color: #18181b !important;
+      }
+      html.light-mode #foliant-splash .splash-logo-container {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(244, 244, 245, 0.98) 100%) !important;
+        border-color: rgba(212, 212, 216, 0.8) !important;
+        box-shadow: 
+          0 10px 25px -5px rgba(0, 0, 0, 0.08),
+          0 0 20px -3px rgba(16, 185, 129, 0.18),
+          inset 0 1px 1px rgba(255, 255, 255, 0.8) !important;
+      }
+      html.light-mode #foliant-splash .splash-title {
+        background: linear-gradient(180deg, #18181b 0%, #27272a 60%, #52525b 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        text-shadow: none !important;
+      }
+      html.light-mode #foliant-splash .splash-progress-track {
+        background: rgba(212, 212, 216, 0.8) !important;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+      }
+      html.light-mode #foliant-splash .splash-status {
+        color: #71717a !important;
+      }
+
       /* Immediate Splash Screen styles before CSS/JS bundles load */
       #foliant-splash {
         position: fixed;
@@ -98,6 +208,8 @@
         height: 58px;
         object-fit: contain;
         filter: drop-shadow(0 2px 10px rgba(16, 185, 129, 0.35));
+        font-size: 0;
+        color: transparent;
       }
 
       /* Katana blade accent sheen */
@@ -182,7 +294,7 @@
       <div class="splash-glow"></div>
       <div class="splash-content">
         <div class="splash-logo-container">
-          <img src="/logo.svg" alt="Foliant Logo" class="splash-logo" />
+          <img src="/logo.svg" alt="" aria-hidden="true" class="splash-logo" />
           <div class="splash-blade-accent"></div>
         </div>
         <h1 class="splash-title">Foliant</h1>

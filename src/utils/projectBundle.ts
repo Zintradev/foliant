@@ -33,7 +33,16 @@ export function normalizeLoadedProject(data: unknown): FoliantProject {
     relationships: Array.isArray(raw.relationships) ? raw.relationships : [],
     junctions: Array.isArray(raw.junctions) ? raw.junctions : [],
     worldItems: Array.isArray(raw.worldItems) ? raw.worldItems : [],
-    contextBlocks: Array.isArray(raw.contextBlocks) ? raw.contextBlocks : [],
+    contextBlocks: Array.isArray(raw.contextBlocks)
+      ? raw.contextBlocks.map((b: any) => ({
+          ...b,
+          folder: b.folder || undefined,
+          storylineIds: Array.isArray(b.storylineIds) ? b.storylineIds : [],
+          characterIds: Array.isArray(b.characterIds) ? b.characterIds : [],
+          worldItemIds: Array.isArray(b.worldItemIds) ? b.worldItemIds : [],
+          tags: Array.isArray(b.tags) ? b.tags : [],
+        }))
+      : [],
   };
 }
 

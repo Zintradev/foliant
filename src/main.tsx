@@ -2,6 +2,16 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import { loadSettings } from "./types/settings";
+import { applyTheme } from "./theme/themeEngine";
+
+// Apply persisted theme immediately before initial React mount
+try {
+  const initialSettings = loadSettings();
+  applyTheme(initialSettings.preferences?.themeMode, initialSettings.preferences?.customTheme);
+} catch {
+  // Non-fatal if localStorage unavailable
+}
 
 // Global safety net for Web version: silence any stray unhandled Tauri IPC errors
 if (typeof window !== "undefined") {

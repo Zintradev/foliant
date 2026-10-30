@@ -99,6 +99,25 @@
         const current = document.documentElement.getAttribute('data-lang') || 'es';
         updateLangButtons(current);
       });
+
+      // Dynamically sync version with latest GitHub release without hardcoding
+      (async function fetchLatestReleaseVersion() {
+        try {
+          const res = await fetch('https://api.github.com/repos/Zintradev/foliant/releases/latest');
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.tag_name) {
+              const tag = data.tag_name;
+              document.querySelectorAll('.app-version-badge').forEach(function (el) {
+                el.textContent = tag;
+              });
+              document.querySelectorAll('.app-version-text').forEach(function (el) {
+                el.textContent = tag;
+              });
+            }
+          }
+        } catch (_) {}
+      })();
     </script>
   </head>
 
@@ -109,16 +128,13 @@
     <!-- Top Navigation Bar -->
     <header class="sticky top-0 z-50 backdrop-blur-md bg-zinc-950/80 border-b border-zinc-800/80">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <a href="#" class="flex items-center gap-3 group">
+        <a href="#" class="flex items-center gap-2.5 group">
           <img
             src="/logo.svg"
             alt="Foliant"
-            class="w-9 h-9 object-contain drop-shadow group-hover:scale-105 transition-transform"
+            class="w-12 h-12 object-contain drop-shadow-md group-hover:scale-105 transition-transform"
           />
-          <div class="flex items-baseline gap-2">
-            <span class="font-cinzel text-xl font-bold tracking-wider text-zinc-100">Foliant</span>
-            <span class="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">v0.1.0 Beta</span>
-          </div>
+          <span class="app-version-badge text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">v0.1.0</span>
         </a>
 
         <!-- Desktop Navigation Links -->
@@ -186,10 +202,8 @@
       <!-- Hero Section -->
       <section class="relative pt-16 pb-16 md:pt-24 md:pb-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto text-center">
         <!-- Brand Badge Pill -->
-        <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-zinc-900/90 border border-zinc-800 text-xs text-zinc-300 mb-8 backdrop-blur shadow-sm hover:border-emerald-500/40 transition">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-zinc-800 text-xs text-zinc-300 mb-8 backdrop-blur shadow-sm hover:border-emerald-500/40 transition">
           <img src="/logo.svg" alt="Foliant Logo" class="w-4 h-4 object-contain" />
-          <span class="font-cinzel font-semibold tracking-wider text-zinc-200">Foliant</span>
-          <span class="text-zinc-600">•</span>
           <span class="text-emerald-400 font-medium lang-es">Estudio Literario & Arquitectura Narrativa</span>
           <span class="text-emerald-400 font-medium lang-en">Literary Studio & Narrative Architecture</span>
         </div>
@@ -251,7 +265,7 @@
             <div class="text-left whitespace-nowrap">
               <span class="block leading-tight font-bold lang-es">Descargar Windows</span>
               <span class="block leading-tight font-bold lang-en">Download Windows</span>
-              <span class="block text-[11px] font-normal text-zinc-400">.exe directa (v0.1.0)</span>
+              <span class="block text-[11px] font-normal text-zinc-400">.exe directa (<span class="app-version-text">v0.1.0</span>)</span>
             </div>
           </a>
 
@@ -285,34 +299,37 @@
             <div class="text-left whitespace-nowrap">
               <span class="block leading-tight font-bold lang-es">Descargar Mac</span>
               <span class="block leading-tight font-bold lang-en">Download Mac</span>
-              <span class="block text-[11px] font-normal text-zinc-400">.dmg directa (v0.1.0)</span>
+              <span class="block text-[11px] font-normal text-zinc-400">.dmg directa (<span class="app-version-text">v0.1.0</span>)</span>
             </div>
           </a>
         </div>
 
-        <!-- Foliant App Notice Component -->
-        <div class="mt-4 max-w-2xl mx-auto p-3.5 rounded-lg bg-zinc-900 border border-zinc-750 shadow-2xl text-left flex items-start gap-3.5 font-sans">
-          <div class="p-2 rounded-full bg-amber-950/60 border border-amber-800/80 text-amber-400 shrink-0 mt-0.5">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-            </svg>
-          </div>
-          <div class="space-y-1 min-w-0 flex-1">
-            <div class="flex items-center gap-2">
-              <h4 class="text-xs font-semibold text-zinc-100 tracking-tight">
-                <span class="lang-es">Aviso sobre la versión Web</span>
-                <span class="lang-en">Notice on Web Version</span>
-              </h4>
-              <span class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-zinc-800 border border-zinc-700 text-amber-300 uppercase">Sesión Web</span>
+        <!-- Subtle Unified Web & Desktop Security Notice -->
+        <div class="mt-5 max-w-2xl mx-auto p-3 rounded-lg bg-zinc-900/40 border border-zinc-800/60 text-left text-[11px] text-zinc-400 font-sans">
+          <div class="flex items-start gap-2.5">
+            <div class="text-zinc-500 mt-0.5 shrink-0">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+              </svg>
             </div>
-            <p class="text-xs text-zinc-400 leading-relaxed">
-              <span class="lang-es">
-                La versión web puede tardar un poco más en responder que la versión local instalada. Los cambios se guardan para la <strong>misma sesión</strong> en el navegador; usa <kbd class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-700 text-zinc-200 shadow-xs">Guardar como</kbd> (<kbd class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-700 text-zinc-200 shadow-xs">Ctrl+Shift+S</kbd>) para descargar y conservar una copia local en tu equipo.
-              </span>
-              <span class="lang-en">
-                The web version may be slower to respond than the installed desktop app. Changes are retained for the <strong>current session</strong>; use <kbd class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-700 text-zinc-200 shadow-xs">Save As</kbd> (<kbd class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-700 text-zinc-200 shadow-xs">Ctrl+Shift+S</kbd>) to download and keep a local copy on your device.
-              </span>
-            </p>
+            <div class="space-y-1.5 leading-relaxed min-w-0 flex-1">
+              <div class="lang-es space-y-1">
+                <p>
+                  <strong class="text-zinc-300">Versión Web:</strong> los cambios se conservan para la sesión actual del navegador; usa <kbd class="px-1 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-750 text-zinc-300">Guardar como</kbd> (<kbd class="px-1 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-750 text-zinc-300">Ctrl+Shift+S</kbd>) para descargar tu archivo en local.
+                </p>
+                <p class="text-zinc-500">
+                  <strong class="text-zinc-400">Instalación en Escritorio:</strong> Foliant es 100% de código abierto y auditable. Al ser un proyecto independiente sin certificados corporativos comerciales, Defender (SmartScreen) o Gatekeeper pueden mostrar un aviso preventivo de editor desconocido al instalar.
+                </p>
+              </div>
+              <div class="lang-en space-y-1">
+                <p>
+                  <strong class="text-zinc-300">Web Version:</strong> changes are retained for the active browser session; use <kbd class="px-1 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-750 text-zinc-300">Save As</kbd> (<kbd class="px-1 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-750 text-zinc-300">Ctrl+Shift+S</kbd>) to download a local copy.
+                </p>
+                <p class="text-zinc-500">
+                  <strong class="text-zinc-400">Desktop Installation:</strong> Foliant is 100% open source and auditable. As an independent project without commercial certificates, Defender (SmartScreen) or Gatekeeper may display a preventive unknown publisher note during installation.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -327,25 +344,6 @@
             <span class="lang-es">¿Buscas versión Linux o todas las notas de versión? Ver en GitHub Releases →</span>
             <span class="lang-en">Looking for Linux build or release notes? Browse on GitHub Releases →</span>
           </a>
-        </div>
-
-        <!-- Security Clarification Notice for Desktop Binaries -->
-        <div class="mt-7 max-w-2xl mx-auto p-3.5 rounded-lg bg-zinc-900/60 border border-zinc-800 text-left flex items-start gap-3">
-          <div class="p-1 rounded bg-amber-500/10 text-amber-400 mt-0.5 shrink-0">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-            </svg>
-          </div>
-          <p class="text-xs text-zinc-400 leading-relaxed">
-            <span class="lang-es">
-              <strong class="text-zinc-200">Aviso sobre avisos de seguridad en Escritorio:</strong>
-              Al ser un desarrollo independiente y no contar con certificados corporativos de pago, es habitual que <span class="text-zinc-300">Windows Defender (SmartScreen)</span> o <span class="text-zinc-300">macOS Gatekeeper</span> muestren una advertencia preventiva de <em>"Editor desconocido"</em> al instalar. Foliant es <strong class="text-emerald-400">100% de código abierto</strong>, transparente y seguro.
-            </span>
-            <span class="lang-en">
-              <strong class="text-zinc-200">Note on Desktop Security Warnings:</strong>
-              As an independent community project without expensive commercial code signing certificates, it is common for <span class="text-zinc-300">Windows Defender (SmartScreen)</span> or <span class="text-zinc-300">macOS Gatekeeper</span> to display an initial preventive warning (<em>"Unknown Publisher"</em>). Foliant is <strong class="text-emerald-400">100% open source</strong>, transparent, and completely safe.
-            </span>
-          </p>
         </div>
 
         <!-- Workspace UI Mockup Showcase -->

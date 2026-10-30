@@ -4,6 +4,7 @@ import '@testing-library/jest-dom/vitest';
 import SettingsModal from './SettingsModal';
 import { DEFAULT_APP_SETTINGS, AppSettings } from '../../types/settings';
 import { dict } from '../../i18n/translations';
+import * as platform from '../../utils/platform';
 
 describe('SettingsModal Component', () => {
   let mockSettings: AppSettings;
@@ -254,6 +255,7 @@ describe('SettingsModal Component', () => {
 
     expect(screen.getByText(dict.en.timelineDropMode)).toBeInTheDocument();
     expect(screen.getByText(dict.en.worldDropMode)).toBeInTheDocument();
+    expect(screen.getByText(dict.en.notesDropMode)).toBeInTheDocument();
 
     // Timeline Drop Mode toggle
     const swapButtons = screen.getAllByText(dict.en.swapMode);
@@ -269,6 +271,14 @@ describe('SettingsModal Component', () => {
     expect(mockOnUpdateSettings).toHaveBeenCalledWith(
       expect.objectContaining({
         preferences: expect.objectContaining({ worldDropMode: 'swap' }),
+      })
+    );
+
+    // Notes Drop Mode toggle
+    fireEvent.click(swapButtons[2]);
+    expect(mockOnUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({ notesDropMode: 'swap' }),
       })
     );
 
@@ -811,5 +821,99 @@ describe('SettingsModal Component', () => {
     // Close via close icon
     fireEvent.click(screen.getByTitle('Close'));
     expect(screen.queryByTitle('Hex Color')).not.toBeInTheDocument();
+  });
+
+  it('hides update options completely when running in a web browser', () => {
+    vi.spyOn(platform, 'isTauriApp').mockReturnValue(false);
+    render(
+      <SettingsModal
+        isOpen={true}
+        onClose={mockOnClose}
+        settings={mockSettings}
+        onUpdateSettings={mockOnUpdateSettings}
+      />
+    );
+
+    // Completely hidden in web browser environment
+    expect(screen.queryByLabelText(dict.en.autoUpdateCheck)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: new RegExp(dict.en.checkForUpdatesNow, 'i') })
+    ).not.toBeInTheDocument();
+  });
+
+  it('manages auto-update toggle and manual check for updates in General section when running in Tauri', () => {
+    vi.spyOn(platform, 'isTauriApp').mockReturnValue(true);
+    render(
+      <SettingsModal
+        isOpen={true}
+        onClose={mockOnClose}
+        settings={mockSettings}
+        onUpdateSettings={mockOnUpdateSettings}
+      />
+    );
+
+    // Local-first notice must be clearly visible
+    expect(screen.getByText(dict.en.autoUpdateNotice)).toBeInTheDocument();
+
+    // Auto-update checkbox toggle (starts unchecked by default for 100% local-first)
+    const autoUpdateCheckbox = screen.getByLabelText(dict.en.autoUpdateCheck);
+    expect(autoUpdateCheckbox).not.toBeChecked();
+
+    fireEvent.click(autoUpdateCheckbox);
+    expect(mockOnUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({ autoUpdateCheck: true }),
+      })
+    );
+
+    // Manual check for updates button
+    const checkNowButton = screen.getByRole('button', { name: new RegExp(dict.en.checkForUpdatesNow, 'i') });
+    expect(checkNowButton).toBeInTheDocument();
+    fireEvent.click(checkNowButton);
+  });
+
+  it('renders Info section with app version, local-first guarantee, and project details', () => {
+    render(
+      <SettingsModal
+        isOpen={true}
+        onClose={mockOnClose}
+        settings={mockSettings}
+        onUpdateSettings={mockOnUpdateSettings}
+      />
+    );
+
+    // Click Info section in sidebar
+    const infoNavButton = screen.getByRole('button', { name: new RegExp(dict.en.categoryInfo, 'i') });
+    expect(infoNavButton).toBeInTheDocument();
+    fireEvent.click(infoNavButton);
+
+    // Check version and title
+    expect(screen.getByText('Foliant Studio')).toBeInTheDocument();
+    expect(screen.getAllByText('v0.1.0').length).toBeGreaterThan(0);
+    expect(screen.getByText(dict.en.appLocalFirstTitle)).toBeInTheDocument();
+    expect(screen.getByText(dict.en.appLocalFirstDesc)).toBeInTheDocument();
+    expect(screen.getByText('Tauri v2 (Rust Core)')).toBeInTheDocument();
+    expect(screen.getByText('ProseMirror Engine')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /github/i })).toHaveAttribute(
+      'href',
+      'https://github.com/Zintradev/foliant'
+    );
+  });
+
+  it('preserves black swatch dot (#09090b) for dark mode in Appearance section', () => {
+    const { container } = render(
+      <SettingsModal
+        isOpen={true}
+        onClose={mockOnClose}
+        settings={mockSettings}
+        onUpdateSettings={mockOnUpdateSettings}
+      />
+    );
+
+    const appearanceNavButton = screen.getByRole('button', { name: new RegExp(dict.en.categoryAppearance, 'i') });
+    fireEvent.click(appearanceNavButton);
+
+    const darkDot = container.querySelector('.bg-\\[\\#09090b\\]');
+    expect(darkDot).toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Globe, Palette, Sliders, Layers } from 'lucide-react';
+import { Globe, Palette, Sliders, Layers, Info } from 'lucide-react';
 import { SettingsSection } from './types';
 
 interface SettingsSidebarNavProps {
@@ -61,6 +61,20 @@ export const SettingsSidebarNav = React.memo(function SettingsSidebarNav({
       >
         <Layers className="w-4 h-4 shrink-0 text-zinc-300" />
         <span>{t('categoryTaxonomy')}</span>
+      </button>
+
+      <div className="my-2 border-t border-zinc-800/80" />
+
+      <button
+        onClick={() => onSelectSection('info')}
+        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-xs font-medium transition cursor-pointer text-left ${
+          activeSection === 'info'
+            ? 'bg-zinc-800 text-zinc-100 shadow-xs'
+            : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850/60'
+        }`}
+      >
+        <Info className="w-4 h-4 shrink-0 text-zinc-300" />
+        <span>{t('categoryInfo')}</span>
       </button>
     </nav>
   );

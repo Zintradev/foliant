@@ -1,6 +1,6 @@
 import { AppSettings, AppPreferences, CustomThemeColors } from '../../../types/settings';
 
-export type SettingsSection = 'general' | 'appearance' | 'editor' | 'timeline' | 'taxonomy';
+export type SettingsSection = 'general' | 'appearance' | 'editor' | 'timeline' | 'taxonomy' | 'info';
 export type TaxonomySubTab = 'roles' | 'storylines' | 'categories' | 'presets';
 
 export interface ActiveColorPickerState {

@@ -8,6 +8,7 @@ import { SettingsGeneralSection } from './SettingsGeneralSection';
 import { SettingsAppearanceSection } from './SettingsAppearanceSection';
 import { SettingsEditorSection } from './SettingsEditorSection';
 import { SettingsTaxonomySection } from './SettingsTaxonomySection';
+import { SettingsInfoSection } from './SettingsInfoSection';
 import { SettingsColorPickerPopup } from './SettingsColorPickerPopup';
 
 export const SettingsModal = React.memo(function SettingsModal({
@@ -115,8 +116,10 @@ export const SettingsModal = React.memo(function SettingsModal({
                 autoSaveInterval={prefs?.autoSaveInterval ?? 300}
                 timelineDropMode={prefs?.timelineDropMode || 'shift'}
                 worldDropMode={prefs?.worldDropMode || 'shift'}
+                notesDropMode={prefs?.notesDropMode || 'shift'}
                 preserveManualSceneWidth={prefs?.preserveManualSceneWidth ?? false}
                 preserveManualPlotHeight={prefs?.preserveManualPlotHeight ?? false}
+                autoUpdateCheck={prefs?.autoUpdateCheck ?? false}
                 onPreferenceChange={handlePreferenceChange}
                 t={t}
               />
@@ -174,6 +177,10 @@ export const SettingsModal = React.memo(function SettingsModal({
                 onOpenColorPicker={setActiveColorPicker}
                 t={t}
               />
+            )}
+
+            {activeSection === 'info' && (
+              <SettingsInfoSection t={t} />
             )}
           </main>
         </div>

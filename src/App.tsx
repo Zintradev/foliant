@@ -22,6 +22,7 @@ import { DEFAULT_PROJECT } from './data/mockProject';
 import { useAppCloseGuard } from './hooks/useAppCloseGuard';
 import { isTauriApp, closeDesktopApp } from './utils/platform';
 import { normalizeLoadedProject } from './utils/projectBundle';
+import { checkForAppUpdates } from './utils/updater';
 
 export default function App() {
   const [project, setProject] = useState<FoliantProject>(() => {
@@ -87,6 +88,13 @@ export default function App() {
         splash.remove();
       }, 550);
       return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Opt-in background update check: only runs on startup if user explicitly enabled it
+  useEffect(() => {
+    if (appSettings.preferences?.autoUpdateCheck && isTauriApp()) {
+      void checkForAppUpdates({ silent: true, language: currentLanguage });
     }
   }, []);
 

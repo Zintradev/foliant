@@ -43,7 +43,7 @@ export const SettingsAppearanceSection = React.memo(function SettingsAppearanceS
             }`}
           >
             <div className="flex items-center justify-between">
-              <div className="w-5 h-5 rounded-full bg-zinc-950 border border-zinc-700" />
+              <div className="w-5 h-5 rounded-full bg-[#09090b] border border-[#3f3f46]" />
               {themeMode === 'dark' && <Check className="w-4 h-4 text-emerald-400" />}
             </div>
             <div className="text-xs font-semibold">{t('dark')}</div>

@@ -50,6 +50,16 @@ export interface ContextBlock {
   type: 'text' | 'list';
   /** Raw content stored as a string (list items joined by '\n'). */
   content: string;
+  /** Optional folder / collection name for grouping notes */
+  folder?: string;
+  /** Linked storyline IDs */
+  storylineIds?: string[];
+  /** Linked character IDs */
+  characterIds?: string[];
+  /** Linked world item IDs (locations, factions, lore, artifacts) */
+  worldItemIds?: string[];
+  /** Custom freeform tags */
+  tags?: string[];
 }
 
 /**

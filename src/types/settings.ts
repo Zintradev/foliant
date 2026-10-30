@@ -170,6 +170,7 @@ export const DEFAULT_CUSTOM_THEME: CustomThemeColors = {
 export interface AppPreferences {
   timelineDropMode: 'shift' | 'swap';
   worldDropMode?: 'shift' | 'swap';
+  notesDropMode?: 'shift' | 'swap';
   persistViewFilters: boolean;
   preserveManualSceneWidth?: boolean;
   preserveManualPlotHeight?: boolean;
@@ -181,6 +182,7 @@ export interface AppPreferences {
   colorPreset?: 'default' | 'monochrome' | 'warm' | 'cyber' | 'custom';
   saveMode?: 'auto' | 'manual';
   autoSaveInterval?: number; // In seconds (default: 2)
+  autoUpdateCheck?: boolean; // Toggle 'Buscar actualizaciones automáticamente' (default: false)
 }
 
 export interface AppSettings extends AppColorSettings {
@@ -190,6 +192,7 @@ export interface AppSettings extends AppColorSettings {
 export const DEFAULT_PREFERENCES: AppPreferences = {
   timelineDropMode: 'shift',
   worldDropMode: 'shift',
+  notesDropMode: 'shift',
   persistViewFilters: false,
   preserveManualSceneWidth: false,
   preserveManualPlotHeight: false,
@@ -201,6 +204,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   colorPreset: 'default',
   saveMode: 'auto',
   autoSaveInterval: 300,
+  autoUpdateCheck: false,
 };
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {

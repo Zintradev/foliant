@@ -201,6 +201,11 @@ export const DockViewContent = memo(function DockViewContent({
           blocks={project.contextBlocks}
           onChange={handleUpdateContextBlocks}
           onStartEditing={() => setEditorSaveStatus('saving')}
+          isExpanded={isExpanded}
+          storylines={project.storylines}
+          characters={project.characters}
+          worldItems={project.worldItems}
+          notesDropMode={appSettings.preferences?.notesDropMode || 'shift'}
         />
       );
     case 'moodboard':
