@@ -1,24 +1,42 @@
-import { memo, useState } from 'react';
-import { Tag } from 'lucide-react';
-import { CharacterTag } from './types';
-import { TAG_COLOR_MAP } from './constants';
-import { CharacterTagBadge } from './CharacterTagBadge';
+import { Tag, Pipette } from 'lucide-react';
+import { DarkColorPicker } from '../../../common/DarkColorPicker';
+import { memo, useMemo, useState } from 'react';
 import { useTranslation } from '../../../../i18n/translations';
+import { CharacterTagBadge } from './CharacterTagBadge';
+import { TAG_COLOR_MAP } from './constants';
+import { CharacterTag } from './types';
 
 interface CharacterTagsEditorProps {
   tags: CharacterTag[];
+  /** Tags already created on any character; offered here to reuse them with one click. */
+  suggestedTags?: CharacterTag[];
   onAddTag: (label: string, color: string) => void;
   onRemoveTag: (tagId: string) => void;
 }
 
 export const CharacterTagsEditor = memo(function CharacterTagsEditor({
   tags,
+  suggestedTags = [],
   onAddTag,
   onRemoveTag,
 }: CharacterTagsEditorProps) {
   const { t } = useTranslation();
   const [newTagInput, setNewTagInput] = useState('');
   const [selectedTagColor, setSelectedTagColor] = useState('blue');
+  const [showColorPicker, setShowColorPicker] = useState(false);
+
+  const availableTags = useMemo(
+    () =>
+      suggestedTags.filter(
+        (s) =>
+          !tags.some(
+            (own) =>
+              own.label.trim().toLowerCase() === s.label.trim().toLowerCase() &&
+              own.color === s.color
+          )
+      ),
+    [suggestedTags, tags]
+  );
 
   const handleAdd = () => {
     if (!newTagInput.trim()) return;
@@ -48,6 +66,28 @@ export const CharacterTagsEditor = memo(function CharacterTagsEditor({
         </div>
       )}
 
+      {/* Tags already used by other characters */}
+      {availableTags.length > 0 && (
+        <div className="space-y-1">
+          <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">
+            {t('existingTags')}
+          </span>
+          <div className="flex flex-wrap gap-1">
+            {availableTags.map((tag) => (
+              <button
+                key={`${tag.label}-${tag.color}`}
+                type="button"
+                onClick={() => onAddTag(tag.label, tag.color)}
+                title={t('addTag')}
+                className="opacity-70 hover:opacity-100 transition cursor-pointer"
+              >
+                <CharacterTagBadge tag={tag} />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Add Tag Row */}
       <div className="flex items-center gap-1.5 pt-1">
         <input
@@ -72,7 +112,10 @@ export const CharacterTagsEditor = memo(function CharacterTagsEditor({
               <button
                 key={cKey}
                 type="button"
-                onClick={() => setSelectedTagColor(cKey)}
+                onClick={() => {
+                  setSelectedTagColor(cKey);
+                  setShowColorPicker(false);
+                }}
                 className={`w-3 h-3 rounded-full transition-transform ${c.dot} ${
                   selectedTagColor === cKey
                     ? 'scale-125 ring-1 ring-zinc-300 ring-offset-1 ring-offset-zinc-900'
@@ -82,6 +125,20 @@ export const CharacterTagsEditor = memo(function CharacterTagsEditor({
               />
             );
           })}
+          {/* Custom Tag Color Picker */}
+          <button
+            type="button"
+            onClick={() => setShowColorPicker((prev) => !prev)}
+            title={t('customColor', 'Color personalizado')}
+            className={`w-3.5 h-3.5 rounded-full border border-zinc-600 bg-zinc-900 text-zinc-400 hover:text-zinc-200 flex items-center justify-center transition cursor-pointer ${
+              selectedTagColor.startsWith('#')
+                ? 'scale-125 ring-1 ring-zinc-300 ring-offset-1 ring-offset-zinc-900 border-zinc-300'
+                : 'opacity-60 hover:opacity-100'
+            }`}
+            style={selectedTagColor.startsWith('#') ? { backgroundColor: selectedTagColor } : undefined}
+          >
+            <Pipette className={`w-2 h-2 ${selectedTagColor.startsWith('#') ? 'text-white drop-shadow' : ''}`} />
+          </button>
         </div>
 
         <button
@@ -93,6 +150,17 @@ export const CharacterTagsEditor = memo(function CharacterTagsEditor({
           {t('add')}
         </button>
       </div>
+
+      {showColorPicker && (
+        <div className="pt-1">
+          <DarkColorPicker
+            standalone
+            color={selectedTagColor.startsWith('#') ? selectedTagColor : '#3b82f6'}
+            onChange={(hex) => setSelectedTagColor(hex)}
+            onClose={() => setShowColorPicker(false)}
+          />
+        </div>
+      )}
     </div>
   );
 });

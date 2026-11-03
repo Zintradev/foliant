@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Languages, Save, Zap, Clock, Globe, StickyNote, Check, AlertCircle, RefreshCw, Loader2, ShieldCheck } from 'lucide-react';
-import { Language } from '../../../types/settings';
+import { Languages, Save, Zap, Clock, Globe, StickyNote, Check, AlertCircle, RefreshCw, Loader2, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Language, DeleteConfirmationPreferences, DEFAULT_DELETE_CONFIRMATIONS } from '../../../types/settings';
 import { PreferenceChangeHandler } from './types';
 import { GbFlag, EsFlag } from '../../common/FlagIcons';
 import { checkForAppUpdates, UpdateStatus } from '../../../utils/updater';
@@ -16,6 +16,7 @@ interface SettingsGeneralSectionProps {
   preserveManualSceneWidth: boolean;
   preserveManualPlotHeight: boolean;
   autoUpdateCheck?: boolean;
+  confirmDelete?: DeleteConfirmationPreferences;
   onPreferenceChange: PreferenceChangeHandler;
   t: (key: string, fallback?: string) => string;
 }
@@ -30,6 +31,7 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
   preserveManualSceneWidth,
   preserveManualPlotHeight,
   autoUpdateCheck = false,
+  confirmDelete = DEFAULT_DELETE_CONFIRMATIONS,
   onPreferenceChange,
   t,
 }: SettingsGeneralSectionProps) {
@@ -348,40 +350,100 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
         </div>
       </div>
 
-      {/* Preserve Card Width on Zoom */}
-      <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 flex items-center justify-between">
+      {/* Preserve Timeline Dimensions (Width & Height) */}
+      <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3.5">
         <div>
-          <div className="text-xs font-semibold text-zinc-200">{t('preserveSceneWidth')}</div>
-          <div className="text-[11px] text-zinc-500 mt-0.5">{t('preserveSceneWidthDesc')}</div>
+          <div className="text-xs font-semibold text-zinc-200">
+            {t('preserveTimelineDimensions', 'Preserve dimensions in Timeline')}
+          </div>
+          <p className="text-[11px] text-zinc-400 mt-0.5">
+            {t('preserveTimelineDimensionsDesc', 'Keep individually resized card widths and track heights intact across zoom levels.')}
+          </p>
         </div>
-        <label className="relative inline-flex items-center cursor-pointer shrink-0">
-          <input
-            type="checkbox"
-            aria-label={t('preserveSceneWidth')}
-            checked={preserveManualSceneWidth}
-            onChange={(e) => onPreferenceChange('preserveManualSceneWidth', e.target.checked)}
-            className="sr-only peer"
-          />
-          <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
-        </label>
+
+        <div className="space-y-2 pt-2 border-t border-zinc-800/80">
+          {/* Width toggle */}
+          <div className="flex items-center justify-between text-xs py-1">
+            <div>
+              <span className="text-zinc-200 font-medium">{t('preserveWidth', 'Width')}</span>
+              <p className="text-[11px] text-zinc-400">{t('preserveWidthDesc', 'Preserve manual scene card width on zoom')}</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+              <input
+                type="checkbox"
+                aria-label={t('preserveWidth', 'Width')}
+                checked={preserveManualSceneWidth}
+                onChange={(e) => onPreferenceChange('preserveManualSceneWidth', e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
+            </label>
+          </div>
+
+          {/* Height toggle */}
+          <div className="flex items-center justify-between text-xs py-1">
+            <div>
+              <span className="text-zinc-200 font-medium">{t('preserveHeight', 'Height')}</span>
+              <p className="text-[11px] text-zinc-400">{t('preserveHeightDesc', 'Preserve manual storyline track height on zoom')}</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+              <input
+                type="checkbox"
+                aria-label={t('preserveHeight', 'Height')}
+                checked={preserveManualPlotHeight}
+                onChange={(e) => onPreferenceChange('preserveManualPlotHeight', e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
+            </label>
+          </div>
+        </div>
       </div>
 
-      {/* Preserve Track Height on Zoom */}
-      <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 flex items-center justify-between">
+      {/* Delete Confirmation Warnings Section */}
+      <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3.5">
         <div>
-          <div className="text-xs font-semibold text-zinc-200">{t('preserveTrackHeight')}</div>
-          <div className="text-[11px] text-zinc-500 mt-0.5">{t('preserveTrackHeightDesc')}</div>
+          <div className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+            <span>{t('confirmDeleteSettingsTitle', 'Delete Confirmation Prompts')}</span>
+          </div>
+          <p className="text-[11px] text-zinc-400 mt-0.5">
+            {t('confirmDeleteSettingsDesc', 'Choose which sections ask for confirmation before deleting items')}
+          </p>
         </div>
-        <label className="relative inline-flex items-center cursor-pointer shrink-0">
-          <input
-            type="checkbox"
-            aria-label={t('preserveTrackHeight')}
-            checked={preserveManualPlotHeight}
-            onChange={(e) => onPreferenceChange('preserveManualPlotHeight', e.target.checked)}
-            className="sr-only peer"
-          />
-          <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
-        </label>
+
+        <div className="space-y-2 pt-2 border-t border-zinc-800/80">
+          {[
+            { key: 'outline', label: t('confirmDeleteOutlineOpt', 'Outline & Manuscript (Scenes & Folders)') },
+            { key: 'characters', label: t('confirmDeleteCharactersOpt', 'Characters (Cast dossiers)') },
+            { key: 'storylines', label: t('confirmDeleteStorylinesOpt', 'Storylines (Plot threads)') },
+            { key: 'worldbuilding', label: t('confirmDeleteWorldOpt', 'Worldbuilding (Lore entries)') },
+            { key: 'notes', label: t('confirmDeleteNotesOpt', 'Context Notes (Blocks & notes)') },
+            { key: 'visuals', label: t('confirmDeleteVisualsOpt', 'Visual References (Moodboard images & folders)') },
+            { key: 'relationships', label: t('confirmDeleteRelationshipsOpt', 'Relationship Graph (Connections & character nodes)') },
+          ].map(({ key, label }) => {
+            const isChecked = confirmDelete[key as keyof DeleteConfirmationPreferences] ?? true;
+            return (
+              <div key={key} className="flex items-center justify-between text-xs py-1">
+                <span className="text-zinc-300">{label}</span>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={(e) => {
+                      onPreferenceChange('confirmDelete', {
+                        ...confirmDelete,
+                        [key]: e.target.checked,
+                      });
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
+                </label>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* App Updates (Local-First Opt-In) Card - Hidden in Web Browsers */}

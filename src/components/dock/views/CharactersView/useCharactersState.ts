@@ -68,6 +68,9 @@ export function useCharactersState({
     setNewSummary('');
     setNewRole('Supporting');
     setIsAdding(false);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('foliant-tour-character-created'));
+    }
   };
 
   const handleDelete = (id: string) => {

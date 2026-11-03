@@ -1,13 +1,16 @@
 import React from 'react';
-import { Pencil, Trash2, Check, X } from 'lucide-react';
+import { Pencil, Trash2, Check, X, Pipette } from 'lucide-react';
+import { useState } from 'react';
+import { DarkColorPicker } from '../../../common/DarkColorPicker';
 import { useTranslation } from '../../../../i18n/translations';
 import { TextNode } from '../../../../types/project';
 import { AppColorSettings, COLOR_SWATCHES } from '../../../../types/settings';
-import { StorylineItem, StorylineColor, StorylineField, WorldItem } from './types';
+import { StorylineItem, StorylineColor, StorylineField, WorldItem, CharacterItem } from './types';
 import { STORYLINE_COLORS, COLOR_CLASSES } from './constants';
 import { CollapsibleStorylineDescription } from './CollapsibleStorylineDescription';
 import { StorylineModularFieldsSection } from './StorylineModularFieldsSection';
 import { StorylineLinkedChaptersSection } from './StorylineLinkedChaptersSection';
+import { StorylineLinkedCharactersSection } from './StorylineLinkedCharactersSection';
 import { StorylineLinkedWorldSection } from './StorylineLinkedWorldSection';
 
 interface StorylineCardProps {
@@ -15,6 +18,7 @@ interface StorylineCardProps {
   colorSettings?: AppColorSettings;
   validChapters: TextNode[];
   worldItems: WorldItem[];
+  characters?: CharacterItem[];
   isEditing: boolean;
   editTitle: string;
   onEditTitleChange: (val: string) => void;
@@ -33,6 +37,8 @@ interface StorylineCardProps {
   onSelectChapter?: (chapterId: string) => void;
   onLinkChapter: (storylineId: string, chapterId: string) => void;
   onUnlinkChapter: (storylineId: string, chapterId: string) => void;
+  onLinkCharacter?: (storylineId: string, characterId: string) => void;
+  onUnlinkCharacter?: (storylineId: string, characterId: string) => void;
   onLinkWorldItem: (storylineId: string, worldItemId: string) => void;
   onUnlinkWorldItem: (storylineId: string, worldItemId: string) => void;
 }
@@ -42,6 +48,7 @@ export const StorylineCard = React.memo(function StorylineCard({
   colorSettings,
   validChapters,
   worldItems,
+  characters = [],
   isEditing,
   editTitle,
   onEditTitleChange,
@@ -60,16 +67,19 @@ export const StorylineCard = React.memo(function StorylineCard({
   onSelectChapter,
   onLinkChapter,
   onUnlinkChapter,
+  onLinkCharacter,
+  onUnlinkCharacter,
   onLinkWorldItem,
   onUnlinkWorldItem,
 }: StorylineCardProps) {
   const { t } = useTranslation();
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
+  const isCustomHex = storyline.color?.startsWith('#');
   const customKey = colorSettings?.storylines[storyline.color] ?? storyline.color;
-  const dotClass =
-    COLOR_SWATCHES[customKey]?.dotBg ??
-    COLOR_CLASSES[storyline.color]?.dot ??
-    'bg-emerald-500';
+  const dotClass = !isCustomHex
+    ? (COLOR_SWATCHES[customKey]?.dotBg ?? COLOR_CLASSES[storyline.color as keyof typeof COLOR_CLASSES]?.dot ?? 'bg-emerald-500')
+    : '';
 
   return (
     <div className="group border border-zinc-800 rounded-sm bg-zinc-900/40 hover:bg-zinc-900/60 hover:border-zinc-700/80 p-3 space-y-3 transition-colors">
@@ -85,14 +95,14 @@ export const StorylineCard = React.memo(function StorylineCard({
                 onClick={() => onSaveEdit(storyline.id)}
                 title={t('save')}
                 disabled={!editTitle.trim()}
-                className="p-1 rounded-sm bg-zinc-100 hover:bg-white text-zinc-950 disabled:opacity-50 transition"
+                className="p-1 rounded-sm bg-zinc-100 hover:bg-white text-zinc-950 disabled:opacity-50 transition cursor-pointer"
               >
                 <Check className="w-3 h-3" />
               </button>
               <button
                 onClick={onCancelEdit}
                 title={t('cancelEdit')}
-                className="p-1 rounded-sm text-zinc-400 hover:text-zinc-200 transition"
+                className="p-1 rounded-sm text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -108,22 +118,52 @@ export const StorylineCard = React.memo(function StorylineCard({
             autoFocus
           />
 
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-zinc-500">{t('color')}:</span>
-            {STORYLINE_COLORS.map((c) => (
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-zinc-500">{t('color')}:</span>
+              {STORYLINE_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => {
+                    onEditColorChange(c);
+                    setShowColorPicker(false);
+                  }}
+                  className={`w-3.5 h-3.5 rounded-full transition-transform cursor-pointer ${
+                    COLOR_CLASSES[c].dot
+                  } ${
+                    editColor === c
+                      ? 'scale-125 ring-1 ring-zinc-300 ring-offset-1 ring-offset-zinc-900'
+                      : 'opacity-60 hover:opacity-100'
+                  }`}
+                />
+              ))}
+
               <button
-                key={c}
                 type="button"
-                onClick={() => onEditColorChange(c)}
-                className={`w-3.5 h-3.5 rounded-full transition-transform ${
-                  COLOR_CLASSES[c].dot
-                } ${
-                  editColor === c
-                    ? 'scale-125 ring-1 ring-zinc-300 ring-offset-1 ring-offset-zinc-900'
+                onClick={() => setShowColorPicker((prev) => !prev)}
+                title={t('customColor', 'Color personalizado')}
+                className={`w-3.5 h-3.5 rounded-full border border-zinc-600 bg-zinc-900 text-zinc-400 hover:text-zinc-200 flex items-center justify-center transition cursor-pointer ${
+                  editColor?.startsWith('#')
+                    ? 'scale-125 ring-1 ring-zinc-300 ring-offset-1 ring-offset-zinc-900 border-zinc-300'
                     : 'opacity-60 hover:opacity-100'
                 }`}
-              />
-            ))}
+                style={editColor?.startsWith('#') ? { backgroundColor: editColor } : undefined}
+              >
+                <Pipette className={`w-2 h-2 ${editColor?.startsWith('#') ? 'text-white drop-shadow' : ''}`} />
+              </button>
+            </div>
+
+            {showColorPicker && (
+              <div className="pt-1">
+                <DarkColorPicker
+                  standalone
+                  color={editColor?.startsWith('#') ? editColor : '#10b981'}
+                  onChange={(hex) => onEditColorChange(hex)}
+                  onClose={() => setShowColorPicker(false)}
+                />
+              </div>
+            )}
           </div>
 
           <textarea
@@ -137,7 +177,10 @@ export const StorylineCard = React.memo(function StorylineCard({
       ) : (
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <span className={`w-2 h-2 rounded-full shrink-0 ${dotClass}`} />
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${dotClass}`}
+              style={isCustomHex ? { backgroundColor: storyline.color } : undefined}
+            />
             <h3 className="text-xs font-semibold text-zinc-100 truncate">
               {storyline.title}
             </h3>
@@ -146,14 +189,14 @@ export const StorylineCard = React.memo(function StorylineCard({
           <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={() => onStartEdit(storyline)}
-              className="p-1 rounded-sm text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition"
+              className="p-1 rounded-sm text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition cursor-pointer"
               title={t('edit')}
             >
               <Pencil className="w-3 h-3" />
             </button>
             <button
               onClick={() => onDeleteStoryline(storyline.id)}
-              className="p-1 rounded-sm text-zinc-500 hover:text-red-400 hover:bg-zinc-800 transition"
+              className="p-1 rounded-sm text-zinc-500 hover:text-red-400 hover:bg-zinc-800 transition cursor-pointer"
               title={t('deleteStoryline')}
             >
               <Trash2 className="w-3 h-3" />
@@ -186,6 +229,17 @@ export const StorylineCard = React.memo(function StorylineCard({
         onLinkChapter={onLinkChapter}
         onUnlinkChapter={onUnlinkChapter}
       />
+
+      {/* Linked Characters Section */}
+      {onLinkCharacter && onUnlinkCharacter && (
+        <StorylineLinkedCharactersSection
+          storylineId={storyline.id}
+          linkedCharacterIds={storyline.linkedCharacterIds}
+          characters={characters}
+          onLinkCharacter={onLinkCharacter}
+          onUnlinkCharacter={onUnlinkCharacter}
+        />
+      )}
 
       {/* Linked World References Section */}
       <StorylineLinkedWorldSection

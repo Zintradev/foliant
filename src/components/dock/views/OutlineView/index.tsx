@@ -1,22 +1,24 @@
-import React, { useState, memo, useCallback } from 'react';
 import {
   BookOpen,
+  ChevronsUpDown,
+  Columns2,
   FilePlus,
   FolderPlus,
   LayoutList,
-  Columns2,
   Split,
-  ChevronsUpDown,
 } from 'lucide-react';
-import { TextNode } from '../../../../types/project';
-import { OutlineViewProps, LayoutMode, ContextMenuState, TreeItem } from './types';
-import { useOutlineTree } from './useOutlineTree';
-import { useOutlineRename } from './useOutlineRename';
-import { useOutlineFolders } from './useOutlineFolders';
-import { OutlineTreeNode } from './OutlineTreeNode';
-import { OutlineContextMenu } from './OutlineContextMenu';
-import ProjectStatsView from '../ProjectStatsView';
+import React, { memo, useCallback, useState } from 'react';
 import { useTranslation } from '../../../../i18n/translations';
+import { TextNode } from '../../../../types/project';
+import { loadSettings } from '../../../../types/settings';
+import ConfirmDeleteModal from '../../../common/ConfirmDeleteModal';
+import ProjectStatsView from '../ProjectStatsView';
+import { OutlineContextMenu } from './OutlineContextMenu';
+import { OutlineTreeNode } from './OutlineTreeNode';
+import { ContextMenuState, LayoutMode, OutlineViewProps, TreeItem } from './types';
+import { useOutlineFolders } from './useOutlineFolders';
+import { useOutlineRename } from './useOutlineRename';
+import { useOutlineTree } from './useOutlineTree';
 
 // ---------------------------------------------------------------------------
 // Cohesive Inlined Presentational Subcomponents
@@ -59,7 +61,7 @@ const OutlineHeader = memo(function OutlineHeader({
             <button
               type="button"
               onClick={() => onLayoutModeChange('1col')}
-              title="1 Column View (Centered Tree)"
+              title={t('oneColumnTooltip')}
               className={`flex items-center gap-1 px-2 py-0.5 rounded-xs text-[10px] font-mono transition cursor-pointer ${
                 layoutMode === '1col'
                   ? 'bg-zinc-800 text-zinc-100 font-medium shadow-xs'
@@ -72,7 +74,7 @@ const OutlineHeader = memo(function OutlineHeader({
             <button
               type="button"
               onClick={() => onLayoutModeChange('2col')}
-              title="2 Columns View (Widescreen Tree)"
+              title={t('twoColumnsTooltip')}
               className={`flex items-center gap-1 px-2 py-0.5 rounded-xs text-[10px] font-mono transition cursor-pointer ${
                 layoutMode === '2col'
                   ? 'bg-zinc-800 text-zinc-100 font-medium shadow-xs'
@@ -85,7 +87,7 @@ const OutlineHeader = memo(function OutlineHeader({
             <button
               type="button"
               onClick={() => onLayoutModeChange('split')}
-              title="Split View (Outline + Stats)"
+              title={t('splitViewTooltip')}
               className={`flex items-center gap-1 px-2 py-0.5 rounded-xs text-[10px] font-mono transition cursor-pointer ${
                 layoutMode === 'split'
                   ? 'bg-zinc-800 text-zinc-100 font-medium shadow-xs'
@@ -103,7 +105,7 @@ const OutlineHeader = memo(function OutlineHeader({
             type="button"
             onClick={onToggleExpandAll}
             title={isAllCollapsed ? t('expandAllFolders') : t('collapseAllFolders')}
-            className="p-1 hover:bg-zinc-800 rounded-sm text-zinc-400 hover:text-white transition cursor-pointer"
+            className="p-1 rounded-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition cursor-pointer"
           >
             <ChevronsUpDown className="w-3.5 h-3.5" />
           </button>
@@ -111,19 +113,24 @@ const OutlineHeader = memo(function OutlineHeader({
 
         <button
           type="button"
-          onClick={onAddScene}
-          title={t('addNewScene')}
-          className="p-1 hover:bg-zinc-800 rounded-sm text-zinc-400 hover:text-white transition cursor-pointer"
-          aria-label={t('addNewScene')}
+          data-tour-id="outline-create-scene-btn"
+          onClick={() => {
+            onAddScene();
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('foliant-tour-scene-created'));
+            }
+          }}
+          title={t('newScene')}
+          className="p-1 rounded-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition cursor-pointer"
         >
           <FilePlus className="w-3.5 h-3.5" />
         </button>
+
         <button
           type="button"
           onClick={onAddFolder}
-          title={t('addNewFolder')}
-          className="p-1 hover:bg-zinc-800 rounded-sm text-zinc-400 hover:text-white transition cursor-pointer"
-          aria-label={t('addNewFolder')}
+          title={t('newFolder')}
+          className="p-1 rounded-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition cursor-pointer"
         >
           <FolderPlus className="w-3.5 h-3.5" />
         </button>
@@ -136,7 +143,7 @@ interface OutlineSplitViewProps {
   tree: TreeItem[];
   renderTreeNode: (item: TreeItem, showMetrics: boolean) => React.ReactNode;
   chapters: TextNode[];
-  storylines?: OutlineViewProps['storylines'];
+  storylines?: any[];
   activeChapterId: string;
   onSelectChapter: (id: string) => void;
   onUpdateChapter?: (id: string, updates: Partial<TextNode>) => void;
@@ -146,24 +153,17 @@ const OutlineSplitView = memo(function OutlineSplitView({
   tree,
   renderTreeNode,
   chapters,
-  storylines,
+  storylines = [],
   activeChapterId,
   onSelectChapter,
   onUpdateChapter,
 }: OutlineSplitViewProps) {
-  const { t } = useTranslation();
-
   return (
-    <div className="flex-1 flex flex-col md:flex-row overflow-hidden divide-y md:divide-y-0 md:divide-x divide-zinc-800">
-      <div className="w-full md:w-1/2 flex flex-col overflow-hidden bg-zinc-950">
-        <div className="px-3 py-1.5 border-b border-zinc-850 bg-zinc-900/30 text-[10px] font-mono uppercase tracking-wider text-zinc-400">
-          {t('outlineStructure')}
-        </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-1">
-          {tree.map((item) => renderTreeNode(item, true))}
-        </div>
+    <div className="flex-1 flex overflow-hidden">
+      <div className="w-1/2 border-r border-zinc-800/80 overflow-y-auto p-4 space-y-1">
+        {tree.map((item) => renderTreeNode(item, true))}
       </div>
-      <div className="w-full md:w-1/2 flex flex-col overflow-hidden bg-zinc-950">
+      <div className="w-1/2 overflow-y-auto p-4 bg-zinc-950/40">
         <ProjectStatsView
           chapters={chapters}
           storylines={storylines}
@@ -179,7 +179,7 @@ const OutlineSplitView = memo(function OutlineSplitView({
 });
 
 // ---------------------------------------------------------------------------
-// Main Orchestrator
+// Main OutlineView Component
 // ---------------------------------------------------------------------------
 
 export function OutlineViewComponent({
@@ -187,24 +187,25 @@ export function OutlineViewComponent({
   activeChapterId,
   onSelectChapter,
   onAddChapter,
-  onAddFolder,
   onDeleteChapter,
   onUpdateChapter,
+  onAddFolder,
   isExpanded = false,
   storylines = [],
   onDirtyChange,
 }: OutlineViewProps) {
   const { t } = useTranslation();
-
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('1col');
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [nodePendingDelete, setNodePendingDelete] = useState<TextNode | null>(null);
 
   const { tree, leftRoots, rightRoots } = useOutlineTree(chapters);
+
   const {
     renamingNodeId,
     renameValue,
-    setRenameValue,
     renameInputRef,
+    setRenameValue,
     handleStartRename,
     handleCommitRename,
     handleCancelRename,
@@ -216,42 +217,75 @@ export function OutlineViewComponent({
     handleToggleExpandAll,
     handleAddSceneToParent,
     handleAddFolderToParent,
-  } = useOutlineFolders({ chapters, onAddChapter, onAddFolder });
+  } = useOutlineFolders({ chapters, activeChapterId, onAddChapter, onAddFolder });
+
+  const closeContextMenu = useCallback(() => setContextMenu(null), []);
+
+  /**
+   * Single entry point for deleting a node (context menu and inline scene button).
+   * It always asks for confirmation first, even for empty scenes/folders.
+   */
+  const requestDeleteNode = useCallback((node: TextNode) => {
+    const shouldConfirm = loadSettings()?.preferences?.confirmDelete?.outline ?? true;
+    if (!shouldConfirm) {
+      onDeleteChapter?.(node.id);
+      return;
+    }
+    setNodePendingDelete(node);
+  }, [onDeleteChapter]);
 
   const handleNodeContextMenu = useCallback((e: React.MouseEvent, node: TextNode) => {
     e.preventDefault();
     e.stopPropagation();
-
-    const menuWidth = 160;
-    const menuHeight = 150;
-    const x = Math.min(e.clientX, window.innerWidth - menuWidth);
-    const y = Math.min(e.clientY, window.innerHeight - menuHeight);
-
+    const x = Math.min(e.clientX, window.innerWidth - 180);
+    const y = Math.min(e.clientY, window.innerHeight - 200);
     setContextMenu({ x, y, node });
+  }, []);
+
+  const getContextTargetParentId = useCallback((menu: ContextMenuState) => {
+    return menu.node.type === 'folder' ? menu.node.id : menu.node.parentId ?? null;
   }, []);
 
   const handleContextNewScene = useCallback(() => {
     if (!contextMenu) return;
-    const targetParentId =
-      contextMenu.node.type === 'folder'
-        ? contextMenu.node.id
-        : contextMenu.node.parentId ?? null;
+    const targetParentId = getContextTargetParentId(contextMenu);
+    setContextMenu(null);
     handleAddSceneToParent(targetParentId);
-  }, [contextMenu, handleAddSceneToParent]);
+  }, [contextMenu, getContextTargetParentId, handleAddSceneToParent]);
 
   const handleContextNewFolder = useCallback(() => {
     if (!contextMenu) return;
-    const targetParentId =
-      contextMenu.node.type === 'folder'
-        ? contextMenu.node.id
-        : contextMenu.node.parentId ?? null;
+    const targetParentId = getContextTargetParentId(contextMenu);
+    setContextMenu(null);
     handleAddFolderToParent(targetParentId);
-  }, [contextMenu, handleAddFolderToParent]);
+  }, [contextMenu, getContextTargetParentId, handleAddFolderToParent]);
 
   const handleContextDelete = useCallback(() => {
     if (!contextMenu) return;
-    onDeleteChapter?.(contextMenu.node.id);
-  }, [contextMenu, onDeleteChapter]);
+    const node = contextMenu.node;
+    // Close the menu first so it never stays on screen over the modal.
+    setContextMenu(null);
+    requestDeleteNode(node);
+  }, [contextMenu, requestDeleteNode]);
+
+  const handleConfirmDelete = useCallback(() => {
+    if (nodePendingDelete) {
+      onDeleteChapter?.(nodePendingDelete.id);
+      setNodePendingDelete(null);
+    }
+  }, [nodePendingDelete, onDeleteChapter]);
+
+  const handleTreeNodeDelete = useCallback(
+    (id: string) => {
+      const node = chapters.find((c) => c.id === id);
+      if (node) {
+        requestDeleteNode(node);
+      } else {
+        onDeleteChapter?.(id);
+      }
+    },
+    [chapters, requestDeleteNode, onDeleteChapter]
+  );
 
   const renderTreeNode = useCallback((item: TreeItem, showMetrics: boolean) => (
     <OutlineTreeNode
@@ -272,7 +306,7 @@ export function OutlineViewComponent({
       onCancelRename={handleCancelRename}
       onAddSceneToParent={handleAddSceneToParent}
       onAddFolderToParent={handleAddFolderToParent}
-      onDeleteChapter={onDeleteChapter}
+      onDeleteChapter={handleTreeNodeDelete}
     />
   ), [
     activeChapterId,
@@ -289,7 +323,7 @@ export function OutlineViewComponent({
     handleCancelRename,
     handleAddSceneToParent,
     handleAddFolderToParent,
-    onDeleteChapter,
+    handleTreeNodeDelete,
   ]);
 
   const folderCount = chapters.filter((c) => c.type === 'folder').length;
@@ -311,7 +345,9 @@ export function OutlineViewComponent({
       {tree.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-zinc-500 gap-2">
           <BookOpen className="w-8 h-8 text-zinc-600" />
-          <p className="text-xs font-medium text-zinc-400">{t('noOutlineElements')}</p>
+          <p className="text-xs font-medium text-zinc-400 max-w-xs leading-relaxed">
+            {t('emptyOutlineMessage')}
+          </p>
         </div>
       ) : isExpanded ? (
         layoutMode === '1col' ? (
@@ -350,12 +386,29 @@ export function OutlineViewComponent({
 
       <OutlineContextMenu
         contextMenu={contextMenu}
-        chaptersCount={chapters.length}
-        onClose={() => setContextMenu(null)}
+        onClose={closeContextMenu}
         onRename={handleStartRename}
         onNewScene={handleContextNewScene}
         onNewFolder={handleContextNewFolder}
         onDelete={handleContextDelete}
+      />
+
+      {/* Confirmation Modal on Delete */}
+      <ConfirmDeleteModal
+        isOpen={Boolean(nodePendingDelete)}
+        onCancel={() => setNodePendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title={
+          nodePendingDelete?.type === 'folder'
+            ? t('deleteFolder')
+            : t('deleteScene')
+        }
+        itemName={nodePendingDelete?.title}
+        message={
+          nodePendingDelete?.type === 'folder'
+            ? t('confirmDeleteFolder')
+            : t('confirmDeleteScene')
+        }
       />
 
       {/* Quick Add Footer button */}
@@ -363,6 +416,7 @@ export function OutlineViewComponent({
         <div className="p-2 border-t border-zinc-800 bg-zinc-950/80 flex items-center gap-1.5 shrink-0">
           <button
             type="button"
+            data-tour-id="outline-create-scene-btn-footer"
             onClick={() => handleAddSceneToParent(null)}
             className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-sm text-[11px] font-medium text-zinc-300 hover:text-white border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900 transition cursor-pointer"
           >

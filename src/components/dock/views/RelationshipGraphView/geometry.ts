@@ -213,3 +213,86 @@ export function resolveNodeSeparation(
     y: Math.round(curCy - 36),
   };
 }
+
+
+import type { CharacterRelationship } from '../../../../types/dock';
+import type { NodeInfo } from './types';
+
+/**
+ * Computes exact start anchor, end anchor, bezier control point, and curve evaluation
+ * so that both the SVG quadratic bezier path and the label pill lie on the exact same physical curve.
+ */
+export function computeRelationshipCurve(
+  rel: CharacterRelationship,
+  sourceInfo: NodeInfo,
+  targetInfo: NodeInfo
+): {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  cx: number;
+  cy: number;
+  isBent: boolean;
+  getPointAt: (t: number) => { x: number; y: number };
+} {
+  const naturalMidX = (sourceInfo.cx + targetInfo.cx) / 2;
+  const naturalMidY = (sourceInfo.cy + targetInfo.cy) / 2;
+  const px = naturalMidX + (rel.controlOffset?.x ?? 0);
+  const py = naturalMidY + (rel.controlOffset?.y ?? 0);
+  const isBent = Boolean(
+    rel.controlOffset &&
+      (Math.abs(rel.controlOffset.x) > 1 || Math.abs(rel.controlOffset.y) > 1)
+  );
+
+  const sourceTargetRay = isBent ? { cx: px, cy: py } : { cx: targetInfo.cx, cy: targetInfo.cy };
+  const targetSourceRay = isBent ? { cx: px, cy: py } : { cx: sourceInfo.cx, cy: sourceInfo.cy };
+
+  const rawStart = getPerimeterAnchor(sourceTargetRay, sourceInfo, 2, 0);
+  const rawEnd = getPerimeterAnchor(targetSourceRay, targetInfo, 3, 0);
+  const gapDist = Math.hypot(rawEnd.x - rawStart.x, rawEnd.y - rawStart.y);
+
+  const safeOffset = isBent
+    ? Math.min(8, Math.max(0, gapDist * 0.2))
+    : Math.min(6, Math.max(0, (gapDist - 12) * 0.35));
+
+  const startAnchor = getPerimeterAnchor(sourceTargetRay, sourceInfo, 2, safeOffset);
+  const endAnchor = getPerimeterAnchor(targetSourceRay, targetInfo, 3, safeOffset);
+
+  let startX = startAnchor.x;
+  let startY = startAnchor.y;
+  let endX = endAnchor.x;
+  let endY = endAnchor.y;
+
+  const forwardX = targetInfo.cx - sourceInfo.cx;
+  const forwardY = targetInfo.cy - sourceInfo.cy;
+  const forwardDist = Math.hypot(forwardX, forwardY);
+  const ufx = forwardDist > 0.001 ? forwardX / forwardDist : 1;
+  const ufy = forwardDist > 0.001 ? forwardY / forwardDist : 0;
+
+  const proj = (endX - startX) * ufx + (endY - startY) * ufy;
+  if (proj < 10) {
+    startX = rawStart.x;
+    startY = rawStart.y;
+    endX = rawEnd.x;
+    endY = rawEnd.y;
+  }
+
+  const midAnchorX = (startX + endX) / 2;
+  const midAnchorY = (startY + endY) / 2;
+  const cx = !isBent ? midAnchorX : midAnchorX + 2 * (rel.controlOffset?.x ?? 0);
+  const cy = !isBent ? midAnchorY : midAnchorY + 2 * (rel.controlOffset?.y ?? 0);
+
+  const getPointAt = (t: number) => {
+    const oneMinusT = 1 - t;
+    const x = Math.round(
+      oneMinusT * oneMinusT * startX + 2 * oneMinusT * t * cx + t * t * endX
+    );
+    const y = Math.round(
+      oneMinusT * oneMinusT * startY + 2 * oneMinusT * t * cy + t * t * endY
+    );
+    return { x, y };
+  };
+
+  return { startX, startY, endX, endY, cx, cy, isBent, getPointAt };
+}

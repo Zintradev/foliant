@@ -1,11 +1,13 @@
-import { memo } from 'react';
-import { Plus, UserPlus, X } from 'lucide-react';
-import { CharactersViewProps } from './types';
-import { useCharactersState } from './useCharactersState';
-import { CharacterAddDrawer } from './CharacterAddDrawer';
-import { CharacterEditCard } from './CharacterEditCard';
-import { CharacterDisplayCard } from './CharacterDisplayCard';
+import { UserPlus, Users, X } from 'lucide-react';
+import { memo, useMemo, useState } from 'react';
 import { useTranslation } from '../../../../i18n/translations';
+import ConfirmDeleteModal from '../../../common/ConfirmDeleteModal';
+import { CharacterAddDrawer } from './CharacterAddDrawer';
+import { CharacterDisplayCard } from './CharacterDisplayCard';
+import { CharacterEditCard } from './CharacterEditCard';
+import { CharacterItem, CharactersViewProps, CharacterTag } from './types';
+import { loadSettings } from '../../../../types/settings';
+import { useCharactersState } from './useCharactersState';
 
 const CharacterLightboxModal = memo(function CharacterLightboxModal({
   image,
@@ -14,6 +16,8 @@ const CharacterLightboxModal = memo(function CharacterLightboxModal({
   image: { url: string; title: string } | null;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
+
   if (!image) return null;
 
   return (
@@ -33,7 +37,7 @@ const CharacterLightboxModal = memo(function CharacterLightboxModal({
             type="button"
             onClick={onClose}
             className="p-1 text-zinc-400 hover:text-white rounded-xs hover:bg-zinc-800 transition cursor-pointer"
-            title="Close lightbox"
+            title={t('close')}
             aria-label="Close lightbox"
           >
             <X className="w-4 h-4" />
@@ -60,6 +64,7 @@ export function CharactersViewComponent({
   onDirtyChange,
 }: CharactersViewProps) {
   const { t } = useTranslation();
+  const [characterPendingDelete, setCharacterPendingDelete] = useState<CharacterItem | null>(null);
 
   const {
     isAdding,
@@ -98,20 +103,63 @@ export function CharactersViewComponent({
     handleDeleteField,
   } = useCharactersState({ characters, onChange, saveMode, onDirtyChange });
 
+  // Every tag already created on any character (deduplicated by label + color),
+  // offered as one-click suggestions when editing another character.
+  const allKnownTags = useMemo<CharacterTag[]>(() => {
+    const seen = new Set<string>();
+    const result: CharacterTag[] = [];
+    for (const c of characters) {
+      for (const tag of c.tags ?? []) {
+        const key = `${tag.label.trim().toLowerCase()}|${tag.color}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          result.push(tag);
+        }
+      }
+    }
+    return result;
+  }, [characters]);
+
+  const requestDelete = (char: CharacterItem) => {
+    const shouldConfirm = loadSettings()?.preferences?.confirmDelete?.characters ?? true;
+    if (!shouldConfirm) {
+      handleDelete(char.id);
+      return;
+    }
+    const hasData = Boolean(
+      (char.summary && char.summary !== 'No description yet.' && char.summary.trim().length > 0) ||
+      (char.tags && char.tags.length > 0) ||
+      (char.fields && char.fields.length > 0) ||
+      char.avatarUrl
+    );
+    if (hasData) {
+      setCharacterPendingDelete(char);
+    } else {
+      handleDelete(char.id);
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    if (characterPendingDelete) {
+      handleDelete(characterPendingDelete.id);
+      setCharacterPendingDelete(null);
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full bg-zinc-950 select-none overflow-hidden font-sans">
+    <div className="flex flex-col h-full bg-zinc-950 select-none overflow-hidden font-sans relative">
       {/* Top Header */}
       <div className="px-3 py-2 border-b border-zinc-850 flex items-center justify-between bg-zinc-900/50">
         <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider font-mono">
           {t('charactersView')}
         </span>
         <button
+          data-tour-id="characters-add-btn"
           onClick={() => setIsAdding(!isAdding)}
-          className={`flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-medium transition cursor-pointer ${
-            isAdding
+          className={`flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-medium transition cursor-pointer ${isAdding
               ? 'bg-zinc-800 text-zinc-200'
               : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-850'
-          }`}
+            }`}
           title={isAdding ? t('cancel') : t('newCharacter')}
         >
           <UserPlus className="w-3.5 h-3.5" />
@@ -136,8 +184,11 @@ export function CharactersViewComponent({
       {/* Characters List or Grid */}
       <div className="flex-1 overflow-y-auto p-3">
         {characters.length === 0 ? (
-          <div className="h-40 flex flex-col items-center justify-center text-zinc-500 text-xs">
-            {t('noCharactersYet')}
+          <div className="h-48 flex flex-col items-center justify-center text-center p-6 gap-2">
+            <Users className="w-8 h-8 text-zinc-600" />
+            <p className="text-xs font-medium text-zinc-400 max-w-xs leading-relaxed">
+              {t('emptyCharactersMessage')}
+            </p>
           </div>
         ) : (
           <div
@@ -162,8 +213,13 @@ export function CharactersViewComponent({
                     role={editRole}
                     summary={editSummary}
                     avatarUrl={editAvatarUrl}
+                    nameColor={char.nameColor}
                     tags={editTags}
+                    suggestedTags={allKnownTags}
                     fields={editFields}
+                    onNameColorChange={(val) => {
+                      handleUpdateActiveChar(char.id, { nameColor: val });
+                    }}
                     onNameChange={(val) => {
                       setEditName(val);
                       handleUpdateActiveChar(char.id, { name: val });
@@ -188,8 +244,8 @@ export function CharactersViewComponent({
                     }
                     onDeleteField={(fieldId) => handleDeleteField(char.id, fieldId)}
                     onSave={() => handleSaveEdit(char.id)}
-                    onCancel={() => handleCancelEdit()}
-                    onClose={() => handleCancelEdit()}
+                    onCancel={handleCancelEdit}
+                    onClose={handleCancelEdit}
                   />
                 );
               }
@@ -207,7 +263,7 @@ export function CharactersViewComponent({
                     }
                   }}
                   onEdit={() => handleStartEdit(char)}
-                  onDelete={() => handleDelete(char.id)}
+                  onDelete={() => requestDelete(char)}
                 />
               );
             })}
@@ -215,23 +271,20 @@ export function CharactersViewComponent({
         )}
       </div>
 
-      {/* Quick Add Button Footer */}
-      {!isAdding && (
-        <div className="p-2 border-t border-zinc-850 bg-zinc-950/80">
-          <button
-            onClick={() => setIsAdding(true)}
-            className="flex items-center justify-center gap-1.5 w-full px-2 py-1.5 rounded-sm text-[11px] font-medium text-zinc-400 hover:text-zinc-100 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900 transition cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>{t('addCharacter')}</span>
-          </button>
-        </div>
-      )}
-
-      {/* Lightbox Modal for Character Portrait */}
+      {/* Lightbox Modal */}
       <CharacterLightboxModal
         image={lightboxImage}
         onClose={() => setLightboxImage(null)}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={Boolean(characterPendingDelete)}
+        onCancel={() => setCharacterPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title={t('deleteCharacter')}
+        itemName={characterPendingDelete?.name}
+        message={t('confirmDeleteCharacter')}
       />
     </div>
   );

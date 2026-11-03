@@ -1,8 +1,6 @@
 import React, { memo } from 'react';
 import {
   GripVertical,
-  PanelLeftClose,
-  PanelRightClose,
   Rows2,
   Menu,
   X,
@@ -27,12 +25,11 @@ interface DockStripTabBarProps {
   ) => void;
   onToggleSplit: () => void;
   onOpenModuleMenu: (strip: 'top' | 'bottom') => void;
-  onToggleOpen: () => void;
+  onToggleOpen?: () => void;
 }
 
 function DockStripTabBar({
   strip,
-  side,
   stripTabs,
   activeStripTab,
   dragState,
@@ -41,10 +38,8 @@ function DockStripTabBar({
   onPointerDownTab,
   onToggleSplit,
   onOpenModuleMenu,
-  onToggleOpen,
 }: DockStripTabBarProps) {
   const { t } = useTranslation();
-  const CloseIcon = side === 'left' ? PanelLeftClose : PanelRightClose;
 
   return (
     <div
@@ -125,17 +120,8 @@ function DockStripTabBar({
           <Menu className="w-3.5 h-3.5" />
         </button>
 
-        {/* Close / Collapse button */}
-        {strip === 'top' ? (
-          <button
-            onClick={onToggleOpen}
-            title={t('collapsePanel', 'Collapse Panel')}
-            className="p-1 rounded-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition cursor-pointer"
-            aria-label={t('collapsePanel', 'Collapse Panel')}
-          >
-            <CloseIcon className="w-3.5 h-3.5" />
-          </button>
-        ) : (
+        {/* Close bottom subdivision strip if split */}
+        {strip === 'bottom' && (
           <button
             onClick={onToggleSplit}
             title={t('closeBottomStrip', 'Close bottom strip and merge into top')}

@@ -64,8 +64,7 @@ describe('SettingsModal Component', () => {
 
     expect(screen.getByText(dict.en.studioSettings)).toBeInTheDocument();
     expect(screen.getAllByText(dict.en.categoryGeneral).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(dict.en.categoryAppearance)).toBeInTheDocument();
-    expect(screen.getByText(dict.en.categoryEditor)).toBeInTheDocument();
+    expect(screen.getByText(dict.en.categoryAppearanceEditor)).toBeInTheDocument();
     expect(screen.getByText(dict.en.categoryTaxonomy)).toBeInTheDocument();
   });
 
@@ -154,7 +153,7 @@ describe('SettingsModal Component', () => {
     );
 
     // Go to Appearance
-    fireEvent.click(screen.getByText(dict.en.categoryAppearance));
+    fireEvent.click(screen.getByText(dict.en.categoryAppearanceEditor));
 
     // Select Light theme
     fireEvent.click(screen.getByText(dict.en.light));
@@ -202,7 +201,7 @@ describe('SettingsModal Component', () => {
       />
     );
 
-    fireEvent.click(screen.getByText(dict.en.categoryAppearance));
+    fireEvent.click(screen.getByText(dict.en.categoryAppearanceEditor));
 
     // Inputs for Background, Surface, Primary, Text
     const backgroundInput = screen.getByDisplayValue(
@@ -229,10 +228,10 @@ describe('SettingsModal Component', () => {
       />
     );
 
-    fireEvent.click(screen.getByText(dict.en.categoryEditor));
+    fireEvent.click(screen.getByText(dict.en.categoryAppearanceEditor));
     expect(screen.getByText(dict.en.automaticIndent)).toBeInTheDocument();
 
-    const checkbox = screen.getByRole('checkbox');
+    const checkbox = screen.getByRole('checkbox', { name: new RegExp(dict.en.automaticIndent, 'i') });
     expect(checkbox).toBeChecked();
 
     fireEvent.click(checkbox);
@@ -805,7 +804,7 @@ describe('SettingsModal Component', () => {
       />
     );
 
-    fireEvent.click(screen.getByText(dict.en.categoryAppearance));
+    fireEvent.click(screen.getByText(dict.en.categoryAppearanceEditor));
 
     // Open theme color picker for Background
     const colorSwatches = screen.getAllByTitle(dict.en.chooseColor);
@@ -910,7 +909,7 @@ describe('SettingsModal Component', () => {
       />
     );
 
-    const appearanceNavButton = screen.getByRole('button', { name: new RegExp(dict.en.categoryAppearance, 'i') });
+    const appearanceNavButton = screen.getByRole('button', { name: new RegExp(dict.en.categoryAppearanceEditor, 'i') });
     fireEvent.click(appearanceNavButton);
 
     const darkDot = container.querySelector('.bg-\\[\\#09090b\\]');

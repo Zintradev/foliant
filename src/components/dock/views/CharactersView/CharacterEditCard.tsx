@@ -1,9 +1,15 @@
+import { Camera, Check, ChevronUp, User, X, Pipette } from 'lucide-react';
+import { useState } from 'react';
+import { DarkColorPicker } from '../../../common/DarkColorPicker';
 import { memo } from 'react';
-import { Check, X, ChevronUp, User, Camera } from 'lucide-react';
-import { CharacterItem, CharacterCustomField, CharacterTag } from './types';
-import { CharacterTagsEditor } from './CharacterTagsEditor';
-import { CharacterCustomFieldsEditor } from './CharacterCustomFieldsEditor';
 import { useTranslation } from '../../../../i18n/translations';
+import { COLOR_SWATCHES } from '../../../../types/settings';
+import { CharacterCustomFieldsEditor } from './CharacterCustomFieldsEditor';
+import { CharacterTagsEditor } from './CharacterTagsEditor';
+import { CharacterCustomField, CharacterItem, CharacterTag } from './types';
+
+const toColorLabelKey = (colorKey: string) =>
+  `color${colorKey.charAt(0).toUpperCase()}${colorKey.slice(1)}`;
 
 interface CharacterEditCardProps {
   charId: string;
@@ -13,8 +19,11 @@ interface CharacterEditCardProps {
   role: CharacterItem['role'];
   summary: string;
   avatarUrl?: string;
+  nameColor?: string;
   tags: CharacterTag[];
+  suggestedTags?: CharacterTag[];
   fields: CharacterCustomField[];
+  onNameColorChange?: (val: string | undefined) => void;
   onNameChange: (val: string) => void;
   onRoleChange: (val: CharacterItem['role']) => void;
   onSummaryChange: (val: string) => void;
@@ -36,8 +45,11 @@ export const CharacterEditCard = memo(function CharacterEditCard({
   role,
   summary,
   avatarUrl,
+  nameColor,
   tags,
+  suggestedTags,
   fields,
+  onNameColorChange,
   onNameChange,
   onRoleChange,
   onSummaryChange,
@@ -52,6 +64,7 @@ export const CharacterEditCard = memo(function CharacterEditCard({
   onClose,
 }: CharacterEditCardProps) {
   const { t } = useTranslation();
+  const [showCustomColorPicker, setShowCustomColorPicker] = useState(false);
 
   return (
     <div className="border border-zinc-700 bg-zinc-900/90 rounded-sm p-3 space-y-3 shadow-lg animate-in fade-in duration-100">
@@ -98,7 +111,7 @@ export const CharacterEditCard = memo(function CharacterEditCard({
       <div className="flex items-center gap-3">
         <label
           className="w-12 h-12 rounded-sm bg-zinc-950 border border-zinc-750 hover:border-zinc-500 overflow-hidden flex items-center justify-center text-zinc-300 font-bold text-sm shrink-0 font-mono cursor-pointer transition relative group/avatar shadow-xs"
-          title="Upload character portrait"
+          title={t('uploadPortrait')}
         >
           <input
             type="file"
@@ -174,6 +187,75 @@ export const CharacterEditCard = memo(function CharacterEditCard({
         </div>
       </div>
 
+      {/* Name label color */}
+      {onNameColorChange && (
+        <div className="space-y-1.5">
+          <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
+            {t('nameLabelColor')}
+          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => onNameColorChange(undefined)}
+              title={t('noColor')}
+              aria-label={t('noColor')}
+              aria-pressed={!nameColor}
+              className={`w-5 h-5 rounded-full border border-zinc-600 bg-zinc-950 text-zinc-500 flex items-center justify-center transition cursor-pointer ${
+                !nameColor ? 'ring-2 ring-zinc-300 ring-offset-1 ring-offset-zinc-900' : 'hover:border-zinc-400'
+              }`}
+            >
+              <X className="w-3 h-3" />
+            </button>
+            {Object.entries(COLOR_SWATCHES).map(([colorKey, swatch]) => {
+              const label = t(toColorLabelKey(colorKey), colorKey);
+              const isSelected = nameColor === colorKey;
+              return (
+                <button
+                  key={colorKey}
+                  type="button"
+                  onClick={() => {
+                    onNameColorChange(colorKey);
+                    setShowCustomColorPicker(false);
+                  }}
+                  title={label}
+                  aria-label={label}
+                  aria-pressed={isSelected}
+                  className={`w-5 h-5 rounded-full border transition cursor-pointer ${swatch?.badgeBg ?? ''} ${swatch?.badgeBorder ?? ''} ${
+                    isSelected ? 'ring-2 ring-zinc-300 ring-offset-1 ring-offset-zinc-900' : 'hover:scale-110'
+                  }`}
+                />
+              );
+            })}
+
+            {/* Custom Hex Picker Button */}
+            <button
+              type="button"
+              onClick={() => setShowCustomColorPicker((prev) => !prev)}
+              title={t('customColor', 'Color personalizado')}
+              className={`w-5 h-5 rounded-full border border-zinc-600 bg-zinc-900 text-zinc-400 hover:text-zinc-200 flex items-center justify-center transition cursor-pointer ${
+                nameColor?.startsWith('#')
+                  ? 'ring-2 ring-zinc-300 ring-offset-1 ring-offset-zinc-900 border-zinc-300'
+                  : 'hover:border-zinc-400'
+              }`}
+              style={nameColor?.startsWith('#') ? { backgroundColor: nameColor } : undefined}
+            >
+              <Pipette className={`w-2.5 h-2.5 ${nameColor?.startsWith('#') ? 'text-white drop-shadow' : ''}`} />
+            </button>
+          </div>
+
+          {showCustomColorPicker && (
+            <div className="pt-2">
+              <DarkColorPicker
+                standalone
+                color={nameColor?.startsWith('#') ? nameColor : '#3b82f6'}
+                onChange={(hex) => onNameColorChange(hex)}
+                onClose={() => setShowCustomColorPicker(false)}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Summary */}
       <textarea
         value={summary}
@@ -186,6 +268,7 @@ export const CharacterEditCard = memo(function CharacterEditCard({
       {/* Custom Color Tags Section */}
       <CharacterTagsEditor
         tags={tags}
+        suggestedTags={suggestedTags}
         onAddTag={onAddTag}
         onRemoveTag={onRemoveTag}
       />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, Folder } from 'lucide-react';
+import { ChevronRight, Folder, Trash2 } from 'lucide-react';
 import { MoodboardSection, ReferenceImage } from './types';
 import { MoodboardThumbnailCard } from './MoodboardThumbnailCard';
 
@@ -14,7 +14,7 @@ interface MoodboardSectionFolderProps {
   draggedImageId: string | null;
   dragOverImageId: string | null;
   dragOverPosition: 'before' | 'after';
-  emptyMessage: string;
+  onDeleteFolder?: (section: MoodboardSection) => void;
   onSelect: () => void;
   onToggleCollapse: () => void;
   onSectionDrop: (e: React.DragEvent, sectionId: string) => void;
@@ -43,7 +43,7 @@ export const MoodboardSectionFolder = React.memo(function MoodboardSectionFolder
   draggedImageId,
   dragOverImageId,
   dragOverPosition,
-  emptyMessage,
+  onDeleteFolder,
   onSelect,
   onToggleCollapse,
   onSectionDrop,
@@ -76,51 +76,67 @@ export const MoodboardSectionFolder = React.memo(function MoodboardSectionFolder
       onDrop={(e) => onSectionDrop(e, section.id)}
     >
       {/* Compact Folder Header: inline-flex w-max */}
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => {
-          onSelect();
-          onToggleCollapse();
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
+            <div className="flex items-center gap-2">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => {
             onSelect();
             onToggleCollapse();
-          }
-        }}
-        onDragEnter={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onSectionDragEnter(e, section.id);
-        }}
-        onDragOver={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          e.dataTransfer.dropEffect = 'move';
-          onSectionDragOver(e, section.id);
-        }}
-        onDrop={(e) => onSectionDrop(e, section.id)}
-        className={`inline-flex w-max items-center gap-1.5 px-2.5 py-1 rounded-sm bg-zinc-900/90 hover:bg-zinc-855 border cursor-pointer select-none transition group ${
-          isDragOver
-            ? 'border-emerald-500 ring-1 ring-emerald-500/50 bg-emerald-950/40 text-emerald-200'
-            : isActive
-            ? 'border-zinc-700 bg-zinc-850 text-zinc-100'
-            : 'border-zinc-800 hover:border-zinc-700 text-zinc-300'
-        }`}
-        title="Click to select folder and toggle collapse"
-      >
-        <ChevronRight
-          className={`w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200 transition-transform duration-200 ${
-            isCollapsed ? '' : 'rotate-90'
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onSelect();
+              onToggleCollapse();
+            }
+          }}
+          onDragEnter={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onSectionDragEnter(e, section.id);
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.dataTransfer.dropEffect = 'move';
+            onSectionDragOver(e, section.id);
+          }}
+          onDrop={(e) => onSectionDrop(e, section.id)}
+          className={`inline-flex w-max items-center gap-1.5 px-2.5 py-1 rounded-sm bg-zinc-900/90 hover:bg-zinc-850 border cursor-pointer select-none transition group ${
+            isDragOver
+              ? 'border-emerald-500 ring-1 ring-emerald-500/50 bg-emerald-950/40 text-emerald-200'
+              : isActive
+              ? 'border-zinc-700 bg-zinc-850 text-zinc-100'
+              : 'border-zinc-800 hover:border-zinc-700 text-zinc-300'
           }`}
-        />
-        <Folder className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200" />
-        <span className="text-xs font-medium text-zinc-200">{sectionLabel}</span>
-        <span className="text-[10px] font-mono text-zinc-400 bg-zinc-800/80 px-1.5 py-0.2 rounded-xs">
-          {images.length}
-        </span>
+          title="Click to select folder and toggle collapse"
+        >
+          <ChevronRight
+            className={`w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200 transition-transform duration-200 ${
+              isCollapsed ? '' : 'rotate-90'
+            }`}
+          />
+          <Folder className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200" />
+          <span className="text-xs font-medium text-zinc-200">{sectionLabel}</span>
+          <span className="text-[10px] font-mono text-zinc-400 bg-zinc-800/80 px-1.5 py-0.2 rounded-xs">
+            {images.length}
+          </span>
+        </div>
+
+        {onDeleteFolder && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteFolder(section);
+            }}
+            title={sectionLabel ? `Delete ${sectionLabel}` : 'Delete folder'}
+            className="p-1 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 rounded-sm transition cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
 
       {/* Pinterest Masonry Grid when not collapsed */}
@@ -138,11 +154,7 @@ export const MoodboardSectionFolder = React.memo(function MoodboardSectionFolder
           }}
           onDrop={(e) => onSectionDrop(e, section.id)}
         >
-          {images.length === 0 ? (
-            <div className="border border-dashed border-zinc-800/80 rounded-sm py-4 px-3 text-center text-zinc-600 text-xs font-mono select-none">
-              {emptyMessage}
-            </div>
-          ) : (
+          {images.length === 0 ? null : (
             <div
               className={
                 isExpanded

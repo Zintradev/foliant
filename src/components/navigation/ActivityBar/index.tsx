@@ -25,32 +25,41 @@ export interface ActivityBarProps {
   onOpenSearch?: () => void;
   onOpenHelpGuide?: () => void;
   isWeb?: boolean;
+  isFocusMode?: boolean;
+  onToggleFocusMode?: () => void;
+  highlightedView?: MainViewId | null;
 }
 
 const ActivityBarNavList = memo(function ActivityBarNavList({
   activeView,
   onSelectView,
   translate,
+  highlightedView,
 }: {
   activeView: MainViewId;
   onSelectView: (view: MainViewId) => void;
   translate: (key: any, defaultVal: string) => string;
+  highlightedView?: MainViewId | null;
 }) {
   return (
     <nav className="flex flex-col items-center gap-1 w-full px-1">
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;
         const isActive = activeView === item.id;
+        const isHighlighted = highlightedView === item.id;
         const itemLabel = translate(item.labelKey, item.defaultLabel);
         const itemTooltip = translate(item.tooltipKey, item.defaultTooltip);
 
         return (
           <button
             key={item.id}
+            data-testid={`activity-bar-${item.id}`}
             onClick={() => onSelectView(item.id)}
             title={itemTooltip}
             className={`relative group flex flex-col items-center justify-center w-full py-2 rounded-sm transition text-[10px] font-medium cursor-pointer ${
-              isActive
+              isHighlighted
+                ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-zinc-950 animate-pulse bg-emerald-950/40 text-emerald-200'
+                : isActive
                 ? 'bg-zinc-900 text-zinc-100 border-l-2 border-zinc-200'
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60 border-l-2 border-transparent'
             }`}
@@ -108,6 +117,9 @@ export const ActivityBar = memo(function ActivityBar({
   onOpenSearch,
   onOpenHelpGuide,
   isWeb,
+  isFocusMode: _isFocusMode = false,
+  onToggleFocusMode: _onToggleFocusMode,
+  highlightedView,
 }: ActivityBarProps) {
   const showLandingLink = isWeb !== undefined ? isWeb : isWebPlatform();
   const { t } = useTranslation(language);
@@ -133,18 +145,24 @@ export const ActivityBar = memo(function ActivityBar({
   }, [isFileMenuOpen]);
 
   const logoAuraClasses = useMemo(() => {
-    if (saveStatus === 'saving' || saveStatus === 'unsaved') {
-      return 'border-amber-400/90 ring-2 ring-amber-400/50 shadow-[0_0_12px_rgba(251,191,36,0.5)] animate-pulse bg-zinc-900 text-amber-300';
+    if (saveStatus === 'saving') {
+      return 'border-amber-400 ring-2 ring-amber-400/50 shadow-[0_0_12px_rgba(251,191,36,0.5)] animate-pulse bg-zinc-900 text-amber-300';
+    }
+    if (saveStatus === 'unsaved') {
+      return 'border-amber-500 bg-zinc-900 text-amber-400';
     }
     if (saveStatus === 'saved') {
-      return 'border-emerald-500/80 ring-1 ring-emerald-400/40 shadow-[0_0_8px_rgba(52,211,153,0.4)] bg-zinc-900 text-emerald-300';
+      return 'border-emerald-500 bg-zinc-900 text-emerald-400';
     }
     return 'border-zinc-800 bg-zinc-900 text-zinc-300';
   }, [saveStatus]);
 
   const logoTitle = useMemo(() => {
-    if (saveStatus === 'saving' || saveStatus === 'unsaved') {
+    if (saveStatus === 'saving') {
       return `Foliant - ${t('saving', 'Saving...')}`;
+    }
+    if (saveStatus === 'unsaved') {
+      return `Foliant - ${t('unsaved', 'Unsaved changes')}`;
     }
     if (saveStatus === 'saved') {
       return `Foliant - ${t('saved', 'Saved')}`;
@@ -165,7 +183,7 @@ export const ActivityBar = memo(function ActivityBar({
             onClick={() => setIsFileMenuOpen((prev) => !prev)}
             title="File Menu"
             aria-label="File Menu"
-            className={`p-1.5 rounded-sm transition ${
+            className={`p-1.5 rounded-sm transition cursor-pointer ${
               isFileMenuOpen
                 ? 'bg-zinc-800 text-zinc-100 shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900'
@@ -207,6 +225,7 @@ export const ActivityBar = memo(function ActivityBar({
           activeView={activeView}
           onSelectView={onSelectView}
           translate={t}
+          highlightedView={highlightedView}
         />
       </div>
 

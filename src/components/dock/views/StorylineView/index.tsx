@@ -1,17 +1,20 @@
-import { useState, useMemo, memo } from 'react';
 import { Plus } from 'lucide-react';
+import { memo, useMemo, useState } from 'react';
 import { useTranslation } from '../../../../i18n/translations';
-import { StorylineViewProps, ViewMode } from './types';
-import { useStorylineActions } from './useStorylineActions';
-import { StorylineHeader } from './StorylineHeader';
+import ConfirmDeleteModal from '../../../common/ConfirmDeleteModal';
 import { StorylineAddDrawer } from './StorylineAddDrawer';
-import { StorylineThreadsView } from './StorylineThreadsView';
 import { StorylineChaptersView } from './StorylineChaptersView';
+import { StorylineHeader } from './StorylineHeader';
+import { StorylineThreadsView } from './StorylineThreadsView';
+import { StorylineViewProps, ViewMode } from './types';
+import { loadSettings } from '../../../../types/settings';
+import { useStorylineActions } from './useStorylineActions';
 
 export function StorylineViewComponent({
   storylines,
   chapters,
   worldItems = [],
+  characters = [],
   onChange,
   onSelectChapter,
   colorSettings,
@@ -20,6 +23,7 @@ export function StorylineViewComponent({
 }: StorylineViewProps) {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<ViewMode>('threads');
+  const [storylinePendingDeleteId, setStorylinePendingDeleteId] = useState<string | null>(null);
 
   const validChapters = useMemo(
     () => chapters.filter((c) => c.type !== 'folder'),
@@ -37,6 +41,8 @@ export function StorylineViewComponent({
     setNewColor,
     initialChapterId,
     setInitialChapterId,
+    initialCharacterId,
+    setInitialCharacterId,
     editingStorylineId,
     editTitle,
     setEditTitle,
@@ -55,6 +61,8 @@ export function StorylineViewComponent({
     handleMoveField,
     handleLinkChapter,
     handleUnlinkChapter,
+    handleLinkCharacter,
+    handleUnlinkCharacter,
     handleLinkWorldItem,
     handleUnlinkWorldItem,
   } = useStorylineActions({
@@ -62,6 +70,17 @@ export function StorylineViewComponent({
     onChange,
     onDirtyChange,
   });
+
+  const storylinePendingDelete = storylinePendingDeleteId
+    ? storylines.find((s) => s.id === storylinePendingDeleteId)
+    : undefined;
+
+  const handleConfirmDeleteStoryline = () => {
+    if (storylinePendingDeleteId) {
+      handleDeleteStoryline(storylinePendingDeleteId);
+    }
+    setStorylinePendingDeleteId(null);
+  };
 
   return (
     <div className="flex flex-col h-full select-none bg-zinc-950 font-sans">
@@ -83,7 +102,10 @@ export function StorylineViewComponent({
           onNewColorChange={setNewColor}
           initialChapterId={initialChapterId}
           onInitialChapterIdChange={setInitialChapterId}
+          initialCharacterId={initialCharacterId}
+          onInitialCharacterIdChange={setInitialCharacterId}
           validChapters={validChapters}
+          characters={characters}
           onCancel={() => setIsAdding(false)}
           onAdd={handleAddStoryline}
         />
@@ -95,6 +117,7 @@ export function StorylineViewComponent({
             storylines={storylines}
             colorSettings={colorSettings}
             validChapters={validChapters}
+            characters={characters}
             worldItems={worldItems}
             isExpanded={isExpanded}
             editingStorylineId={editingStorylineId}
@@ -107,7 +130,14 @@ export function StorylineViewComponent({
             onSaveEdit={handleSaveEdit}
             onCancelEdit={handleCancelEdit}
             onStartEdit={handleStartEdit}
-            onDeleteStoryline={handleDeleteStoryline}
+            onDeleteStoryline={(id: string) => {
+              const shouldConfirm = loadSettings()?.preferences?.confirmDelete?.storylines ?? true;
+              if (!shouldConfirm) {
+                handleDeleteStoryline(id);
+                return;
+              }
+              setStorylinePendingDeleteId(id);
+            }}
             onAddField={handleAddField}
             onUpdateField={handleUpdateField}
             onDeleteField={handleDeleteField}
@@ -115,6 +145,8 @@ export function StorylineViewComponent({
             onSelectChapter={onSelectChapter}
             onLinkChapter={handleLinkChapter}
             onUnlinkChapter={handleUnlinkChapter}
+            onLinkCharacter={handleLinkCharacter}
+            onUnlinkCharacter={handleUnlinkCharacter}
             onLinkWorldItem={handleLinkWorldItem}
             onUnlinkWorldItem={handleUnlinkWorldItem}
           />
@@ -133,11 +165,20 @@ export function StorylineViewComponent({
         )}
       </div>
 
+      <ConfirmDeleteModal
+        isOpen={Boolean(storylinePendingDeleteId)}
+        onCancel={() => setStorylinePendingDeleteId(null)}
+        onConfirm={handleConfirmDeleteStoryline}
+        title={t('deleteStorylineConfirmTitle')}
+        itemName={storylinePendingDelete?.title}
+        message={t('deleteStorylineConfirmMessage')}
+      />
+
       {!isAdding && (
         <div className="p-2 border-t border-zinc-800 bg-zinc-950/80">
           <button
             onClick={() => setIsAdding(true)}
-            className="flex items-center justify-center gap-1.5 w-full px-2 py-1.5 rounded-sm text-[11px] font-medium text-zinc-300 hover:text-white border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900 transition"
+            className="flex items-center justify-center gap-1.5 w-full px-2 py-1.5 rounded-sm text-[11px] font-medium text-zinc-300 hover:text-white border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900 transition cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>{t('addStoryline')}</span>

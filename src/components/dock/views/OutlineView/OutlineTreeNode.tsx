@@ -1,8 +1,8 @@
 import React, { memo } from 'react';
-import { TreeItem } from './types';
 import { TextNode } from '../../../../types/project';
 import { OutlineFolderRow } from './OutlineFolderRow';
 import { OutlineSceneRow } from './OutlineSceneRow';
+import { TreeItem } from './types';
 
 interface OutlineTreeNodeProps {
   item: TreeItem;
@@ -68,7 +68,8 @@ export const OutlineTreeNode = memo(function OutlineTreeNode({
           onCancelRename={onCancelRename}
           onAddScene={() => onAddSceneToParent(node.id)}
           onAddFolder={() => onAddFolderToParent(node.id)}
-          onDelete={onDeleteChapter ? () => onDeleteChapter(node.id) : undefined}
+          // Folders are deleted only from the context menu (no inline trash icon).
+          onDelete={undefined}
         />
       ) : (
         <OutlineSceneRow

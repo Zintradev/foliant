@@ -14,15 +14,25 @@ export function resolveEntityUpdate<T>(
 
 export function createDefaultChapter(
   type: 'folder' | 'scene',
-  count: number,
-  parentId: string | null
+  _count: number,
+  parentId: string | null,
+  language: string = 'en'
 ): TextNode {
   const isFolder = type === 'folder';
+  const isEs = language === 'es' || language?.startsWith('es');
+  let defaultTitle = '';
+  if (isEs) {
+    defaultTitle = isFolder ? `Nueva Sección` : 'Sin título';
+  } else {
+    defaultTitle = isFolder ? `New Section` : 'Untitled';
+  }
   return {
     id: `${type}-${Date.now()}`,
-    title: isFolder ? `Folder ${count}: New Section` : `Chapter ${count}: Untitled`,
+    title: defaultTitle,
     content: '',
-    synopsis: isFolder ? 'Section overview notes...' : 'Scene outline notes...',
+    synopsis: isFolder
+      ? (isEs ? 'Notas generales de la sección...' : 'Section overview notes...')
+      : (isEs ? 'Notas de la escena...' : 'Scene outline notes...'),
     type,
     parentId,
     targetWords: isFolder ? 5000 : 2500,
@@ -54,10 +64,6 @@ export function deleteChapterFromList(
   idToDelete: string,
   activeChapterId: string
 ): { updatedChapters: TextNode[]; nextActiveId?: string } {
-  if (chapters.length <= 1) {
-    return { updatedChapters: chapters };
-  }
-
   const idsToDelete = new Set([idToDelete, ...getDescendantChapterIds(chapters, idToDelete)]);
   const filtered = chapters.filter((c) => !idsToDelete.has(c.id));
 

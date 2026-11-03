@@ -1,5 +1,7 @@
 import { useState, useMemo, useRef, useCallback, memo } from 'react';
-import { GraphJunctionNode } from '../../../../types/dock';
+import { GraphJunctionNode, CharacterItem } from '../../../../types/dock';
+import { loadSettings } from '../../../../types/settings';
+import { useTranslation } from '../../../../i18n/translations';
 import { RelationshipGraphViewProps } from './types';
 import { useGraphZoomPan } from './useGraphZoomPan';
 import { useGraphPositions } from './useGraphPositions';
@@ -15,6 +17,7 @@ import { JunctionInspectorPanel } from './JunctionInspectorPanel';
 import { CharacterRepresentationDrawer } from './CharacterRepresentationDrawer';
 import { QuickCharacterModal } from './QuickCharacterModal';
 import { CreateRelationshipModal } from './CreateRelationshipModal';
+import ConfirmDeleteModal from '../../../common/ConfirmDeleteModal';
 
 function RelationshipGraphViewComponent({
   characters,
@@ -30,6 +33,7 @@ function RelationshipGraphViewComponent({
   isExpanded = false,
 }: RelationshipGraphViewProps) {
   const boardRef = useRef<HTMLDivElement | null>(null);
+  const [characterPendingDelete, setCharacterPendingDelete] = useState<CharacterItem | null>(null);
 
   const [internalJunctions, setInternalJunctions] = useState<GraphJunctionNode[]>([]);
   const junctions = propJunctions ?? internalJunctions;
@@ -42,6 +46,7 @@ function RelationshipGraphViewComponent({
   );
 
   const [filterType, setFilterType] = useState<string>('all');
+  const { t } = useTranslation();
   const zoomPanHook = useGraphZoomPan(boardRef);
 
   const relationshipsRef = useRef(relationships);
@@ -57,7 +62,7 @@ function RelationshipGraphViewComponent({
     relationshipsRef,
     junctionsRef,
     charactersRef,
-    setPositions: () => {},
+    setPositions: () => { },
     updateJunctions,
     onUpdateCharacterPositions,
     onUpdateRelationships,
@@ -69,7 +74,7 @@ function RelationshipGraphViewComponent({
     relationships,
     junctions,
     positions: dummyPositionsRef.current,
-    setPositions: () => {},
+    setPositions: () => { },
     updateJunctions,
     onUpdateRelationships,
     onUpdateCharacters,
@@ -78,8 +83,8 @@ function RelationshipGraphViewComponent({
     pushUndoSnapshot,
     createQuickRelationship: (...args) => connectionsHook.createQuickRelationship(...args),
     connectingSourceId: null,
-    setConnectingSourceId: () => {},
-    setElasticCursor: () => {},
+    setConnectingSourceId: () => { },
+    setElasticCursor: () => { },
   });
 
   const connectionsHook = useGraphConnections({
@@ -233,7 +238,16 @@ function RelationshipGraphViewComponent({
           characters={characters}
           onClose={() => selectionHook.setEditingCardId(null)}
           onReassign={selectionHook.handleReassignCardCharacter}
-          onDeleteCharacter={selectionHook.handleDeleteCharacter}
+          onDeleteCharacter={(id) => {
+            const char = characters.find((c) => c.id === id);
+            const hasRel = relationships.some((r) => r.sourceId === id || r.targetId === id);
+            const shouldConfirm = loadSettings()?.preferences?.confirmDelete?.relationships ?? true;
+            if (shouldConfirm && char && (char.summary || char.tags?.length || char.fields?.length || hasRel)) {
+              setCharacterPendingDelete(char);
+            } else {
+              selectionHook.handleDeleteCharacter(id);
+            }
+          }}
         />
       )}
 
@@ -244,6 +258,25 @@ function RelationshipGraphViewComponent({
           onSubmit={selectionHook.handleCreateChar}
         />
       )}
+
+      <ConfirmDeleteModal
+        isOpen={Boolean(characterPendingDelete)}
+        title={t('confirmDelete', 'Confirm Delete')}
+        message={t(
+          'confirmDeleteCharacter',
+          '¿Estás seguro de que deseas eliminar este personaje? Esta acción eliminará su ficha y conexiones asociadas.'
+        )}
+        itemName={characterPendingDelete?.name}
+        onConfirm={() => {
+          if (characterPendingDelete) {
+            selectionHook.handleDeleteCharacter(characterPendingDelete.id);
+            setCharacterPendingDelete(null);
+          }
+        }}
+        onCancel={() => setCharacterPendingDelete(null)}
+      />
+
+
 
       {selectionHook.isCreatingRel && (
         <CreateRelationshipModal

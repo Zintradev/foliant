@@ -53,7 +53,7 @@ function TimelineLanesSceneCardComponent({
         isActive
           ? 'border-zinc-400 ring-1 ring-zinc-400/40 bg-zinc-900'
           : 'border-zinc-800 hover:border-zinc-650 hover:bg-zinc-900/95'
-      } ${isDimmed ? 'opacity-35' : ''}`}
+      } ${isDimmed ? 'opacity-35' : ''} ${isDropdownOpen ? 'z-50' : 'z-0'}`}
     >
       <div className="space-y-1.5">
         {/* Title and Word Count Header */}

@@ -186,6 +186,7 @@ export function usePillDrag({
     setDraggingRelId(null);
 
     if (dragInfo.isDragging) {
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('foliant-tour-graph-pill-moved'));
       if (snapshotBeforeDragRef.current) {
         pushUndoSnapshot(snapshotBeforeDragRef.current);
         snapshotBeforeDragRef.current = null;

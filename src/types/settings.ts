@@ -167,6 +167,26 @@ export const DEFAULT_CUSTOM_THEME: CustomThemeColors = {
   text: '#f4f4f5',
 };
 
+export interface DeleteConfirmationPreferences {
+  outline?: boolean;
+  characters?: boolean;
+  storylines?: boolean;
+  worldbuilding?: boolean;
+  notes?: boolean;
+  visuals?: boolean;
+  relationships?: boolean;
+}
+
+export const DEFAULT_DELETE_CONFIRMATIONS: DeleteConfirmationPreferences = {
+  outline: true,
+  characters: true,
+  storylines: true,
+  worldbuilding: true,
+  notes: true,
+  visuals: true,
+  relationships: true,
+};
+
 export interface AppPreferences {
   timelineDropMode: 'shift' | 'swap';
   worldDropMode?: 'shift' | 'swap';
@@ -176,6 +196,11 @@ export interface AppPreferences {
   preserveManualPlotHeight?: boolean;
   editorIndentFirstLine?: boolean;
   editorFontFamily?: EditorFontFamily;
+  editorPaperColor?: 'paper' | 'white' | 'warm' | 'custom' | 'default';
+  editorCustomBg?: string;
+  editorCustomText?: string;
+  matchEditorBackgroundWithPaper?: boolean;
+  focusModeShowFormattingToolbar?: boolean;
   language?: Language;
   themeMode?: ThemeMode;
   customTheme?: CustomThemeColors;
@@ -183,6 +208,7 @@ export interface AppPreferences {
   saveMode?: 'auto' | 'manual';
   autoSaveInterval?: number; // In seconds (default: 2)
   autoUpdateCheck?: boolean; // Toggle 'Buscar actualizaciones automáticamente' (default: false)
+  confirmDelete?: DeleteConfirmationPreferences;
 }
 
 export interface AppSettings extends AppColorSettings {
@@ -198,6 +224,11 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   preserveManualPlotHeight: false,
   editorIndentFirstLine: true,
   editorFontFamily: 'serif',
+  editorPaperColor: 'paper',
+  editorCustomBg: '#f6f1e8',
+  editorCustomText: '#2c2523',
+  matchEditorBackgroundWithPaper: false,
+  focusModeShowFormattingToolbar: false,
   language: 'en',
   themeMode: 'dark',
   customTheme: DEFAULT_CUSTOM_THEME,
@@ -205,6 +236,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   saveMode: 'auto',
   autoSaveInterval: 300,
   autoUpdateCheck: false,
+  confirmDelete: DEFAULT_DELETE_CONFIRMATIONS,
 };
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
@@ -231,6 +263,10 @@ export function loadSettings(): AppSettings {
         customTheme: {
           ...DEFAULT_CUSTOM_THEME,
           ...(parsed.preferences?.customTheme || {}),
+        },
+        confirmDelete: {
+          ...DEFAULT_DELETE_CONFIRMATIONS,
+          ...(parsed.preferences?.confirmDelete || {}),
         },
       },
     };

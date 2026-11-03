@@ -81,6 +81,7 @@ export function useTimelinePopovers({
     const currentAttached = scene.attachedCharacterIds || [];
     if (!currentAttached.includes(characterId)) {
       onUpdateChapter(sceneId, { attachedCharacterIds: [...currentAttached, characterId] });
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('foliant-tour-tag-assigned'));
     }
     setOpenAttachDropdown(null);
   };

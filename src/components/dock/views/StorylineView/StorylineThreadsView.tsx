@@ -3,7 +3,7 @@ import { GitMerge } from 'lucide-react';
 import { useTranslation } from '../../../../i18n/translations';
 import { TextNode } from '../../../../types/project';
 import { AppColorSettings } from '../../../../types/settings';
-import { StorylineItem, StorylineColor, StorylineField, WorldItem } from './types';
+import { StorylineItem, StorylineColor, StorylineField, WorldItem, CharacterItem } from './types';
 import { StorylineCard } from './StorylineCard';
 
 interface StorylineThreadsViewProps {
@@ -11,6 +11,7 @@ interface StorylineThreadsViewProps {
   colorSettings?: AppColorSettings;
   validChapters: TextNode[];
   worldItems: WorldItem[];
+  characters?: CharacterItem[];
   isExpanded?: boolean;
   editingStorylineId: string | null;
   editTitle: string;
@@ -30,6 +31,8 @@ interface StorylineThreadsViewProps {
   onSelectChapter?: (chapterId: string) => void;
   onLinkChapter: (storylineId: string, chapterId: string) => void;
   onUnlinkChapter: (storylineId: string, chapterId: string) => void;
+  onLinkCharacter?: (storylineId: string, characterId: string) => void;
+  onUnlinkCharacter?: (storylineId: string, characterId: string) => void;
   onLinkWorldItem: (storylineId: string, worldItemId: string) => void;
   onUnlinkWorldItem: (storylineId: string, worldItemId: string) => void;
 }
@@ -39,6 +42,7 @@ export const StorylineThreadsView = React.memo(function StorylineThreadsView({
   colorSettings,
   validChapters,
   worldItems,
+  characters = [],
   isExpanded = false,
   editingStorylineId,
   editTitle,
@@ -58,6 +62,8 @@ export const StorylineThreadsView = React.memo(function StorylineThreadsView({
   onSelectChapter,
   onLinkChapter,
   onUnlinkChapter,
+  onLinkCharacter,
+  onUnlinkCharacter,
   onLinkWorldItem,
   onUnlinkWorldItem,
 }: StorylineThreadsViewProps) {
@@ -90,6 +96,7 @@ export const StorylineThreadsView = React.memo(function StorylineThreadsView({
           colorSettings={colorSettings}
           validChapters={validChapters}
           worldItems={worldItems}
+          characters={characters}
           isEditing={editingStorylineId === storyline.id}
           editTitle={editTitle}
           onEditTitleChange={onEditTitleChange}
@@ -108,6 +115,8 @@ export const StorylineThreadsView = React.memo(function StorylineThreadsView({
           onSelectChapter={onSelectChapter}
           onLinkChapter={onLinkChapter}
           onUnlinkChapter={onUnlinkChapter}
+          onLinkCharacter={onLinkCharacter}
+          onUnlinkCharacter={onUnlinkCharacter}
           onLinkWorldItem={onLinkWorldItem}
           onUnlinkWorldItem={onUnlinkWorldItem}
         />

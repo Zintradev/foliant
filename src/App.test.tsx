@@ -2,7 +2,7 @@ import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import App from './App';
-import { ask, open } from '@tauri-apps/plugin-dialog';
+import { open } from '@tauri-apps/plugin-dialog';
 import { readTextFile } from '@tauri-apps/plugin-fs';
 import { importManuskriptProject } from './utils/importManuskript';
 import { DEFAULT_PROJECT } from './data/mockProject';
@@ -127,12 +127,15 @@ vi.mock('./components/common/UnsavedChangesModal', () => ({
 }));
 
 describe('App Component', () => {
-  const mockAsk = vi.mocked(ask);
+
   const mockImport = vi.mocked(importManuskriptProject);
   const mockOpen = vi.mocked(open);
   const mockReadTextFile = vi.mocked(readTextFile);
 
   beforeEach(() => {
+    sessionStorage.setItem('foliant_welcome_answered', 'true');
+    localStorage.setItem('foliant_first_run_completed', 'true');
+    localStorage.setItem('foliant_welcome_completed', 'true');
     vi.useRealTimers();
     vi.clearAllMocks();
     (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ = { invoke: vi.fn() };
@@ -235,11 +238,11 @@ describe('App Component', () => {
     fireEvent.click(expandLeftBtn);
 
     // Right Panel Toggle
-    const rightPanelToggle = screen.getByTitle(dict.en.collapseRightDock);
-    fireEvent.click(rightPanelToggle);
     const expandRightBtn = screen.getByTitle(dict.en.expandRightDock);
-    expect(expandRightBtn).toBeInTheDocument();
     fireEvent.click(expandRightBtn);
+    const collapseRightBtn = screen.getByTitle(dict.en.collapseRightDock);
+    expect(collapseRightBtn).toBeInTheDocument();
+    fireEvent.click(collapseRightBtn);
 
     // Bottom Panel Toggle (Timeline & Relationships footer tabs)
     const timelineButtons = screen.getAllByRole('button', { name: /Timeline/i });
@@ -310,19 +313,24 @@ describe('App Component', () => {
     fireEvent.click(fileMenuBtn);
 
     // 1. Rejected confirmation
-    mockAsk.mockResolvedValueOnce(false);
+
     const newProjectBtn = screen.getByText(dict.en.newProject);
     fireEvent.click(newProjectBtn);
-    expect(mockAsk).toHaveBeenCalled();
+    expect(screen.getByText(dict.en.newProjectConfirm)).toBeInTheDocument();
+    const cancelBtn = screen.getByText(dict.en.cancel);
+    fireEvent.click(cancelBtn);
+    expect(screen.queryByText(dict.en.newProjectConfirm)).not.toBeInTheDocument();
 
     // 2. Accepted confirmation
     fireEvent.click(fileMenuBtn);
-    mockAsk.mockResolvedValueOnce(true);
+
     const newProjectBtn2 = screen.getByText(dict.en.newProject);
     fireEvent.click(newProjectBtn2);
 
     await waitFor(() => {
-      expect(mockAsk).toHaveBeenCalledTimes(2);
+      const confirmButtons = screen.getAllByText(dict.en.newProject);
+      fireEvent.click(confirmButtons[confirmButtons.length - 1]);
+      expect(screen.queryByText(dict.en.newProjectConfirm)).not.toBeInTheDocument();
     });
   });
 
@@ -420,7 +428,12 @@ describe('App Component', () => {
     const chevronBtn = footerButtons.find((btn) =>
       btn.querySelector('.lucide-chevron-up, .lucide-chevron-down')
     );
-    if (chevronBtn) fireEvent.click(chevronBtn);
+    if (chevronBtn) {
+      fireEvent.click(chevronBtn);
+    } else {
+      const timelineButtons3 = screen.getAllByRole('button', { name: /Timeline/i });
+      fireEvent.click(timelineButtons3[timelineButtons3.length - 1]);
+    }
   });
 
   it('handles left and right dock splitters mouse drag resizing', () => {
@@ -431,6 +444,10 @@ describe('App Component', () => {
     fireEvent.mouseDown(leftSplitter, { clientX: 250 });
     fireEvent.mouseMove(window, { clientX: 320 });
     fireEvent.mouseUp(window);
+
+    // Expand right dock first
+    const expandRightBtn = screen.getByTitle(dict.en.expandRightDock);
+    fireEvent.click(expandRightBtn);
 
     // Right splitter
     const rightSplitter = screen.getByLabelText('Resize right panel');
@@ -568,8 +585,8 @@ describe('App Component', () => {
     fireEvent.click(newSceneOptions[newSceneOptions.length - 1]);
 
     // 2. New project fallback when Tauri ask fails with exception
-    mockAsk.mockRejectedValueOnce(new Error('Tauri IPC failed'));
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValueOnce(true);
+
+
 
     const fileMenuBtn = screen.getByLabelText('File Menu');
     fireEvent.click(fileMenuBtn);
@@ -579,8 +596,9 @@ describe('App Component', () => {
       fireEvent.click(newProjectBtn);
     });
 
-    expect(confirmSpy).toHaveBeenCalled();
-    confirmSpy.mockRestore();
+    expect(screen.getByText(dict.en.newProjectConfirm)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(dict.en.cancel));
+
   });
 
   it('covers dock close buttons, splitter double-click noop, and auto-save timer effect', async () => {
@@ -593,11 +611,11 @@ describe('App Component', () => {
     fireEvent.doubleClick(leftSplitter);
 
     // 2. Close docks via dock container collapse buttons
-    const dockCollapseBtns = screen.getAllByLabelText('Collapse Panel');
+    const dockCollapseBtns = screen.queryAllByLabelText('Collapse Panel');
     if (dockCollapseBtns.length > 0) {
       fireEvent.click(dockCollapseBtns[0]); // handleCloseLeft
     }
-    const dockCollapseBtnsAfter = screen.getAllByLabelText('Collapse Panel');
+    const dockCollapseBtnsAfter = screen.queryAllByLabelText('Collapse Panel');
     if (dockCollapseBtnsAfter.length > 0) {
       fireEvent.click(dockCollapseBtnsAfter[0]); // handleCloseRight
     }

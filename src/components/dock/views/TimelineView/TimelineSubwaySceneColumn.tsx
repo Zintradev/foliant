@@ -57,12 +57,12 @@ function TimelineSubwaySceneColumnComponent({
       onClick={() => onSelectScene(scene.id)}
       style={{ width: isManualWidth ? `${width}px` : `var(--scene-col-width, ${width}px)` }}
       className={`p-2 flex flex-col justify-between gap-1.5 shrink-0 select-none cursor-pointer relative bg-zinc-900/60 hover:bg-zinc-850/60 h-full ${
-        isDropdownOpen ? 'z-40' : 'z-0'
+        isDropdownOpen ? 'z-50' : 'z-0'
       } ${isDimmed ? 'opacity-35' : ''}`}
     >
       <div
-        style={{ contentVisibility: 'auto', contain: 'layout style paint' }}
-        className={`rounded-sm border p-2 flex flex-col justify-between h-full overflow-hidden transition-colors duration-150 ${
+        style={{ contentVisibility: 'auto', contain: isDropdownOpen ? 'none' : 'layout style paint' }}
+        className={`rounded-sm border p-2 flex flex-col justify-between h-full ${isDropdownOpen ? 'overflow-visible' : 'overflow-hidden'} transition-colors duration-150 ${
           isActive
             ? 'border-zinc-300 ring-1 ring-zinc-300/40 bg-zinc-850 shadow-md'
             : 'border-zinc-800 bg-zinc-950/70 hover:border-zinc-700'

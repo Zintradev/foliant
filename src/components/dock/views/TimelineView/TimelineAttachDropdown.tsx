@@ -25,7 +25,7 @@ function TimelineAttachDropdownComponent({
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      className="attach-dropdown-menu absolute bottom-full left-2 mb-1 z-50 w-48 bg-zinc-950 border border-zinc-800 rounded-xs shadow-xl p-1 text-xs"
+      className="attach-dropdown-menu absolute top-full left-0 mt-1 z-50 w-48 bg-zinc-950 border border-zinc-800 rounded-xs shadow-xl p-1 text-xs"
     >
       <div className="px-1.5 py-0.5 text-[8px] font-mono text-zinc-500 uppercase border-b border-zinc-850 mb-1">
         {type === 'storyline' ? t('attachStoryline') : t('attachCharacter')}

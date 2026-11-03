@@ -117,13 +117,12 @@ function RelationshipBoardCanvasComponent({
       onMouseDown={onCanvasMouseDown}
       onPointerMove={onCanvasPointerMove}
       onContextMenu={onCanvasContextMenu}
-      className={`relative w-full h-full overflow-hidden select-none touch-none ${
-        connectingSourceId
-          ? 'cursor-crosshair'
-          : isPanning || isSpacePressed
+      className={`relative w-full h-full overflow-hidden select-none touch-none ${connectingSourceId
+        ? 'cursor-crosshair'
+        : isPanning || isSpacePressed
           ? 'cursor-grabbing'
           : 'cursor-grab'
-      }`}
+        }`}
       style={{
         touchAction: 'none',
         backgroundImage: `radial-gradient(circle, #27272a 1px, transparent 1px)`,
@@ -131,14 +130,6 @@ function RelationshipBoardCanvasComponent({
         backgroundPosition: `${pan.x}px ${pan.y}px`,
       }}
     >
-      {characters.length === 0 && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-500 pointer-events-none select-none">
-          <Users className="w-10 h-10 mb-2 opacity-30" />
-          <p className="text-xs">{t('noCharactersInGraph')}</p>
-          <p className="text-[10px] text-zinc-600 mt-0.5">{t('clickAddOrRightClick')}</p>
-        </div>
-      )}
-
       <div
         className="absolute top-0 left-0 w-[10000px] h-[10000px] pointer-events-auto"
         style={{
@@ -203,6 +194,20 @@ function RelationshipBoardCanvasComponent({
           onDoubleClick={onPillDoubleClick}
         />
       </div>
+
+      {characters.length === 0 && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-zinc-500 gap-3 pointer-events-none z-20 select-none">
+          <div className="p-3.5 rounded-full bg-zinc-900/90 border border-zinc-800 shadow-xl">
+            <Users className="w-8 h-8 text-zinc-500" />
+          </div>
+          <p className="text-xs font-medium text-zinc-300 max-w-sm leading-relaxed">
+            {t(
+              'emptyGraphMessage',
+              'No tienes personajes aún. Añádelos si te resultan útiles para estructurar tu historia.'
+            )}
+          </p>
+        </div>
+      )}
 
       {canvasContextMenu && (
         <RelationshipCanvasContextMenu

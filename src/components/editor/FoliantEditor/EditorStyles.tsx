@@ -8,22 +8,22 @@ function EditorStylesComponent() {
         outline: none;
         min-height: 450px;
         line-height: 1.8;
+        color: inherit;
       }
 
       /* High-Contrast Bold with Letter-Spacing Compensation */
       .foliant-editor-wrapper .tiptap strong,
       .foliant-editor-wrapper .tiptap b {
         font-weight: 700;
-        color: #ffffff !important;
+        color: inherit;
         letter-spacing: -0.015em;
-        text-shadow: 0 0 1px rgba(255, 255, 255, 0.4);
       }
 
       /* Crisp Italic */
       .foliant-editor-wrapper .tiptap em,
       .foliant-editor-wrapper .tiptap i {
         font-style: italic;
-        color: #f4f4f5;
+        color: inherit;
       }
 
       /* Font Family Definitions */
@@ -55,7 +55,7 @@ function EditorStylesComponent() {
         font-weight: 700;
         margin-top: 1.5rem;
         margin-bottom: 0.75rem;
-        color: #f4f4f5;
+        color: inherit;
         line-height: 1.25;
       }
       .foliant-editor-wrapper .tiptap h2 {
@@ -63,7 +63,7 @@ function EditorStylesComponent() {
         font-weight: 600;
         margin-top: 1.25rem;
         margin-bottom: 0.5rem;
-        color: #e4e4e7;
+        color: inherit;
         line-height: 1.3;
       }
       .foliant-editor-wrapper .tiptap blockquote {
@@ -71,7 +71,8 @@ function EditorStylesComponent() {
         padding-left: 1rem;
         margin-top: 1rem;
         margin-bottom: 1rem;
-        color: #a1a1aa;
+        color: inherit;
+        opacity: 0.85;
         font-style: italic;
       }
       /* Horizontal Rule / Markdown Divider */
@@ -98,15 +99,17 @@ function EditorStylesComponent() {
       }
       .foliant-indent-first-line .tiptap h1,
       .foliant-indent-first-line .tiptap h2,
-      .foliant-indent-first-line .tiptap h3,
       .foliant-indent-first-line .tiptap blockquote,
-      .foliant-indent-first-line .tiptap blockquote p,
-      .foliant-indent-first-line .tiptap ul p,
-      .foliant-indent-first-line .tiptap ol p {
-        text-indent: 0 !important;
+      .foliant-indent-first-line .tiptap ul,
+      .foliant-indent-first-line .tiptap ol,
+      .foliant-indent-first-line .tiptap hr {
+        text-indent: 0;
       }
-      .foliant-indent-first-line .tiptap p[style*="text-align: center"] {
-        text-indent: 0 !important;
+      .foliant-indent-first-line .tiptap p:first-child,
+      .foliant-indent-first-line .tiptap h1 + p,
+      .foliant-indent-first-line .tiptap h2 + p,
+      .foliant-indent-first-line .tiptap hr + p {
+        text-indent: 0;
       }
     `}</style>
   );

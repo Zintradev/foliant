@@ -3,16 +3,32 @@ import { TextNode } from '../../../../types/project';
 
 interface UseOutlineFoldersProps {
   chapters: TextNode[];
+  activeChapterId?: string;
   onAddChapter: (type?: 'folder' | 'scene', parentId?: string | null) => void;
   onAddFolder?: (parentId?: string | null) => void;
 }
 
 export function useOutlineFolders({
   chapters,
+  activeChapterId,
   onAddChapter,
   onAddFolder,
 }: UseOutlineFoldersProps) {
-  const [collapsedFolderIds, setCollapsedFolderIds] = useState<Set<string>>(new Set());
+  // Start with all internal folders collapsed by default, EXCEPT ancestors of active scene
+  const [collapsedFolderIds, setCollapsedFolderIds] = useState<Set<string>>(() => {
+    const activeAncestors = new Set<string>();
+    if (activeChapterId) {
+      let current = chapters.find((c) => c.id === activeChapterId);
+      while (current && current.parentId) {
+        activeAncestors.add(current.parentId);
+        current = chapters.find((c) => c.id === current!.parentId);
+      }
+    }
+    const folderIds = chapters
+      .filter((c) => c.type === 'folder' && !activeAncestors.has(c.id))
+      .map((c) => c.id);
+    return new Set(folderIds);
+  });
 
   const handleToggleFolder = useCallback((folderId: string) => {
     setCollapsedFolderIds((prev) => {

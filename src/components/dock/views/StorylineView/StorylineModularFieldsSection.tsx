@@ -108,7 +108,7 @@ export const StorylineModularFieldsSection = React.memo(
                       type="button"
                       disabled={fIdx === 0}
                       onClick={() => onMoveField(storylineId, fIdx, 'up')}
-                      className="p-0.5 rounded-xs text-zinc-500 hover:text-zinc-200 disabled:opacity-20 transition"
+                      className="p-0.5 rounded-xs text-zinc-500 hover:text-zinc-200 disabled:opacity-20 transition cursor-pointer disabled:cursor-not-allowed"
                       title="Move up"
                     >
                       <ChevronUp className="w-3 h-3" />
@@ -117,7 +117,7 @@ export const StorylineModularFieldsSection = React.memo(
                       type="button"
                       disabled={fIdx === fields.length - 1}
                       onClick={() => onMoveField(storylineId, fIdx, 'down')}
-                      className="p-0.5 rounded-xs text-zinc-500 hover:text-zinc-200 disabled:opacity-20 transition"
+                      className="p-0.5 rounded-xs text-zinc-500 hover:text-zinc-200 disabled:opacity-20 transition cursor-pointer disabled:cursor-not-allowed"
                       title="Move down"
                     >
                       <ChevronDown className="w-3 h-3" />
@@ -125,7 +125,7 @@ export const StorylineModularFieldsSection = React.memo(
                     <button
                       type="button"
                       onClick={() => onDeleteField(storylineId, field.id)}
-                      className="p-0.5 rounded-xs text-zinc-500 hover:text-red-400 transition"
+                      className="p-0.5 rounded-xs text-zinc-500 hover:text-red-400 transition cursor-pointer"
                       title="Delete field"
                     >
                       <X className="w-3 h-3" />

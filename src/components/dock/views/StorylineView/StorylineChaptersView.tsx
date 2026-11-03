@@ -106,7 +106,7 @@ export const StorylineChaptersView = React.memo(
                         <button
                           type="button"
                           onClick={() => onUnlinkChapter(st.id, chapter.id)}
-                          className="hover:text-red-400 text-zinc-500 ml-0.5 transition"
+                          className="hover:text-red-400 text-zinc-500 ml-0.5 transition cursor-pointer"
                           title={t('detachPlotThread')}
                         >
                           <X className="w-2.5 h-2.5" />

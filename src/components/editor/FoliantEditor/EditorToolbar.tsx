@@ -16,11 +16,12 @@ import ToolbarButton from './ToolbarButton';
 import UnderlineColorPicker from './UnderlineColorPicker';
 import HighlightColorPicker from './HighlightColorPicker';
 
-interface EditorToolbarProps {
+export interface EditorToolbarProps {
   editor: Editor | null;
   onOpenSymbols: () => void;
   currentFont: EditorFontFamily;
   onFontChange: (font: EditorFontFamily) => void;
+  className?: string;
 }
 
 function EditorToolbar({
@@ -28,6 +29,7 @@ function EditorToolbar({
   onOpenSymbols,
   currentFont,
   onFontChange,
+  className,
 }: EditorToolbarProps) {
   const isEditorReady = !!editor && !editor.isDestroyed;
 
@@ -47,7 +49,15 @@ function EditorToolbar({
   };
 
   return (
-    <div className="sticky top-0 z-30 bg-zinc-950/95 backdrop-blur-xs border-b border-zinc-800 pb-2 pt-0.5 mb-6 flex items-center flex-nowrap gap-1 select-none overflow-visible">
+    <div
+      data-testid="editor-toolbar"
+      aria-label="Editor Formatting Toolbar"
+      className={
+        className ||
+        'relative z-10 w-full bg-transparent border-b border-current/20 pb-2 pt-0.5 mb-6 flex items-center flex-wrap sm:flex-nowrap gap-1 select-none overflow-visible'
+      }
+      style={{ display: 'flex' }}
+    >
       {/* Font Family Quick Selector */}
       <div className="flex items-center shrink-0 mr-0.5">
         <select

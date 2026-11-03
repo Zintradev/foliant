@@ -1,11 +1,12 @@
 import { TextNode } from '../../../../types/project';
-import { StorylineItem, StorylineColor, StorylineField, WorldItem } from '../../../../types/dock';
+import { StorylineItem, StorylineColor, StorylineField, WorldItem, CharacterItem } from '../../../../types/dock';
 import { AppColorSettings } from '../../../../types/settings';
 
 export interface StorylineViewProps {
   storylines: StorylineItem[];
   chapters: TextNode[];
   worldItems?: WorldItem[];
+  characters?: CharacterItem[];
   onChange: (storylines: StorylineItem[]) => void;
   onSelectChapter?: (chapterId: string) => void;
   colorSettings?: AppColorSettings;
@@ -15,4 +16,4 @@ export interface StorylineViewProps {
 
 export type ViewMode = 'threads' | 'chapters';
 
-export type { StorylineItem, StorylineColor, StorylineField, WorldItem };
+export type { StorylineItem, StorylineColor, StorylineField, WorldItem, CharacterItem };

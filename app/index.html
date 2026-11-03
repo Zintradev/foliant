@@ -301,9 +301,32 @@
         <div class="splash-progress-track">
           <div class="splash-progress-bar"></div>
         </div>
-        <div class="splash-status">Iniciando entorno...</div>
+        <div class="splash-status" id="foliant-splash-status">Initializing environment...</div>
       </div>
     </div>
+    <script>
+      (function() {
+        try {
+          var raw = localStorage.getItem('foliant_app_settings_v1') || localStorage.getItem('foliant_color_settings_v1');
+          var lang = 'en';
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            if (parsed && parsed.preferences && parsed.preferences.language) {
+              lang = parsed.preferences.language;
+            }
+          }
+          var statusEl = document.getElementById('foliant-splash-status');
+          var splashEl = document.getElementById('foliant-splash');
+          if (lang === 'es') {
+            if (statusEl) statusEl.textContent = 'Iniciando entorno...';
+            if (splashEl) splashEl.setAttribute('aria-label', 'Cargando Foliant');
+          } else {
+            if (statusEl) statusEl.textContent = 'Initializing environment...';
+            if (splashEl) splashEl.setAttribute('aria-label', 'Loading Foliant');
+          }
+        } catch (e) {}
+      })();
+    </script>
 
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

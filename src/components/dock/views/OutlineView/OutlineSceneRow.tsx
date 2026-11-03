@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { BookOpen, Target, Trash2 } from 'lucide-react';
+import { BookOpen, Target } from 'lucide-react';
 import { TextNode } from '../../../../types/project';
 
 interface OutlineSceneRowProps {
@@ -10,7 +10,7 @@ interface OutlineSceneRowProps {
   renameInputRef: React.RefObject<HTMLInputElement | null>;
   showMetrics: boolean;
   wordCount: number;
-  chaptersCount: number;
+  chaptersCount?: number;
   onSelect: () => void;
   onContextMenu: (e: React.MouseEvent) => void;
   onRenameChange: (val: string) => void;
@@ -27,13 +27,13 @@ export const OutlineSceneRow = memo(function OutlineSceneRow({
   renameInputRef,
   showMetrics,
   wordCount,
-  chaptersCount,
+  chaptersCount: _chaptersCount,
   onSelect,
   onContextMenu,
   onRenameChange,
   onCommitRename,
   onCancelRename,
-  onDelete,
+  onDelete: _onDelete,
 }: OutlineSceneRowProps) {
   const targetWords = node.targetWords || 0;
   const progress = targetWords > 0 ? Math.min((wordCount / targetWords) * 100, 100) : 0;
@@ -109,19 +109,7 @@ export const OutlineSceneRow = memo(function OutlineSceneRow({
           </>
         )}
 
-        {onDelete && chaptersCount > 1 && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            title="Delete scene"
-            className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-rose-400 p-0.5 transition cursor-pointer"
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
-        )}
+        
       </div>
     </div>
   );

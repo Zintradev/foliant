@@ -211,8 +211,8 @@ describe('useProjectMutations Hook', () => {
     expect(setActiveChapterId).not.toHaveBeenCalled();
   });
 
-  it('handleDeleteChapter aborts if confirmation is rejected via ask dialog', async () => {
-    vi.mocked(ask).mockResolvedValueOnce(false);
+  it('handleDeleteChapter deletes directly without triggering native window.confirm', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm');
 
     const { result } = renderHook(() =>
       useProjectMutations({
@@ -227,7 +227,9 @@ describe('useProjectMutations Hook', () => {
       await result.current.handleDeleteChapter('scene-2');
     });
 
-    expect(project.chapters.some((c) => c.id === 'scene-2')).toBe(true);
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(project.chapters.some((c) => c.id === 'scene-2')).toBe(false);
+    confirmSpy.mockRestore();
   });
 
   it('handleDeleteChapter deletes a single scene and resets activeChapterId if it was active', async () => {
@@ -275,7 +277,7 @@ describe('useProjectMutations Hook', () => {
     expect(setActiveChapterId).toHaveBeenCalledWith('scene-3');
   });
 
-  it('handleDeleteChapter guards against deleting the last remaining node', async () => {
+  it('handleDeleteChapter allows deleting the last remaining node', async () => {
     vi.mocked(ask).mockResolvedValueOnce(true);
     // Strip down to 1 chapter
     project.chapters = [project.chapters[0]];
@@ -293,13 +295,11 @@ describe('useProjectMutations Hook', () => {
       await result.current.handleDeleteChapter('folder-1');
     });
 
-    expect(project.chapters.length).toBe(1);
+    expect(project.chapters.length).toBe(0);
+    expect(setActiveChapterId).toHaveBeenCalledWith('');
   });
 
-  it('handleDeleteChapter falls back to window.confirm when Tauri ask plugin throws', async () => {
-    vi.mocked(ask).mockRejectedValueOnce(new Error('Tauri API unavailable'));
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValueOnce(true);
-
+  it('handleDeleteChapter deletes standalone scenes cleanly and dispatches safely', async () => {
     const { result } = renderHook(() =>
       useProjectMutations({
         project,
@@ -313,9 +313,7 @@ describe('useProjectMutations Hook', () => {
       await result.current.handleDeleteChapter('scene-3');
     });
 
-    expect(confirmSpy).toHaveBeenCalled();
     expect(project.chapters.some((c) => c.id === 'scene-3')).toBe(false);
-    confirmSpy.mockRestore();
   });
 
   it('handleUpdateChapter updates partial fields on target chapter', () => {

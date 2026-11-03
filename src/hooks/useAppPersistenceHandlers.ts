@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { ask } from '@tauri-apps/plugin-dialog';
 import { isTauriApp } from '../utils/platform';
 import { SaveStatus } from './useProjectPersistence';
 import { importManuskriptProject } from '../utils/importManuskript';
@@ -27,6 +26,7 @@ export function useAppPersistenceHandlers({
 }: UseAppPersistenceHandlersOptions) {
   const [editorSaveStatus, setEditorSaveStatus] = useState<SaveStatus>('saved');
   const [importModalData, setImportModalData] = useState<ImportModalData>(null);
+  const [isNewProjectConfirmOpen, setIsNewProjectConfirmOpen] = useState(false);
 
   const handleEditorStatusChange = useCallback(
     (status: SaveStatus) => {
@@ -58,26 +58,19 @@ export function useAppPersistenceHandlers({
     }
   }, [saveProjectAs]);
 
-  const handleNewProject = useCallback(async () => {
-    const confirmMsg =
-      'Are you sure you want to start a new project? All unsaved progress in the current workspace will be cleared.';
-    let confirmed = false;
+  const handleNewProject = useCallback(() => {
+    setIsNewProjectConfirmOpen(true);
+  }, []);
 
-    if (isTauriApp()) {
-      try {
-        confirmed = await ask(confirmMsg, { title: 'New Project', kind: 'warning' });
-      } catch {
-        confirmed = typeof window !== 'undefined' && window.confirm(confirmMsg);
-      }
-    } else {
-      confirmed = typeof window !== 'undefined' && window.confirm(confirmMsg);
-    }
-
-    if (confirmed) {
-      newProject('Untitled Project');
-      setActiveChapterId('');
-    }
+  const handleConfirmNewProject = useCallback(() => {
+    newProject('Untitled Project');
+    setActiveChapterId('');
+    setIsNewProjectConfirmOpen(false);
   }, [newProject, setActiveChapterId]);
+
+  const handleCancelNewProject = useCallback(() => {
+    setIsNewProjectConfirmOpen(false);
+  }, []);
 
   const handleImportManuskript = useCallback(async () => {
     if (!isTauriApp()) {
@@ -124,6 +117,9 @@ export function useAppPersistenceHandlers({
     handleManualSave,
     handleManualSaveAs,
     handleNewProject,
+    isNewProjectConfirmOpen,
+    handleConfirmNewProject,
+    handleCancelNewProject,
     handleImportManuskript,
   };
 }

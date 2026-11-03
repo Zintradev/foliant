@@ -1,5 +1,6 @@
 import { useState, useMemo, memo } from 'react';
 import { WorldbuildingViewProps, WorldItem } from './types';
+import { loadSettings } from '../../../../types/settings';
 import { DEFAULT_CATEGORIES } from './constants';
 import { useWorldbuildingDragDrop } from './useWorldbuildingDragDrop';
 import { useWorldbuildingDraft } from './useWorldbuildingDraft';
@@ -9,6 +10,8 @@ import { WorldbuildingList } from './WorldbuildingList';
 import { WorldbuildingDetailHeader } from './WorldbuildingDetailHeader';
 import { WorldbuildingDetailEditor } from './WorldbuildingDetailEditor';
 import { WorldbuildingEmptyDetail } from './WorldbuildingEmptyDetail';
+import ConfirmDeleteModal from '../../../common/ConfirmDeleteModal';
+import { useTranslation } from '../../../../i18n/translations';
 
 export function WorldbuildingViewComponent({
   items,
@@ -21,6 +24,8 @@ export function WorldbuildingViewComponent({
   const [selectedId, setSelectedId] = useState<string | null>(() => items[0]?.id ?? null);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const { t } = useTranslation();
+  const [itemPendingDelete, setItemPendingDelete] = useState<WorldItem | null>(null);
 
   const allCategories = useMemo(() => {
     const set = new Set<string>(DEFAULT_CATEGORIES);
@@ -109,7 +114,13 @@ export function WorldbuildingViewComponent({
 
   const handleDelete = (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    const remaining = items.filter((item) => item.id !== id);
+    const item = items.find((i) => i.id === id);
+    const shouldConfirm = loadSettings()?.preferences?.confirmDelete?.worldbuilding ?? true;
+    if (shouldConfirm && item && (item.summary?.trim() || item.description?.trim())) {
+      setItemPendingDelete(item);
+      return;
+    }
+    const remaining = items.filter((i) => i.id !== id);
     onChange(remaining);
     if (selectedId === id) {
       setSelectedId(remaining[0]?.id ?? null);
@@ -190,6 +201,23 @@ export function WorldbuildingViewComponent({
           <WorldbuildingEmptyDetail onCreateNew={handleCreateNew} />
         )}
       </div>
+      <ConfirmDeleteModal
+        isOpen={Boolean(itemPendingDelete)}
+        title={t('confirmDelete', 'Confirm Delete')}
+        message={t('confirmDeleteWorldItem', 'Are you sure you want to delete this worldbuilding entry? This action cannot be undone.')}
+        itemName={itemPendingDelete?.title}
+        onConfirm={() => {
+          if (itemPendingDelete) {
+            const remaining = items.filter((item) => item.id !== itemPendingDelete.id);
+            onChange(remaining);
+            if (selectedId === itemPendingDelete.id) {
+              setSelectedId(remaining[0]?.id ?? null);
+            }
+            setItemPendingDelete(null);
+          }
+        }}
+        onCancel={() => setItemPendingDelete(null)}
+      />
     </div>
   );
 }

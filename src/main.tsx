@@ -5,10 +5,15 @@ import "./index.css";
 import { loadSettings } from "./types/settings";
 import { applyTheme } from "./theme/themeEngine";
 
-// Apply persisted theme immediately before initial React mount
+// Apply persisted theme and splash localization immediately before initial React mount
 try {
   const initialSettings = loadSettings();
   applyTheme(initialSettings.preferences?.themeMode, initialSettings.preferences?.customTheme);
+  const lang = initialSettings.preferences?.language || 'en';
+  const splashStatus = document.getElementById('foliant-splash-status') || document.querySelector('.splash-status');
+  if (splashStatus) {
+    splashStatus.textContent = lang === 'es' ? 'Iniciando entorno...' : 'Initializing environment...';
+  }
 } catch {
   // Non-fatal if localStorage unavailable
 }

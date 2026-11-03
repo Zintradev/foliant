@@ -7,7 +7,7 @@ describe('useDockLayout hook', () => {
     const { result } = renderHook(() => useDockLayout());
 
     expect(result.current.leftOpen).toBe(true);
-    expect(result.current.rightOpen).toBe(true);
+    expect(result.current.rightOpen).toBe(false);
     expect(result.current.isBottomOpen).toBe(false);
     expect(result.current.leftWidth).toBe(270);
     expect(result.current.rightWidth).toBe(310);

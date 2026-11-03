@@ -6,7 +6,6 @@ import { useSettingsDraft } from './useSettingsDraft';
 import { SettingsSidebarNav } from './SettingsSidebarNav';
 import { SettingsGeneralSection } from './SettingsGeneralSection';
 import { SettingsAppearanceSection } from './SettingsAppearanceSection';
-import { SettingsEditorSection } from './SettingsEditorSection';
 import { SettingsTaxonomySection } from './SettingsTaxonomySection';
 import { SettingsInfoSection } from './SettingsInfoSection';
 import { SettingsColorPickerPopup } from './SettingsColorPickerPopup';
@@ -120,26 +119,26 @@ export const SettingsModal = React.memo(function SettingsModal({
                 preserveManualSceneWidth={prefs?.preserveManualSceneWidth ?? false}
                 preserveManualPlotHeight={prefs?.preserveManualPlotHeight ?? false}
                 autoUpdateCheck={prefs?.autoUpdateCheck ?? false}
+                confirmDelete={prefs?.confirmDelete}
                 onPreferenceChange={handlePreferenceChange}
                 t={t}
               />
             )}
 
-            {activeSection === 'appearance' && (
+            {(activeSection === 'appearance' || activeSection === 'editor') && (
               <SettingsAppearanceSection
                 themeMode={prefs?.themeMode || 'dark'}
                 customTheme={customTheme}
+                editorIndentFirstLine={prefs?.editorIndentFirstLine ?? true}
+                editorFontFamily={prefs?.editorFontFamily ?? 'serif'}
+                editorPaperColor={prefs?.editorPaperColor ?? 'paper'}
+                editorCustomBg={prefs?.editorCustomBg ?? '#f6f1e8'}
+                editorCustomText={prefs?.editorCustomText ?? '#2c2523'}
+                matchEditorBackgroundWithPaper={prefs?.matchEditorBackgroundWithPaper ?? false}
+                focusModeShowFormattingToolbar={prefs?.focusModeShowFormattingToolbar ?? false}
                 onPreferenceChange={handlePreferenceChange}
                 onCustomColorChange={handleCustomColorChange}
                 onOpenColorPicker={setActiveColorPicker}
-                t={t}
-              />
-            )}
-
-            {activeSection === 'editor' && (
-              <SettingsEditorSection
-                editorIndentFirstLine={prefs?.editorIndentFirstLine ?? true}
-                onPreferenceChange={handlePreferenceChange}
                 t={t}
               />
             )}

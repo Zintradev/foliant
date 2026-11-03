@@ -40,13 +40,14 @@ export function useAppAutoSave({
       return;
     }
 
-    setEditorSaveStatus('saving');
+    setEditorSaveStatus('unsaved');
 
     if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
 
     const intervalMs = autoSaveInterval != null ? Math.max(300, autoSaveInterval * 1000) : 600;
 
     autoSaveTimeoutRef.current = setTimeout(async () => {
+      setEditorSaveStatus('saving');
       if (currentFilePath) {
         await saveSilently();
       }

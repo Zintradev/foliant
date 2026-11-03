@@ -3,11 +3,13 @@ import { Loader2, Sparkles } from 'lucide-react';
 import { useTranslation } from '../../../i18n/translations';
 import { useFlipAnimation } from '../../common/useFlipAnimation';
 import { MoodboardBlockProps, MoodboardSection, ReferenceImage } from './types';
+import { loadSettings } from '../../../types/settings';
 import { useMoodboardStorage } from './useMoodboardStorage';
 import { useMoodboardDragDrop } from './useMoodboardDragDrop';
 import { MoodboardSectionFolder } from './MoodboardSectionFolder';
 import { MoodboardLightbox } from './MoodboardLightbox';
 import { MoodboardHeader } from './MoodboardHeader';
+import ConfirmDeleteModal from '../../common/ConfirmDeleteModal';
 
 export function MoodboardBlockComponent({
   title,
@@ -22,6 +24,8 @@ export function MoodboardBlockComponent({
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const [isAddingSection, setIsAddingSection] = useState(false);
   const [newSectionName, setNewSectionName] = useState('');
+  const [folderPendingDelete, setFolderPendingDelete] = useState<MoodboardSection | null>(null);
+  const [imagePendingDelete, setImagePendingDelete] = useState<ReferenceImage | null>(null);
 
   const {
     images,
@@ -33,6 +37,7 @@ export function MoodboardBlockComponent({
     uploadFile,
     handleDeleteImage,
     handleAddSection,
+    handleDeleteSection,
   } = useMoodboardStorage();
 
   const {
@@ -59,7 +64,8 @@ export function MoodboardBlockComponent({
   const registerCard = useFlipAnimation(Boolean(draggedImageId), draggedImageId);
 
   const getSectionLabel = useCallback(
-    (sec: MoodboardSection): string => {
+    (sec?: MoodboardSection): string => {
+      if (!sec) return '';
       if (sec.id === 'general') return t('sectionGeneral');
       if (sec.id === 'characters') return t('sectionCharacters');
       if (sec.id === 'locations') return t('sectionLocations');
@@ -83,6 +89,27 @@ export function MoodboardBlockComponent({
     [activeSectionId, uploadFile]
   );
 
+  const onFolderDeleteRequest = useCallback((sec: MoodboardSection) => {
+    const shouldConfirm = loadSettings()?.preferences?.confirmDelete?.visuals ?? true;
+    if (!shouldConfirm) {
+      handleDeleteSection(sec.id);
+      return;
+    }
+    setFolderPendingDelete(sec);
+  }, [handleDeleteSection]);
+
+  const requestDeleteImage = useCallback((img: ReferenceImage) => {
+    const shouldConfirm = loadSettings()?.preferences?.confirmDelete?.visuals ?? true;
+    if (!shouldConfirm) {
+      handleDeleteImage(img);
+      if (activeLightbox?.id === img.id || activeLightbox?.path === img.path) {
+        setActiveLightbox(null);
+      }
+      return;
+    }
+    setImagePendingDelete(img);
+  }, [handleDeleteImage, activeLightbox]);
+
   const handleAddNewSection = useCallback(() => {
     handleAddSection(newSectionName);
     setNewSectionName('');
@@ -99,7 +126,44 @@ export function MoodboardBlockComponent({
         <MoodboardLightbox
           image={activeLightbox}
           onClose={() => setActiveLightbox(null)}
-          onDelete={handleDeleteImage}
+          onDelete={(img) => requestDeleteImage(img)}
+        />
+      )}
+
+      {imagePendingDelete && (
+        <ConfirmDeleteModal
+          isOpen={Boolean(imagePendingDelete)}
+          title={t('deleteImage', 'Eliminar Imagen')}
+          message={t(
+            'deleteImageConfirm',
+            '¿Estás seguro de que deseas eliminar esta imagen de referencia? Esta acción no se puede deshacer.'
+          )}
+          itemName={imagePendingDelete.name}
+          onConfirm={() => {
+            handleDeleteImage(imagePendingDelete);
+            setImagePendingDelete(null);
+            if (activeLightbox?.id === imagePendingDelete.id || activeLightbox?.path === imagePendingDelete.path) {
+              setActiveLightbox(null);
+            }
+          }}
+          onCancel={() => setImagePendingDelete(null)}
+        />
+      )}
+
+      {folderPendingDelete && (
+        <ConfirmDeleteModal
+          isOpen={Boolean(folderPendingDelete)}
+          title={t('deleteFolder', 'Eliminar Carpeta')}
+          message={t(
+            'confirmDeleteFolder',
+            '¿Estás seguro de que deseas eliminar esta carpeta? Las imágenes contenidas se moverán a la sección general.'
+          )}
+          itemName={folderPendingDelete.name}
+          onConfirm={() => {
+            handleDeleteSection(folderPendingDelete.id);
+            setFolderPendingDelete(null);
+          }}
+          onCancel={() => setFolderPendingDelete(null)}
         />
       )}
 
@@ -108,11 +172,10 @@ export function MoodboardBlockComponent({
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`relative border rounded-md transition-colors overflow-hidden ${
-          isCanvasDragging
-            ? 'border-emerald-500/80 bg-emerald-950/20 ring-1 ring-emerald-500/30'
-            : 'border-zinc-800 bg-zinc-900/30'
-        }`}
+        className={`relative border rounded-md transition-colors overflow-hidden ${isCanvasDragging
+          ? 'border-emerald-500/80 bg-emerald-950/20 ring-1 ring-emerald-500/30'
+          : 'border-zinc-800 bg-zinc-900/30'
+          }`}
       >
         <MoodboardHeader
           title={title}
@@ -143,10 +206,10 @@ export function MoodboardBlockComponent({
                 <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
                 <span className="text-xs font-mono">{t('loadingImages')}</span>
               </div>
-            ) : sections.length === 0 ? (
+            ) : previewImages.length === 0 ? (
               <div className="py-8 flex flex-col items-center justify-center text-zinc-500 gap-2 border border-dashed border-zinc-800/80 rounded">
                 <Sparkles className="w-6 h-6 text-zinc-600" />
-                <span className="text-xs">{t('noImagesYet')}</span>
+                <span className="text-xs font-medium text-zinc-400">{t('emptyVisualsMessage')}</span>
                 <span className="text-[10px] text-zinc-600 font-mono">
                   {t('dragDropOrAdd')}
                 </span>
@@ -170,7 +233,7 @@ export function MoodboardBlockComponent({
                       draggedImageId={draggedImageId}
                       dragOverImageId={dragOverImageId}
                       dragOverPosition={dragOverPosition}
-                      emptyMessage={t('noImagesInSection')}
+                      onDeleteFolder={onFolderDeleteRequest}
                       onSelect={() => setActiveSectionId(section.id)}
                       onToggleCollapse={() => toggleSectionCollapse(section.id)}
                       onSectionDrop={handleSectionDrop}
@@ -188,7 +251,7 @@ export function MoodboardBlockComponent({
                       }}
                       registerCard={registerCard}
                       onPreview={setActiveLightbox}
-                      onDeleteImage={handleDeleteImage}
+                      onDeleteImage={requestDeleteImage}
                       onImageDragStart={handleImageDragStart}
                       onImageDragEnter={handleImageDragEnter}
                       onImageDragOver={handleImageDragOver}

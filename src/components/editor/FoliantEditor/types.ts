@@ -20,4 +20,16 @@ export interface FoliantEditorProps {
   isAutoSave?: boolean;
   /** Inactivity interval in seconds before triggering auto-save. Default: 1 (or 2). */
   autoSaveInterval?: number;
+  /** Whether to hide the formatting toolbar (e.g. in Focus Mode). Default: false. */
+  hideToolbar?: boolean;
+  /** Editable scene title rendered at top of the paper. */
+  title?: string;
+  /** Callback when scene title is edited on the paper. */
+  onTitleChange?: (title: string) => void;
+  /** Scene word count displayed on paper. */
+  wordCount?: number;
+  /** Target word count. */
+  targetWords?: number;
+  externalToolbar?: boolean;
+  onEditorReady?: (editor: import('@tiptap/react').Editor | null) => void;
 }

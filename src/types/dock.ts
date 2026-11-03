@@ -58,6 +58,7 @@ export interface CharacterItem {
   name: string;
   role: CharacterRole;
   summary: string;
+  nameColor?: string;
   avatarUrl?: string;
   notes?: string;
   tags?: CharacterTag[];
@@ -109,7 +110,7 @@ export interface CharacterNodePosition {
   y: number;
 }
 
-export type StorylineColor = 'emerald' | 'purple' | 'amber' | 'blue' | 'rose' | 'cyan';
+export type StorylineColor = 'emerald' | 'purple' | 'amber' | 'blue' | 'rose' | 'cyan' | string;
 
 export interface StorylineField {
   id: string;
@@ -125,6 +126,7 @@ export interface StorylineItem {
   linkedChapterIds: string[];
   fields?: StorylineField[];
   linkedWorldItemIds?: string[];
+  linkedCharacterIds?: string[];
 }
 
 export type Storyline = StorylineItem;

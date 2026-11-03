@@ -1,7 +1,10 @@
 import React from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Pipette } from 'lucide-react';
+import { useState } from 'react';
+import { DarkColorPicker } from '../../../common/DarkColorPicker';
 import { useTranslation } from '../../../../i18n/translations';
 import { TextNode } from '../../../../types/project';
+import { CharacterItem } from '../../../../types/dock';
 import { StorylineColor } from './types';
 import { STORYLINE_COLORS, COLOR_CLASSES } from './constants';
 
@@ -15,6 +18,9 @@ interface StorylineAddDrawerProps {
   initialChapterId: string;
   onInitialChapterIdChange: (id: string) => void;
   validChapters: TextNode[];
+  initialCharacterId?: string;
+  onInitialCharacterIdChange?: (id: string) => void;
+  characters?: CharacterItem[];
   onCancel: () => void;
   onAdd: () => void;
 }
@@ -29,10 +35,14 @@ export const StorylineAddDrawer = React.memo(function StorylineAddDrawer({
   initialChapterId,
   onInitialChapterIdChange,
   validChapters,
+  initialCharacterId = '',
+  onInitialCharacterIdChange,
+  characters = [],
   onCancel,
   onAdd,
 }: StorylineAddDrawerProps) {
   const { t } = useTranslation();
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   return (
     <div className="p-3 border-b border-zinc-800 bg-zinc-900/90 space-y-2.5 animate-in fade-in duration-100">
@@ -52,7 +62,10 @@ export const StorylineAddDrawer = React.memo(function StorylineAddDrawer({
             <button
               key={c}
               type="button"
-              onClick={() => onNewColorChange(c)}
+              onClick={() => {
+                onNewColorChange(c);
+                setShowColorPicker(false);
+              }}
               className={`w-3.5 h-3.5 rounded-full transition-transform cursor-pointer ${
                 COLOR_CLASSES[c].dot
               } ${
@@ -62,26 +75,71 @@ export const StorylineAddDrawer = React.memo(function StorylineAddDrawer({
               }`}
             />
           ))}
+
+          <button
+            type="button"
+            onClick={() => setShowColorPicker((prev) => !prev)}
+            title={t('customColor', 'Color personalizado')}
+            className={`w-3.5 h-3.5 rounded-full border border-zinc-600 bg-zinc-900 text-zinc-400 hover:text-zinc-200 flex items-center justify-center transition cursor-pointer ${
+              newColor?.startsWith('#')
+                ? 'scale-125 ring-1 ring-zinc-300 ring-offset-1 ring-offset-zinc-900 border-zinc-300'
+                : 'opacity-60 hover:opacity-100'
+            }`}
+            style={newColor?.startsWith('#') ? { backgroundColor: newColor } : undefined}
+          >
+            <Pipette className={`w-2 h-2 ${newColor?.startsWith('#') ? 'text-white drop-shadow' : ''}`} />
+          </button>
         </div>
 
-        {validChapters.length > 0 && (
-          <div className="relative">
-            <select
-              value={initialChapterId}
-              onChange={(e) => onInitialChapterIdChange(e.target.value)}
-              className="appearance-none bg-zinc-950 border border-zinc-800 rounded-sm px-2 py-1 pr-6 text-[10px] text-zinc-300 focus:outline-none focus:border-zinc-600 cursor-pointer"
-            >
-              <option value="">{t('noneSelect')}</option>
-              {validChapters.map((ch) => (
-                <option key={ch.id} value={ch.id}>
-                  Link: {ch.title}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-2.5 h-2.5 text-zinc-500 pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2" />
-          </div>
-        )}
+        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+          {validChapters.length > 0 && (
+            <div className="relative">
+              <select
+                value={initialChapterId}
+                onChange={(e) => onInitialChapterIdChange(e.target.value)}
+                className="appearance-none bg-zinc-950 border border-zinc-800 rounded-sm px-2 py-1 pr-6 text-[10px] text-zinc-300 focus:outline-none focus:border-zinc-600 cursor-pointer"
+              >
+                <option value="">{t('noneSelect')}</option>
+                {validChapters.map((ch) => (
+                  <option key={ch.id} value={ch.id}>
+                    {t('scene', 'Scene')}: {ch.title}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-2.5 h-2.5 text-zinc-500 pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2" />
+            </div>
+          )}
+
+          {characters.length > 0 && onInitialCharacterIdChange && (
+            <div className="relative">
+              <select
+                value={initialCharacterId}
+                onChange={(e) => onInitialCharacterIdChange(e.target.value)}
+                className="appearance-none bg-zinc-950 border border-zinc-800 rounded-sm px-2 py-1 pr-6 text-[10px] text-zinc-300 focus:outline-none focus:border-zinc-600 cursor-pointer"
+              >
+                <option value="">{t('noneSelect')}</option>
+                {characters.map((char) => (
+                  <option key={char.id} value={char.id}>
+                    {t('characterPrefix', 'Char')}: {char.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-2.5 h-2.5 text-zinc-500 pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2" />
+            </div>
+          )}
+        </div>
       </div>
+
+      {showColorPicker && (
+        <div className="pt-1">
+          <DarkColorPicker
+            standalone
+            color={newColor?.startsWith('#') ? newColor : '#10b981'}
+            onChange={(hex) => onNewColorChange(hex)}
+            onClose={() => setShowColorPicker(false)}
+          />
+        </div>
+      )}
 
       <textarea
         placeholder={t('storylineGoalPlaceholder')}

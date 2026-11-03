@@ -9,9 +9,11 @@ import {
   X,
 } from 'lucide-react';
 import { ContextBlock } from '../../types/project';
+import { loadSettings } from '../../types/settings';
 import { StorylineItem, CharacterItem, WorldItem } from '../../types/dock';
 import { useTranslation } from '../../i18n/translations';
 import ContextBlockItem from './ContextBlockItem';
+import ConfirmDeleteModal from '../common/ConfirmDeleteModal';
 
 interface ContextPanelProps {
   blocks: ContextBlock[];
@@ -51,6 +53,7 @@ function ContextPanelComponent({
   const isShiftMode = notesDropMode === 'shift';
   const [selectedFolder, setSelectedFolder] = useState<string>('all');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [blockPendingDelete, setBlockPendingDelete] = useState<ContextBlock | null>(null);
   const [newFolderNameInput, setNewFolderNameInput] = useState('');
   const [customFolderList, setCustomFolderList] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -97,6 +100,12 @@ function ContextPanelComponent({
 
   const handleDelete = useCallback(
     (id: string) => {
+      const block = blocksRef.current.find((b) => b.id === id);
+      const shouldConfirm = loadSettings()?.preferences?.confirmDelete?.notes ?? true;
+      if (shouldConfirm && block && (block.content.trim() || block.title.trim())) {
+        setBlockPendingDelete(block);
+        return;
+      }
       onChange(blocksRef.current.filter((b) => b.id !== id));
     },
     [onChange],
@@ -718,6 +727,22 @@ function ContextPanelComponent({
           </div>
         )}
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={Boolean(blockPendingDelete)}
+        title={t('confirmDelete', 'Confirm Delete')}
+        message={t('confirmDeleteNote', 'Are you sure you want to delete this note? This action cannot be undone.')}
+        itemName={blockPendingDelete?.title}
+        onConfirm={() => {
+          if (blockPendingDelete) {
+            onChange(blocksRef.current.filter((b) => b.id !== blockPendingDelete.id));
+            setBlockPendingDelete(null);
+          }
+        }}
+        onCancel={() => setBlockPendingDelete(null)}
+      />
+
+
 
       {/* Footer — add block actions */}
       <div className="shrink-0 border-t border-zinc-800 p-2.5 flex flex-col gap-1.5 bg-zinc-950/80">

@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { CharacterRelationship, RelationshipColor } from '../../../../types/dock';
 import { COLOR_PALETTE } from './constants';
+import { computeRelationshipCurve } from './geometry';
 import { NodeInfo } from './types';
 
 interface RelationshipLabelPillsProps {
@@ -36,17 +37,10 @@ function RelationshipLabelPillsComponent({
         if (!sourceInfo || !targetInfo) return null;
 
         const t = rel.labelT ?? 0.5;
-        const bendFactor = 4 * t * (1 - t);
-        const px = Math.round(
-          sourceInfo.cx +
-            (targetInfo.cx - sourceInfo.cx) * t +
-            (rel.controlOffset?.x ?? 0) * bendFactor
-        );
-        const py = Math.round(
-          sourceInfo.cy +
-            (targetInfo.cy - sourceInfo.cy) * t +
-            (rel.controlOffset?.y ?? 0) * bendFactor
-        );
+        const curve = computeRelationshipCurve(rel, sourceInfo, targetInfo);
+        const pt = curve.getPointAt(t);
+        const px = pt.x;
+        const py = pt.y;
 
         const colorKey = (rel.color || 'blue') as RelationshipColor;
         const colorMeta = COLOR_PALETTE[colorKey] || COLOR_PALETTE.blue;

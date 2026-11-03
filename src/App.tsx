@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { FoliantProject } from './types/project';
+import { FoliantProject, createEmptyProject } from './types/project';
 import { useProjectPersistence } from './hooks/useProjectPersistence';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 import { useEpubExport } from './hooks/useEpubExport';
@@ -18,14 +18,28 @@ import { AppSettings, loadSettings } from './types/settings';
 import { applyTheme } from './theme/themeEngine';
 import { useTranslation, LanguageProvider } from './i18n/translations';
 import { countWords } from './utils/textMetrics';
-import { DEFAULT_PROJECT } from './data/mockProject';
+import { DEFAULT_PROJECT, getDefaultProject } from './data/getMockProject';
 import { useAppCloseGuard } from './hooks/useAppCloseGuard';
 import { isTauriApp, closeDesktopApp } from './utils/platform';
 import { normalizeLoadedProject } from './utils/projectBundle';
 import { checkForAppUpdates } from './utils/updater';
 
 export default function App() {
+  const isFirstRun = (() => {
+    try {
+      if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('foliant_welcome_answered') === 'true') {
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+
   const [project, setProject] = useState<FoliantProject>(() => {
+    if (isFirstRun) {
+      return createEmptyProject();
+    }
     if (!isTauriApp() && typeof sessionStorage !== 'undefined') {
       try {
         const stored = sessionStorage.getItem('foliant_session_project');
@@ -36,9 +50,11 @@ export default function App() {
         // fallback
       }
     }
-    return DEFAULT_PROJECT;
+    const initialLang = loadSettings()?.preferences?.language || 'en';
+    return getDefaultProject(initialLang);
   });
   const [activeChapterId, setActiveChapterId] = useState<string>(() => {
+    if (isFirstRun) return '';
     return DEFAULT_PROJECT.chapters.find((c) => c.type === 'scene')?.id ?? '';
   });
 
@@ -68,6 +84,10 @@ export default function App() {
   const [isHelpGuideOpen, setIsHelpGuideOpen] = useState(false);
   const [isGuidedTourActive, setIsGuidedTourActive] = useState(false);
   const [appSettings, setAppSettings] = useState<AppSettings>(loadSettings);
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const handleToggleFocusMode = useCallback(() => setIsFocusMode((prev) => !prev), []);
+  const [isFirstRunPromptOpen, setIsFirstRunPromptOpen] = useState(isFirstRun);
+  const [tourHighlightedView, setTourHighlightedView] = useState<MainViewId | null>(null);
   const currentLanguage = appSettings.preferences?.language || 'en';
   const { t } = useTranslation(currentLanguage);
 
@@ -144,10 +164,62 @@ export default function App() {
   const handleCloseSettings = useCallback(() => setIsSettingsOpen(false), []);
   const handleOpenHelpGuide = useCallback(() => setIsHelpGuideOpen(true), []);
   const handleCloseHelpGuide = useCallback(() => setIsHelpGuideOpen(false), []);
-  const handleStartGuidedTour = useCallback(() => {
+  const [isLoadDemoConfirmOpen, setIsLoadDemoConfirmOpen] = useState(false);
+
+  const executeLoadDemoProject = useCallback(() => {
+    const demoProj = getDefaultProject(currentLanguage);
+    setProject(demoProj);
+    const firstScene = demoProj.chapters.find((c) => c.type === 'scene') ?? demoProj.chapters[0];
+    setActiveChapterId(firstScene?.id ?? '');
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('foliant_welcome_answered', 'true');
+      }
+      localStorage.setItem('foliant_first_run_completed', 'true');
+      localStorage.setItem('foliant_welcome_completed', 'true');
+    } catch {}
+    setIsFirstRunPromptOpen(false);
+    setIsLoadDemoConfirmOpen(false);
+  }, [currentLanguage]);
+
+  const handleRequestLoadDemoFromGuide = useCallback(() => {
     setIsHelpGuideOpen(false);
+    setIsLoadDemoConfirmOpen(true);
+  }, []);
+
+  const handleStartEmptyProject = useCallback(() => {
+    setProject(createEmptyProject());
+    setActiveChapterId('');
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('foliant_welcome_answered', 'true');
+      }
+      localStorage.setItem('foliant_first_run_completed', 'true');
+      localStorage.setItem('foliant_welcome_completed', 'true');
+    } catch {}
+    setIsFirstRunPromptOpen(false);
+  }, []);
+
+  const hasUnsavedChangesForTour =
+    persistence.editorSaveStatus === 'unsaved' ||
+    persistence.editorSaveStatus === 'saving' ||
+    isDirty;
+
+  const startTourSafely = useCallback(() => {
+    setIsHelpGuideOpen(false);
+    setProject(createEmptyProject());
+    setActiveChapterId('');
+    setActiveMainView('write');
     setIsGuidedTourActive(true);
   }, []);
+
+  const handleStartGuidedTour = useCallback(() => {
+    if (hasUnsavedChangesForTour) {
+      nav.setPendingNavigationAction(() => startTourSafely);
+      return;
+    }
+    startTourSafely();
+  }, [hasUnsavedChangesForTour, nav, startTourSafely]);
   const handleCloseGuidedTour = useCallback(() => setIsGuidedTourActive(false), []);
 
   useGlobalShortcuts({
@@ -161,6 +233,7 @@ export default function App() {
   const mutations = useProjectMutations({
     project, setProject, activeChapterId, setActiveChapterId,
     deleteChapterDialogTitle: t('deleteChapter'),
+    language: currentLanguage,
   });
 
   const activeChapter = project.chapters.find((ch) => ch.id === activeChapterId);
@@ -198,6 +271,9 @@ export default function App() {
       <div className="flex h-screen w-screen overflow-hidden bg-zinc-950 text-zinc-200 select-none font-sans">
         <ActivityBar
           activeView={activeMainView}
+          isFocusMode={isFocusMode}
+          onToggleFocusMode={handleToggleFocusMode}
+          highlightedView={tourHighlightedView}
           onSelectView={nav.handleSelectMainView}
           language={appSettings.preferences?.language || 'en'}
           saveStatus={persistence.editorSaveStatus}
@@ -215,6 +291,9 @@ export default function App() {
 
         <WritingWorkspace
           isVisible={activeMainView === 'write'}
+          isFocusMode={isFocusMode}
+          onToggleFocusMode={handleToggleFocusMode}
+          onUpdateChapter={mutations.handleUpdateChapter}
           layout={layout}
           nav={nav}
           renderDockView={renderDockView}
@@ -241,6 +320,18 @@ export default function App() {
         )}
 
         <AppModals
+          activeMainView={activeMainView}
+          onHighlightViewChange={setTourHighlightedView}
+          isFirstRunPromptOpen={isFirstRunPromptOpen}
+          isNewProjectConfirmOpen={persistence.isNewProjectConfirmOpen}
+          onConfirmNewProject={persistence.handleConfirmNewProject}
+          onCancelNewProject={persistence.handleCancelNewProject}
+          onLoadDemoFirstRun={executeLoadDemoProject}
+          onStartEmptyFirstRun={handleStartEmptyProject}
+          onLoadDemoProject={handleRequestLoadDemoFromGuide}
+          isLoadDemoConfirmOpen={isLoadDemoConfirmOpen}
+          onConfirmLoadDemo={executeLoadDemoProject}
+          onCancelLoadDemo={() => setIsLoadDemoConfirmOpen(false)}
           isExportModalOpen={epub.isExportModalOpen}
           onCloseExportModal={epub.closeExportModal}
           project={project}

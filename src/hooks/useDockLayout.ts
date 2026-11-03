@@ -18,7 +18,7 @@ export function useDockLayout(options: UseDockLayoutOptions = {}): UseDockLayout
   } = options;
 
   const [leftOpen, setLeftOpen] = useState(true);
-  const [rightOpen, setRightOpen] = useState(true);
+  const [rightOpen, setRightOpen] = useState(false);
   const [leftWidth, setLeftWidth] = useState<number>(270);
   const [rightWidth, setRightWidth] = useState<number>(310);
 

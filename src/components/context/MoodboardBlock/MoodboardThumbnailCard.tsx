@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { ZoomIn, Trash2, ImageOff } from 'lucide-react';
+import { ImageOff } from 'lucide-react';
 import { ReferenceImage } from './types';
 
 interface MoodboardThumbnailCardProps {
   image: ReferenceImage;
   onPreview: (img: ReferenceImage) => void;
-  onDelete: (img: ReferenceImage) => void;
+  onDelete?: (img: ReferenceImage) => void;
   onDragStart: (e: React.DragEvent, img: ReferenceImage) => void;
   onDragEnter: (e: React.DragEvent, img: ReferenceImage) => void;
   onDragOver: (e: React.DragEvent, img: ReferenceImage) => void;
@@ -22,7 +22,7 @@ interface MoodboardThumbnailCardProps {
 export const MoodboardThumbnailCard = React.memo(function MoodboardThumbnailCard({
   image,
   onPreview,
-  onDelete,
+  onDelete: _onDelete,
   onDragStart,
   onDragEnter,
   onDragOver,
@@ -94,31 +94,7 @@ export const MoodboardThumbnailCard = React.memo(function MoodboardThumbnailCard
 
       {/* Floating Action Overlay on Hover with pointer-events-none internal elements */}
       <div className="absolute inset-0 bg-zinc-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-1.5 pointer-events-none">
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={(e) => {
-            e.stopPropagation();
-            onPreview(image);
-          }}
-          className="p-1.5 rounded-sm bg-zinc-900/90 text-zinc-200 border border-zinc-700/60 shadow-xs pointer-events-none"
-          title="Zoom image"
-        >
-          <ZoomIn className="w-3.5 h-3.5 pointer-events-none" />
-        </button>
-
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(image);
-          }}
-          className="p-1.5 rounded-sm bg-zinc-900/90 text-zinc-300 border border-zinc-700/60 shadow-xs pointer-events-none"
-          title="Delete image"
-        >
-          <Trash2 className="w-3.5 h-3.5 pointer-events-none" />
-        </button>
+        
       </div>
 
       {/* Image Name Tooltip Tag */}

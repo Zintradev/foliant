@@ -12,13 +12,28 @@ export const CharacterTagBadge = memo(function CharacterTagBadge({
   tag,
   onRemove,
 }: CharacterTagBadgeProps) {
-  const style = TAG_COLOR_MAP[tag.color] ?? TAG_COLOR_MAP.zinc;
+  const isCustomHex = tag.color?.startsWith('#');
+  const style = !isCustomHex ? (TAG_COLOR_MAP[tag.color] ?? TAG_COLOR_MAP.zinc) : null;
 
   return (
     <span
-      className={`inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded-xs border ${style.bg} ${style.border} ${style.text}`}
+      className={`inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded-xs border ${
+        style ? `${style.bg} ${style.border} ${style.text}` : ''
+      }`}
+      style={
+        isCustomHex
+          ? {
+              backgroundColor: `${tag.color}20`,
+              borderColor: `${tag.color}60`,
+              color: tag.color,
+            }
+          : undefined
+      }
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+      <span
+        className={`w-1.5 h-1.5 rounded-full ${style?.dot ?? ''}`}
+        style={isCustomHex ? { backgroundColor: tag.color } : undefined}
+      />
       <span>{tag.label}</span>
       {onRemove && (
         <button

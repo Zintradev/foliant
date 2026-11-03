@@ -73,18 +73,27 @@ export const CharacterAddDrawer = memo(function CharacterAddDrawer({
         placeholder={t('characterNotesPlaceholder')}
         value={summary}
         onChange={(e) => onSummaryChange(e.target.value)}
-        rows={2}
-        className="w-full bg-zinc-950 border border-zinc-800 rounded-sm px-2.5 py-1.5 text-xs text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 resize-none font-sans leading-relaxed transition-all duration-200 focus:min-h-[150px]"
+        rows={3}
+        className="w-full min-h-[72px] bg-zinc-950 border border-zinc-800 rounded-sm px-2.5 py-1.5 text-xs text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 resize-none font-sans leading-relaxed transition-colors"
       />
       <div className="flex items-center justify-end gap-2 pt-1">
         <button
+          type="button"
           onClick={onCancel}
           className="px-2.5 py-1 rounded-sm text-xs text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
         >
           {t('cancel')}
         </button>
         <button
-          onClick={onSubmit}
+          type="button"
+          onMouseDown={(e) => {
+            // Prevent premature textarea blur that causes layout shifting
+            e.preventDefault();
+          }}
+          onClick={() => {
+            onSubmit();
+            if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('foliant-tour-character-created'));
+          }}
           disabled={!name.trim()}
           className="px-3 py-1 rounded-sm text-xs font-medium bg-zinc-100 hover:bg-white text-zinc-950 disabled:opacity-50 transition cursor-pointer"
         >

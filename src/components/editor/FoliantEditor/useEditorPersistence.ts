@@ -83,7 +83,7 @@ export function useEditorPersistence({
   const handleEditorUpdate = useCallback(
     (ed: Editor) => {
       isDirtyRef.current = true;
-      onStatusChangeRef.current?.(isAutoSave ? 'saving' : 'unsaved');
+      onStatusChangeRef.current?.('unsaved');
 
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);

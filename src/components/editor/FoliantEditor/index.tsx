@@ -3,6 +3,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Highlight from '@tiptap/extension-highlight';
 import TextAlign from '@tiptap/extension-text-align';
+import { useTranslation } from '../../../i18n/translations';
 import { EditorFontFamily } from '../../../types/settings';
 import { FoliantEditorProps } from './types';
 import { CustomUnderline, FontSize } from './extensions';
@@ -23,7 +24,15 @@ function FoliantEditorComponent({
   searchTerm,
   isAutoSave = true,
   autoSaveInterval,
+  hideToolbar = false,
+  title,
+  onTitleChange,
+  wordCount: _wordCount,
+  targetWords: _targetWords,
+  externalToolbar = false,
+  onEditorReady,
 }: FoliantEditorProps) {
+  const { t } = useTranslation();
   const [localFont, setLocalFont] = useState<EditorFontFamily>(fontFamily);
   const [isSymbolsModalOpen, setIsSymbolsModalOpen] = useState(false);
 
@@ -56,7 +65,7 @@ function FoliantEditorComponent({
     editorProps: {
       attributes: {
         class:
-          'w-full min-h-[450px] bg-transparent text-zinc-300 leading-relaxed text-base focus:outline-none outline-none',
+          'w-full min-h-[450px] bg-transparent leading-relaxed text-base focus:outline-none outline-none',
       },
     },
     onUpdate: ({ editor: ed }) => {
@@ -75,6 +84,10 @@ function FoliantEditorComponent({
   });
 
   updateHandlerRef.current = handleEditorUpdate;
+
+  useEffect(() => {
+    onEditorReady?.(editor);
+  }, [editor, onEditorReady]);
 
   useEditorSearchJump({
     editor,
@@ -96,12 +109,29 @@ function FoliantEditorComponent({
     >
       <EditorStyles />
 
-      <EditorToolbar
-        editor={editor}
-        currentFont={activeFontFamily}
-        onFontChange={setLocalFont}
-        onOpenSymbols={() => setIsSymbolsModalOpen(true)}
-      />
+      {/* Formatting Toolbar at the top of the editor view (if not hosted externally) */}
+      {!externalToolbar && !hideToolbar && (
+        <div className="mb-4">
+          <EditorToolbar
+            editor={editor}
+            currentFont={activeFontFamily}
+            onFontChange={setLocalFont}
+            onOpenSymbols={() => setIsSymbolsModalOpen(true)}
+          />
+        </div>
+      )}
+
+      {/* Editable Scene Title on Paper */}
+      <div className="mb-4">
+        <input
+          type="text"
+          value={title ?? ''}
+          onChange={(e) => onTitleChange?.(e.target.value)}
+          placeholder={t("sceneTitlePlaceholder", "Scene title...")}
+          aria-label="Scene Title"
+          className="w-full text-3xl font-serif font-bold bg-transparent border-b border-current/20 pb-2 text-inherit focus:outline-none placeholder:opacity-40 transition"
+        />
+      </div>
 
       <EditorContent editor={editor} />
 

@@ -96,6 +96,7 @@ export function SceneInspectorComponent({
       ? attachedCharacterIds.filter((id) => id !== charId)
       : [...attachedCharacterIds, charId];
     onUpdateNode(node.id, { attachedCharacterIds: updated });
+    if (!exists && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('foliant-tour-tag-assigned'));
   };
 
   const handleToggleWorldItem = (worldId: string) => {
@@ -115,6 +116,7 @@ export function SceneInspectorComponent({
       updated = [...currentPlotStates, { storylineId, status: 'Active' }];
     }
     onUpdateNode(node.id, { plotStates: updated });
+    if (!existing && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('foliant-tour-tag-assigned'));
   };
 
   const handleUpdatePlotStatus = (storylineId: string, status: PlotStatus) => {

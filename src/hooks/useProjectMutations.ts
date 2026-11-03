@@ -11,16 +11,16 @@ import {
 import {
   resolveEntityUpdate,
   createDefaultChapter,
-  confirmChapterDeletion,
   deleteChapterFromList,
 } from './projectMutationUtils';
 
 export interface UseProjectMutationsOptions {
-  project: FoliantProject;
+  project?: FoliantProject;
   setProject: Dispatch<SetStateAction<FoliantProject>>;
   activeChapterId: string;
   setActiveChapterId: (id: string) => void;
   deleteChapterDialogTitle?: string;
+  language?: string;
 }
 
 export interface UseProjectMutationsReturn {
@@ -66,11 +66,10 @@ export interface UseProjectMutationsReturn {
  * on the novel's FoliantProject payload, ensuring lastModified is consistently refreshed.
  */
 export function useProjectMutations({
-  project,
   setProject,
   activeChapterId,
   setActiveChapterId,
-  deleteChapterDialogTitle = 'Delete Section',
+  language = 'en',
 }: UseProjectMutationsOptions): UseProjectMutationsReturn {
   const handleContentChange = useCallback(
     (newContent: string, targetChapterId?: string) => {
@@ -91,7 +90,7 @@ export function useProjectMutations({
       const isFolder = type === 'folder';
       setProject((prev) => {
         const count = prev.chapters.filter((c) => c.type === type).length + 1;
-        const newChapter = createDefaultChapter(type, count, parentId);
+        const newChapter = createDefaultChapter(type, count, parentId, language);
         if (!isFolder) {
           setActiveChapterId(newChapter.id);
         }
@@ -101,18 +100,15 @@ export function useProjectMutations({
           chapters: [...prev.chapters, newChapter],
         };
       });
+      if (!isFolder && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('foliant-tour-scene-created'));
+      }
     },
-    [setActiveChapterId, setProject]
+    [language, setActiveChapterId, setProject]
   );
 
   const handleDeleteChapter = useCallback(
     async (id: string) => {
-      const chapterToDelete = project.chapters.find((c) => c.id === id);
-      const chapterTitle = chapterToDelete?.title || 'this section';
-
-      const confirmed = await confirmChapterDeletion(chapterTitle, deleteChapterDialogTitle);
-      if (!confirmed) return;
-
       setProject((prev) => {
         const { updatedChapters, nextActiveId } = deleteChapterFromList(
           prev.chapters,
@@ -129,7 +125,7 @@ export function useProjectMutations({
         };
       });
     },
-    [activeChapterId, deleteChapterDialogTitle, project.chapters, setActiveChapterId, setProject]
+    [activeChapterId, setActiveChapterId, setProject]
   );
 
   const handleUpdateChapter = useCallback(

@@ -196,7 +196,7 @@ export default function FileMenuDropdown({
         >
           <span className="flex items-center gap-2">
             <HelpCircle className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-            <span className="whitespace-nowrap">{t('helpAndGuide', 'Ayuda y Guía')}</span>
+            <span className="whitespace-nowrap">{t('helpAndGuide', 'Help & Guide')}</span>
           </span>
           <span className="text-[10px] text-zinc-500 font-mono">F1</span>
         </button>

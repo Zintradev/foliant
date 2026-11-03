@@ -25,6 +25,7 @@ export interface HelpGuideModalProps {
   onClose: () => void;
   onStartTour: () => void;
   language?: Language;
+  onLoadDemoProject?: () => void;
 }
 
 type HelpTab = 'doc' | 'controls' | 'settings';
@@ -34,6 +35,7 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({
   onClose,
   onStartTour,
   language = 'en',
+  onLoadDemoProject,
 }) => {
   const [activeTab, setActiveTab] = useState<HelpTab>('doc');
   const { t } = useTranslation(language);
@@ -45,7 +47,7 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={t('helpAndGuide', 'Ayuda y Guía')}
+      aria-label={t('helpAndGuide', 'Help & Guide')}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 animate-in fade-in duration-150 select-none"
       onClick={onClose}
     >
@@ -61,16 +63,16 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({
             </div>
             <div>
               <h2 className="text-sm font-semibold text-zinc-100 tracking-tight">
-                {t('helpAndGuideTitle', 'Guía y Ayuda de Foliant')}
+                {t('helpAndGuideTitle', 'Foliant Guide & Help')}
               </h2>
               <p className="text-[11px] text-zinc-400">
-                {t('helpAndGuideSubtitle', 'Estudio literario y arquitectura narrativa')}
+                {t('helpAndGuideSubtitle', 'Literary studio and narrative architecture')}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            title={t('closeHelp', 'Cerrar Ayuda')}
+            title={t('closeHelp', 'Close Help')}
             aria-label="Close Help"
             className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition cursor-pointer"
           >
@@ -86,26 +88,41 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({
             </div>
             <div>
               <h3 className="text-xs font-semibold text-emerald-200 flex items-center gap-2">
-                <span>{t('interactiveTourTitle', 'Guía Interactiva Rápida')}</span>
+                <span>{t('interactiveTourTitle', 'Quick Interactive Tour')}</span>
                 <span className="text-[10px] font-mono font-normal px-1.5 py-0.5 rounded bg-emerald-900/60 text-emerald-300 border border-emerald-700/40 whitespace-nowrap">
-                  1 min • Toca y prueba
+                  {isEs ? '1 min • Toca y prueba' : '1 min • Touch & test'}
                 </span>
               </h3>
               <p className="text-[11px] text-zinc-300 leading-snug mt-0.5 max-w-xl">
                 {t(
                   'interactiveTourDesc',
-                  'Explora la interfaz interactiva mientras tocas y pruebas directamente cada herramienta del estudio literario.'
+                  'Explore the interface interactively while directly testing each tool of the literary studio.'
                 )}
               </p>
             </div>
           </div>
-          <button
+          <div className="flex items-center gap-2 flex-wrap">
+            {onLoadDemoProject && (
+              <button
+                type="button"
+                onClick={() => {
+                  onLoadDemoProject();
+                  onClose();
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-medium text-xs transition shadow-sm cursor-pointer shrink-0 whitespace-nowrap"
+              >
+                <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                <span className="whitespace-nowrap">{t('loadDemoProject', 'Load example project')}</span>
+              </button>
+            )}
+            <button
             onClick={onStartTour}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition shadow-sm cursor-pointer shrink-0 whitespace-nowrap"
           >
             <Sparkles className="w-3.5 h-3.5 shrink-0" />
-            <span className="whitespace-nowrap">{t('startInteractiveTour', 'Iniciar tour guiado')}</span>
+            <span className="whitespace-nowrap">{t('startInteractiveTour', 'Start interactive tour')}</span>
           </button>
+          </div>
         </div>
 
         {/* Tab Navigation */}
@@ -119,7 +136,7 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
-            <span>{t('tabDoc', 'Documentación')}</span>
+            <span>{t('tabDoc', 'Documentation')}</span>
           </button>
           <button
             onClick={() => setActiveTab('controls')}
@@ -130,7 +147,7 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({
             }`}
           >
             <Keyboard className="w-3.5 h-3.5" />
-            <span>{t('tabControls', 'Controles y Atajos')}</span>
+            <span>{t('tabControls', 'Controls & Shortcuts')}</span>
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -141,7 +158,7 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
-            <span>{t('tabSettingsGuide', 'Guía de Ajustes')}</span>
+            <span>{t('tabSettingsGuide', 'Settings Guide')}</span>
           </button>
         </div>
 

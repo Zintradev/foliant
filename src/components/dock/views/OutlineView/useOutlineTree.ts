@@ -3,7 +3,8 @@ import { TextNode } from '../../../../types/project';
 import { TreeItem } from './types';
 import { countWords } from '../../../../utils/textMetrics';
 
-export function useOutlineTree(chapters: TextNode[]) {
+export function useOutlineTree(input: TextNode[] | { chapters: TextNode[]; isExpanded?: boolean; layoutMode?: any }) {
+  const chapters = Array.isArray(input) ? input : (input?.chapters ?? []);
   const { tree, totalWords } = useMemo(() => {
     const nodeMap = new Map<string, TreeItem>();
     const roots: TreeItem[] = [];

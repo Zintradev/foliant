@@ -247,6 +247,21 @@ export function useMoodboardStorage() {
     setSections((prev) => [...prev, newSection]);
   }, []);
 
+  const handleDeleteSection = useCallback((sectionId: string) => {
+    setSections((prev) => prev.filter((s) => s.id !== sectionId));
+    setImages((prev) => {
+      const updated = prev.map((img) =>
+        img.sectionId === sectionId ? { ...img, sectionId: 'general' } : img
+      );
+      try {
+        localStorage.setItem(MOODBOARD_CACHE_KEY, JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
+  }, []);
+
   return {
     images,
     setImages,
@@ -260,5 +275,6 @@ export function useMoodboardStorage() {
     uploadFile,
     handleDeleteImage,
     handleAddSection,
+    handleDeleteSection,
   };
 }

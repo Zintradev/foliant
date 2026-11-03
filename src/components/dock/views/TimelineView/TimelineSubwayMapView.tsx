@@ -146,7 +146,7 @@ function TimelineSubwayMapViewComponent(props: TimelineSubwayMapViewProps) {
         >
           {storylines.length === 0 ? (
             <div className="p-8 text-center text-zinc-500 text-xs italic">
-              {t('noStorylinesRegistered')}
+              <p className="max-w-xs mx-auto leading-relaxed">{t('emptyTimelineMessage', 'No tienes tramas aún. Añádelas si te resultan útiles para estructurar tu historia.')}</p>
             </div>
           ) : (
             (() => {

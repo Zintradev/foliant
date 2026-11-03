@@ -55,6 +55,8 @@ export const CharacterDisplayCard = memo(function CharacterDisplayCard({
   const { t } = useTranslation();
   const tags = char.tags || [];
   const fields = char.fields || [];
+  const isCustomHex = char.nameColor?.startsWith('#');
+  const nameSwatch = !isCustomHex && char.nameColor ? COLOR_SWATCHES[char.nameColor] : undefined;
 
   return (
     <div className="group border border-zinc-855 rounded-sm bg-zinc-900/40 hover:bg-zinc-900/70 hover:border-zinc-700 transition overflow-hidden">
@@ -91,9 +93,28 @@ export const CharacterDisplayCard = memo(function CharacterDisplayCard({
           </div>
 
           <div className="min-w-0">
-            <span className="text-xs font-semibold text-zinc-100 truncate block">
-              {char.name}
-            </span>
+            {nameSwatch ? (
+              <span
+                className={`inline-block max-w-full text-xs font-semibold truncate align-middle px-1.5 py-0.5 rounded-xs border ${nameSwatch.badgeBg} ${nameSwatch.badgeBorder} ${nameSwatch.badgeText}`}
+              >
+                {char.name}
+              </span>
+            ) : isCustomHex && char.nameColor ? (
+              <span
+                className="inline-block max-w-full text-xs font-semibold truncate align-middle px-1.5 py-0.5 rounded-xs border"
+                style={{
+                  backgroundColor: `${char.nameColor}20`,
+                  borderColor: `${char.nameColor}60`,
+                  color: char.nameColor,
+                }}
+              >
+                {char.name}
+              </span>
+            ) : (
+              <span className="text-xs font-semibold text-zinc-100 truncate block">
+                {char.name}
+              </span>
+            )}
           </div>
         </div>
 

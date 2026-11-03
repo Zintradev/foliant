@@ -17,6 +17,7 @@ export function useStorylineActions({
   const [newDescription, setNewDescription] = useState('');
   const [newColor, setNewColor] = useState<StorylineColor>('emerald');
   const [initialChapterId, setInitialChapterId] = useState<string>('');
+  const [initialCharacterId, setInitialCharacterId] = useState<string>('');
 
   const [editingStorylineId, setEditingStorylineId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -39,15 +40,20 @@ export function useStorylineActions({
       color: newColor,
       description: newDescription.trim() || 'No description added.',
       linkedChapterIds: initialChapterId ? [initialChapterId] : [],
+      linkedCharacterIds: initialCharacterId ? [initialCharacterId] : [],
       fields: [],
     };
     onChange([...storylines, newStoryline]);
+    if ((initialChapterId || initialCharacterId) && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('foliant-tour-tag-assigned'));
+    }
     setNewTitle('');
     setNewDescription('');
     setNewColor('purple');
     setInitialChapterId('');
+    setInitialCharacterId('');
     setIsAdding(false);
-  }, [newTitle, newColor, newDescription, initialChapterId, onChange, storylines]);
+  }, [newTitle, newColor, newDescription, initialChapterId, initialCharacterId, onChange, storylines]);
 
   const handleStartEdit = useCallback((storyline: StorylineItem) => {
     setEditingStorylineId(storyline.id);
@@ -167,6 +173,9 @@ export function useStorylineActions({
         ? s
         : { ...s, linkedChapterIds: [...s.linkedChapterIds, chapterId] }
       ));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('foliant-tour-tag-assigned'));
+      }
     },
     [onChange, storylines]
   );
@@ -177,6 +186,42 @@ export function useStorylineActions({
         ? s
         : { ...s, linkedChapterIds: s.linkedChapterIds.filter((id) => id !== chapterId) }
       ));
+    },
+    [onChange, storylines]
+  );
+
+  const handleLinkCharacter = useCallback(
+    (storylineId: string, characterId: string) => {
+      if (!characterId) return;
+      onChange(
+        storylines.map((s) => {
+          if (s.id !== storylineId) return s;
+          const currentLinks = s.linkedCharacterIds || [];
+          if (currentLinks.includes(characterId)) return s;
+          return { ...s, linkedCharacterIds: [...currentLinks, characterId] };
+        })
+      );
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('foliant-tour-tag-assigned'));
+      }
+    },
+    [onChange, storylines]
+  );
+
+  const handleUnlinkCharacter = useCallback(
+    (storylineId: string, characterId: string) => {
+      onChange(
+        storylines.map((s) =>
+          s.id !== storylineId
+            ? s
+            : {
+                ...s,
+                linkedCharacterIds: (s.linkedCharacterIds || []).filter(
+                  (id) => id !== characterId
+                ),
+              }
+        )
+      );
     },
     [onChange, storylines]
   );
@@ -216,6 +261,8 @@ export function useStorylineActions({
     setNewColor,
     initialChapterId,
     setInitialChapterId,
+    initialCharacterId,
+    setInitialCharacterId,
     editingStorylineId,
     editTitle,
     setEditTitle,
@@ -234,6 +281,8 @@ export function useStorylineActions({
     handleMoveField,
     handleLinkChapter,
     handleUnlinkChapter,
+    handleLinkCharacter,
+    handleUnlinkCharacter,
     handleLinkWorldItem,
     handleUnlinkWorldItem,
   };

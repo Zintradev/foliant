@@ -1,5 +1,5 @@
 import React from 'react';
-import { Globe, Palette, Sliders, Layers, Info } from 'lucide-react';
+import { Globe, Palette, Layers, Info } from 'lucide-react';
 import { SettingsSection } from './types';
 
 interface SettingsSidebarNavProps {
@@ -30,25 +30,13 @@ export const SettingsSidebarNav = React.memo(function SettingsSidebarNav({
       <button
         onClick={() => onSelectSection('appearance')}
         className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-xs font-medium transition cursor-pointer text-left ${
-          activeSection === 'appearance'
+          activeSection === 'appearance' || activeSection === 'editor'
             ? 'bg-zinc-800 text-zinc-100 shadow-xs'
             : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850/60'
         }`}
       >
         <Palette className="w-4 h-4 shrink-0 text-zinc-300" />
-        <span>{t('categoryAppearance')}</span>
-      </button>
-
-      <button
-        onClick={() => onSelectSection('editor')}
-        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-xs font-medium transition cursor-pointer text-left ${
-          activeSection === 'editor'
-            ? 'bg-zinc-800 text-zinc-100 shadow-xs'
-            : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850/60'
-        }`}
-      >
-        <Sliders className="w-4 h-4 shrink-0 text-zinc-300" />
-        <span>{t('categoryEditor')}</span>
+        <span>{t('categoryAppearanceEditor', 'Apariencia y Editor')}</span>
       </button>
 
       <button

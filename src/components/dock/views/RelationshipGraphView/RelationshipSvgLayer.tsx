@@ -99,7 +99,7 @@ function RelationshipSvgLayerComponent({
         const py = naturalMidY + (rel.controlOffset?.y ?? 0);
         const isBent = Boolean(
           rel.controlOffset &&
-            (Math.abs(rel.controlOffset.x) > 1 || Math.abs(rel.controlOffset.y) > 1)
+          (Math.abs(rel.controlOffset.x) > 1 || Math.abs(rel.controlOffset.y) > 1)
         );
 
         const sourceTargetRay = isBent ? { cx: px, cy: py } : { cx: targetInfo.cx, cy: targetInfo.cy };

@@ -21,12 +21,12 @@ function ToolbarButton({
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`p-1.5 rounded-xs transition flex items-center justify-center cursor-pointer select-none ${
+      className={`p-1.5 rounded-xs transition flex items-center justify-center cursor-pointer select-none text-current ${
         disabled
-          ? 'opacity-30 cursor-not-allowed text-zinc-500'
+          ? 'opacity-30 cursor-not-allowed'
           : isActive
-          ? 'bg-zinc-800 text-zinc-100 border border-zinc-700/80 shadow-xs'
-          : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850/80 border border-transparent'
+          ? 'bg-black/15 dark:bg-zinc-800 text-current border border-current/30 shadow-xs'
+          : 'opacity-70 hover:opacity-100 hover:bg-black/10 dark:hover:bg-zinc-800/80 border border-transparent'
       }`}
     >
       {children}

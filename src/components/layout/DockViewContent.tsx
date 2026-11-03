@@ -94,6 +94,7 @@ export const DockViewContent = memo(function DockViewContent({
           storylines={project.storylines}
           chapters={project.chapters}
           worldItems={project.worldItems}
+          characters={project.characters}
           onChange={handleUpdateStorylines}
           onSelectChapter={setActiveChapterId}
           colorSettings={appSettings}
@@ -210,8 +211,8 @@ export const DockViewContent = memo(function DockViewContent({
       );
     case 'moodboard':
       return (
-        <div className="p-3">
-          <MoodboardBlock collapsible={false} />
+        <div className="h-full overflow-y-auto p-3">
+          <MoodboardBlock collapsible={false} isExpanded={isExpanded} />
         </div>
       );
     case 'characters':

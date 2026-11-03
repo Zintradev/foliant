@@ -78,7 +78,9 @@ function WorldbuildingListComponent({
       {filteredItems.length === 0 ? (
         <div className="py-12 px-4 text-center text-zinc-500 text-xs">
           <Compass className="w-8 h-8 text-zinc-700 mx-auto mb-2 opacity-50" />
-          <p>{t('noLoreYet')}</p>
+          <p className="max-w-xs mx-auto leading-relaxed">
+            {t('emptyWorldMessage', 'No tienes elementos de mundo aún. Añádelos si te resultan útiles para estructurar tu historia.')}
+          </p>
           <button
             type="button"
             onClick={onCreateNew}
