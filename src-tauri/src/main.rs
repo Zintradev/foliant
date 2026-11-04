@@ -52,8 +52,12 @@ fn resolve_project_visuals_dir(
                 p
             };
             let dir = base_dir.join("visuals");
-            fs::create_dir_all(&dir)
-                .map_err(|e| format!("Failed to create project visuals directory '{}': {e}", dir.display()))?;
+            fs::create_dir_all(&dir).map_err(|e| {
+                format!(
+                    "Failed to create project visuals directory '{}': {e}",
+                    dir.display()
+                )
+            })?;
             return Ok(dir);
         }
     }
@@ -63,7 +67,9 @@ fn resolve_project_visuals_dir(
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| "default".to_string());
 
-    let temp_visuals = std::env::temp_dir().join("foliant_visuals").join(&safe_proj_id);
+    let temp_visuals = std::env::temp_dir()
+        .join("foliant_visuals")
+        .join(&safe_proj_id);
     let _ = fs::create_dir_all(&temp_visuals);
     if temp_visuals.exists() {
         return Ok(temp_visuals);
@@ -129,7 +135,8 @@ async fn save_reference_image(
             .collect()
     };
 
-    let target_dir = resolve_project_visuals_dir(&app, project_path.as_deref(), project_id.as_deref())?;
+    let target_dir =
+        resolve_project_visuals_dir(&app, project_path.as_deref(), project_id.as_deref())?;
     let dest = target_dir.join(&dest_name);
 
     fs::copy(&src, &dest).map_err(|e| {
@@ -146,7 +153,9 @@ async fn save_reference_image(
         .map(bundle::sanitize_file_name)
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| "default".to_string());
-    let temp_visuals = std::env::temp_dir().join("foliant_visuals").join(&safe_proj_id);
+    let temp_visuals = std::env::temp_dir()
+        .join("foliant_visuals")
+        .join(&safe_proj_id);
     let _ = fs::create_dir_all(&temp_visuals);
     let _ = fs::copy(&src, temp_visuals.join(&dest_name));
 
@@ -200,15 +209,16 @@ async fn save_reference_image_base64(
             &base64::engine::general_purpose::STANDARD,
         );
         let mut buf = Vec::new();
-        decoder
-            .read_to_end(&mut buf)
-            .map_err(|e| {
-                eprintln!("[Rust:save_reference_image_base64] Base64 decode error: {e}");
-                format!("Failed to decode base64 image data: {e}")
-            })?;
+        decoder.read_to_end(&mut buf).map_err(|e| {
+            eprintln!("[Rust:save_reference_image_base64] Base64 decode error: {e}");
+            format!("Failed to decode base64 image data: {e}")
+        })?;
         buf
     };
-    eprintln!("[Rust:save_reference_image_base64] Decoded {} bytes for '{file_name}'", bytes.len());
+    eprintln!(
+        "[Rust:save_reference_image_base64] Decoded {} bytes for '{file_name}'",
+        bytes.len()
+    );
 
     // Sanitise the file name
     let safe_name: String = file_name
@@ -216,15 +226,21 @@ async fn save_reference_image_base64(
         .filter(|c| !matches!(c, '/' | '\\' | ':'))
         .collect();
 
-    let target_dir = resolve_project_visuals_dir(&app, project_path.as_deref(), project_id.as_deref())?;
+    let target_dir =
+        resolve_project_visuals_dir(&app, project_path.as_deref(), project_id.as_deref())?;
     let dest = target_dir.join(&safe_name);
 
-    fs::write(&dest, &bytes)
-        .map_err(|e| {
-            eprintln!("[Rust:save_reference_image_base64] Write error at '{}': {e}", dest.display());
-            format!("Failed to write image '{}': {e}", dest.display())
-        })?;
-    eprintln!("[Rust:save_reference_image_base64] Saved successfully to project visuals: '{}'", dest.display());
+    fs::write(&dest, &bytes).map_err(|e| {
+        eprintln!(
+            "[Rust:save_reference_image_base64] Write error at '{}': {e}",
+            dest.display()
+        );
+        format!("Failed to write image '{}': {e}", dest.display())
+    })?;
+    eprintln!(
+        "[Rust:save_reference_image_base64] Saved successfully to project visuals: '{}'",
+        dest.display()
+    );
 
     // Also write to project-scoped temp visuals directory
     let safe_proj_id = project_id
@@ -232,11 +248,16 @@ async fn save_reference_image_base64(
         .map(bundle::sanitize_file_name)
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| "default".to_string());
-    let temp_visuals = std::env::temp_dir().join("foliant_visuals").join(&safe_proj_id);
+    let temp_visuals = std::env::temp_dir()
+        .join("foliant_visuals")
+        .join(&safe_proj_id);
     let _ = fs::create_dir_all(&temp_visuals);
     let temp_dest = temp_visuals.join(&safe_name);
     let _ = fs::write(&temp_dest, &bytes);
-    eprintln!("[Rust:save_reference_image_base64] Saved copy to temp visuals: '{}'", temp_dest.display());
+    eprintln!(
+        "[Rust:save_reference_image_base64] Saved copy to temp visuals: '{}'",
+        temp_dest.display()
+    );
 
     Ok(dest
         .to_str()
@@ -258,13 +279,18 @@ async fn list_reference_images(
     project_path: Option<String>,
     project_id: Option<String>,
 ) -> Result<Vec<String>, String> {
-    eprintln!("[Rust:list_reference_images] START: project_path={:?}, project_id={:?}", project_path, project_id);
+    eprintln!(
+        "[Rust:list_reference_images] START: project_path={:?}, project_id={:?}",
+        project_path, project_id
+    );
     let allowed_extensions = ["png", "jpg", "jpeg", "gif", "webp", "svg", "avif"];
     let mut paths = Vec::new();
     let mut seen_filenames = std::collections::HashSet::new();
 
     // 1. Scan the project's visuals directory (from project_path if any)
-    if let Ok(dir) = resolve_project_visuals_dir(&app, project_path.as_deref(), project_id.as_deref()) {
+    if let Ok(dir) =
+        resolve_project_visuals_dir(&app, project_path.as_deref(), project_id.as_deref())
+    {
         if dir.exists() && dir.is_dir() {
             if let Ok(entries) = fs::read_dir(&dir) {
                 for entry in entries.flatten() {
@@ -298,7 +324,9 @@ async fn list_reference_images(
         .map(bundle::sanitize_file_name)
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| "default".to_string());
-    let temp_visuals = std::env::temp_dir().join("foliant_visuals").join(&safe_proj_id);
+    let temp_visuals = std::env::temp_dir()
+        .join("foliant_visuals")
+        .join(&safe_proj_id);
     if temp_visuals.exists() && temp_visuals.is_dir() {
         if let Ok(entries) = fs::read_dir(&temp_visuals) {
             for entry in entries.flatten() {
@@ -327,7 +355,11 @@ async fn list_reference_images(
 
     // Sort alphabetically for deterministic ordering in the UI
     paths.sort();
-    eprintln!("[Rust:list_reference_images] RETURN: found {} images: {:?}", paths.len(), paths);
+    eprintln!(
+        "[Rust:list_reference_images] RETURN: found {} images: {:?}",
+        paths.len(),
+        paths
+    );
     Ok(paths)
 }
 
@@ -349,11 +381,13 @@ async fn delete_reference_image(
         return Err(format!("Invalid file name: '{file_name}'"));
     }
 
-    let target_dir = resolve_project_visuals_dir(&app, project_path.as_deref(), project_id.as_deref())?;
+    let target_dir =
+        resolve_project_visuals_dir(&app, project_path.as_deref(), project_id.as_deref())?;
     let path = target_dir.join(&file_name);
 
     if path.exists() {
-        fs::remove_file(&path).map_err(|e| format!("Failed to delete '{}': {e}", path.display()))?;
+        fs::remove_file(&path)
+            .map_err(|e| format!("Failed to delete '{}': {e}", path.display()))?;
     }
 
     // Also remove from project-scoped temp visuals if present
@@ -371,7 +405,9 @@ async fn delete_reference_image(
     }
 
     // Legacy un-scoped fallback cleanup
-    let legacy_temp = std::env::temp_dir().join("foliant_visuals").join(&file_name);
+    let legacy_temp = std::env::temp_dir()
+        .join("foliant_visuals")
+        .join(&file_name);
     if legacy_temp.exists() {
         let _ = fs::remove_file(&legacy_temp);
     }

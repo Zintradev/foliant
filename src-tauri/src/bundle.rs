@@ -142,7 +142,10 @@ fn resolve_visual_paths_to_temp(val: &mut serde_json::Value, temp_dir: &Path) {
                         "path".to_string(),
                         serde_json::Value::String(file_path.to_string_lossy().to_string()),
                     );
-                    let need_base64 = map.get("base64").and_then(|b| b.as_str()).map_or(true, |s| s.is_empty());
+                    let need_base64 = map
+                        .get("base64")
+                        .and_then(|b| b.as_str())
+                        .map_or(true, |s| s.is_empty());
                     if need_base64 {
                         if let Ok(bytes) = fs::read(&file_path) {
                             let ext = file_path
@@ -164,7 +167,10 @@ fn resolve_visual_paths_to_temp(val: &mut serde_json::Value, temp_dir: &Path) {
                             use base64::Engine;
                             let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
                             let data_url = format!("data:{mime};base64,{b64}");
-                            map.insert("base64".to_string(), serde_json::Value::String(data_url.clone()));
+                            map.insert(
+                                "base64".to_string(),
+                                serde_json::Value::String(data_url.clone()),
+                            );
                             map.insert("src".to_string(), serde_json::Value::String(data_url));
                         }
                     }
@@ -274,8 +280,8 @@ pub fn save_project_bundle_sync(
     let mut buffer = Cursor::new(Vec::new());
     {
         let mut zip = ZipWriter::new(&mut buffer);
-        let options = SimpleFileOptions::default()
-            .compression_method(zip::CompressionMethod::Deflated);
+        let options =
+            SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
 
         // 4a. Write project.json
         let serialized_metadata = serde_json::to_string_pretty(&metadata_project)
@@ -350,8 +356,12 @@ pub fn save_project_bundle_sync(
         }
     }
 
-    fs::write(dest_path, &zip_bytes)
-        .map_err(|e| format!("Failed to write Foliant bundle file '{}': {e}", dest_path.display()))?;
+    fs::write(dest_path, &zip_bytes).map_err(|e| {
+        format!(
+            "Failed to write Foliant bundle file '{}': {e}",
+            dest_path.display()
+        )
+    })?;
 
     Ok(())
 }
@@ -399,7 +409,12 @@ pub fn load_project_bundle_sync(file_path: &str) -> Result<serde_json::Value, St
     let mut project_json_str = String::new();
     project_file
         .read_to_string(&mut project_json_str)
-        .map_err(|e| format!("Failed to read 'project.json' from '{}': {e}", path.display()))?;
+        .map_err(|e| {
+            format!(
+                "Failed to read 'project.json' from '{}': {e}",
+                path.display()
+            )
+        })?;
     drop(project_file);
 
     let mut project: serde_json::Value = serde_json::from_str(&project_json_str)
@@ -467,7 +482,12 @@ pub fn load_project_bundle_sync(file_path: &str) -> Result<serde_json::Value, St
                 if let Some(id) = chapter.get("id").and_then(|i| i.as_str()) {
                     if let Some(loaded_content) = scenes_content.get(id) {
                         chapter["content"] = serde_json::Value::String(loaded_content.clone());
-                    } else if !chapter.get("content").and_then(|c| c.as_str()).unwrap_or("").is_empty() {
+                    } else if !chapter
+                        .get("content")
+                        .and_then(|c| c.as_str())
+                        .unwrap_or("")
+                        .is_empty()
+                    {
                         // Keep preexisting inline content if present
                     } else {
                         chapter["content"] = serde_json::Value::String(String::new());
@@ -558,13 +578,18 @@ mod tests {
 
         let scene2 = &chapters[2];
         assert_eq!(scene2["id"], "scene-2");
-        assert_eq!(scene2["content"], "Waves crashed violently against the hull.");
+        assert_eq!(
+            scene2["content"],
+            "Waves crashed violently against the hull."
+        );
 
         // 3. Inspect ZIP archive internals directly to verify project.json has stripped content
         let file = fs::File::open(&bundle_path).expect("open zip");
         let mut archive = ZipArchive::new(file).expect("zip archive");
 
-        let mut project_file = archive.by_name("project.json").expect("project.json exists");
+        let mut project_file = archive
+            .by_name("project.json")
+            .expect("project.json exists");
         let mut pj_str = String::new();
         project_file.read_to_string(&mut pj_str).unwrap();
         let stripped_pj: serde_json::Value = serde_json::from_str(&pj_str).unwrap();
@@ -581,7 +606,10 @@ mod tests {
 
         let res = load_project_bundle_sync(bad_file.to_str().unwrap());
         assert!(res.is_err());
-        assert!(res.unwrap_err().contains("Corrupted or invalid Foliant project archive"));
+        assert!(
+            res.unwrap_err()
+                .contains("Corrupted or invalid Foliant project archive")
+        );
     }
 
     #[test]
@@ -655,7 +683,9 @@ mod tests {
         assert!(check_file_exists(sample_file.to_str().unwrap().to_string()));
 
         let nonexistent = temp_dir.path().join("deleted.foliant");
-        assert!(!check_file_exists(nonexistent.to_str().unwrap().to_string()));
+        assert!(!check_file_exists(
+            nonexistent.to_str().unwrap().to_string()
+        ));
     }
 
     #[test]
@@ -704,13 +734,11 @@ mod tests {
 
         let parsed_metadata: serde_json::Value = serde_json::from_str(&project_json_str).unwrap();
         assert_eq!(
-            parsed_metadata["characters"][0]["avatarUrl"],
-            "visuals/sample_test_asset.jpg",
+            parsed_metadata["characters"][0]["avatarUrl"], "visuals/sample_test_asset.jpg",
             "Avatar path in project.json must be relative"
         );
         assert_eq!(
-            parsed_metadata["visuals"][0]["path"],
-            "visuals/sample_test_asset.jpg",
+            parsed_metadata["visuals"][0]["path"], "visuals/sample_test_asset.jpg",
             "Visual path in project.json must be relative"
         );
 
@@ -723,20 +751,23 @@ mod tests {
 
         // 3. Load bundle: verify paths resolve to project-scoped system temp directory and file is extracted
         let loaded = load_project_bundle_sync(bundle_path_str).unwrap();
-        let expected_temp_path = temp_visuals_dir().join("proj-visuals").join("sample_test_asset.jpg");
+        let expected_temp_path = temp_visuals_dir()
+            .join("proj-visuals")
+            .join("sample_test_asset.jpg");
         let expected_temp_path_str = expected_temp_path.to_str().unwrap();
 
         assert_eq!(
-            loaded["characters"][0]["avatarUrl"],
-            expected_temp_path_str,
+            loaded["characters"][0]["avatarUrl"], expected_temp_path_str,
             "Avatar path on load must point to system temp directory"
         );
         assert_eq!(
-            loaded["visuals"][0]["path"],
-            expected_temp_path_str,
+            loaded["visuals"][0]["path"], expected_temp_path_str,
             "Visual path on load must point to system temp directory"
         );
-        assert!(expected_temp_path.exists(), "Extracted image must exist in system temp dir");
+        assert!(
+            expected_temp_path.exists(),
+            "Extracted image must exist in system temp dir"
+        );
         let _ = fs::remove_dir_all(expected_temp_path.parent().unwrap());
     }
 }
