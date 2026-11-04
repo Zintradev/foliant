@@ -97,16 +97,6 @@ export async function promptSaveProjectFile(
 }
 
 /**
- * Legacy compatibility alias for directory prompt, now targeting .foliant files.
- */
-export async function promptSelectDirectory(
-  title: string,
-  defaultPath?: string | null
-): Promise<string | null> {
-  return promptOpenProjectFile(title, defaultPath);
-}
-
-/**
  * Writes the project bundle to the given .foliant file with updated timestamp.
  */
 export async function executeSaveBundle(

@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import App from './App';
 import { open } from '@tauri-apps/plugin-dialog';
-import { readTextFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
 import { importManuskriptProject } from './utils/importManuskript';
 import { DEFAULT_PROJECT } from './data/mockProject';
@@ -131,7 +130,6 @@ describe('App Component', () => {
 
   const mockImport = vi.mocked(importManuskriptProject);
   const mockOpen = vi.mocked(open);
-  const mockReadTextFile = vi.mocked(readTextFile);
 
   beforeEach(() => {
     sessionStorage.setItem('foliant_welcome_answered', 'true');

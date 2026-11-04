@@ -191,6 +191,7 @@ export interface AppPreferences {
   timelineDropMode: 'shift' | 'swap';
   worldDropMode?: 'shift' | 'swap';
   notesDropMode?: 'shift' | 'swap';
+  visualsDropMode?: 'shift' | 'swap';
   persistViewFilters: boolean;
   preserveManualSceneWidth?: boolean;
   preserveManualPlotHeight?: boolean;
@@ -219,6 +220,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   timelineDropMode: 'shift',
   worldDropMode: 'shift',
   notesDropMode: 'shift',
+  visualsDropMode: 'shift',
   persistViewFilters: false,
   preserveManualSceneWidth: false,
   preserveManualPlotHeight: false,

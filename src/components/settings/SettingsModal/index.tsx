@@ -116,6 +116,7 @@ export const SettingsModal = React.memo(function SettingsModal({
                 timelineDropMode={prefs?.timelineDropMode || 'shift'}
                 worldDropMode={prefs?.worldDropMode || 'shift'}
                 notesDropMode={prefs?.notesDropMode || 'shift'}
+                visualsDropMode={prefs?.visualsDropMode || 'shift'}
                 preserveManualSceneWidth={prefs?.preserveManualSceneWidth ?? false}
                 preserveManualPlotHeight={prefs?.preserveManualPlotHeight ?? false}
                 autoUpdateCheck={prefs?.autoUpdateCheck ?? false}

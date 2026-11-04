@@ -43,6 +43,7 @@ export interface DockViewContentProps {
   ) => void;
   handleUpdateWorldItems: (items: FoliantProject['worldItems']) => void;
   handleUpdateContextBlocks: (blocks: FoliantProject['contextBlocks']) => void;
+  currentFilePath?: string | null;
 }
 
 export const DockViewContent = memo(function DockViewContent({
@@ -70,8 +71,20 @@ export const DockViewContent = memo(function DockViewContent({
   handleUpdateCharacterPositions,
   handleUpdateWorldItems,
   handleUpdateContextBlocks,
+  currentFilePath,
 }: DockViewContentProps) {
   const persistViewFilters = Boolean(appSettings.preferences?.persistViewFilters);
+
+  const handleUpdateVisuals = React.useCallback(
+    (visuals: FoliantProject['visuals']) => {
+      setProject((prev) => {
+        if (prev.visuals === visuals) return prev;
+        return { ...prev, visuals };
+      });
+      setIsDirty(true);
+    },
+    [setProject, setIsDirty]
+  );
 
   switch (tabId) {
     case 'outline':
@@ -212,7 +225,15 @@ export const DockViewContent = memo(function DockViewContent({
     case 'moodboard':
       return (
         <div className="h-full overflow-y-auto p-3">
-          <MoodboardBlock collapsible={false} isExpanded={isExpanded} />
+          <MoodboardBlock
+            collapsible={false}
+            isExpanded={isExpanded}
+            projectId={project.id}
+            projectFilePath={currentFilePath}
+            initialVisuals={project.visuals}
+            visualsDropMode={appSettings.preferences?.visualsDropMode || 'shift'}
+            onUpdateVisuals={handleUpdateVisuals}
+          />
         </div>
       );
     case 'characters':

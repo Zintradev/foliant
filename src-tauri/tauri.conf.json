@@ -20,7 +20,17 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "**",
+          "**/*",
+          "$PICTURES/**",
+          "$DOWNLOADS/**",
+          "$DESKTOP/**"
+        ]
+      }
     }
   },
   "bundle": {
@@ -36,7 +46,9 @@
     ],
     "fileAssociations": [
       {
-        "ext": ["foliant"],
+        "ext": [
+          "foliant"
+        ],
         "name": "Foliant Project",
         "description": "Foliant Studio Project File",
         "role": "Editor"

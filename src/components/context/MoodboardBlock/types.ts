@@ -1,3 +1,5 @@
+import { ProjectVisualItem } from '../../../types/project';
+
 export interface ReferenceImage {
   id: string;
   path: string;
@@ -26,4 +28,9 @@ export interface MoodboardBlockProps {
   collapsible?: boolean;
   defaultCollapsed?: boolean;
   isExpanded?: boolean;
+  projectId?: string;
+  projectFilePath?: string | null;
+  initialVisuals?: ProjectVisualItem[];
+  visualsDropMode?: 'shift' | 'swap';
+  onUpdateVisuals?: (visuals: Array<{ id: string; path: string; name: string; sectionId: string }>) => void;
 }

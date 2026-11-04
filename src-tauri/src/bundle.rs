@@ -1,16 +1,206 @@
 use std::collections::HashMap;
 use std::fs;
 use std::io::{Cursor, Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use zip::write::SimpleFileOptions;
 use zip::{ZipArchive, ZipWriter};
+
+/// Directory in the system temp directory used to extract `.foliant` bundled visual assets.
+pub fn temp_visuals_dir() -> PathBuf {
+    std::env::temp_dir().join("foliant_visuals")
+}
+
+/// Checks whether a given file extension corresponds to a supported visual image format.
+pub fn is_image_extension(ext: &str) -> bool {
+    let lower = ext.to_lowercase();
+    matches!(
+        lower.as_str(),
+        "png" | "jpg" | "jpeg" | "gif" | "webp" | "svg" | "avif" | "bmp" | "ico"
+    )
+}
+
+/// Strips characters that are invalid across POSIX and Windows filesystems.
+pub fn sanitize_file_name(name: &str) -> String {
+    name.chars()
+        .filter(|c| !matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|'))
+        .collect()
+}
+
+/// Helper to scan all JSON strings recursively for image paths,
+/// collect the source files to be copied into the ZIP under `visuals/`,
+/// and rewrite the paths in the project metadata to relative `"visuals/<safe_name>"`.
+fn process_visual_paths_for_save(
+    val: &mut serde_json::Value,
+    images_to_pack: &mut HashMap<String, PathBuf>,
+    seen_paths: &mut HashMap<String, String>,
+    project_id: Option<&str>,
+) {
+    match val {
+        serde_json::Value::Object(map) => {
+            for (_key, v) in map.iter_mut() {
+                process_visual_paths_for_save(v, images_to_pack, seen_paths, project_id);
+            }
+        }
+        serde_json::Value::Array(arr) => {
+            for v in arr.iter_mut() {
+                process_visual_paths_for_save(v, images_to_pack, seen_paths, project_id);
+            }
+        }
+        serde_json::Value::String(s) => {
+            let str_val = s.trim();
+            if str_val.is_empty() {
+                return;
+            }
+
+            // Case A: Path is already relative "visuals/<name>" or "images/<name>"
+            if str_val.starts_with("visuals/") || str_val.starts_with("images/") {
+                let filename = str_val
+                    .strip_prefix("visuals/")
+                    .or_else(|| str_val.strip_prefix("images/"))
+                    .unwrap_or(str_val);
+                let safe_name = sanitize_file_name(filename);
+                if !safe_name.is_empty() {
+                    let mut temp_candidate = temp_visuals_dir().join(&safe_name);
+                    if let Some(pid) = project_id {
+                        let safe_pid = sanitize_file_name(pid);
+                        let candidate_in_proj = temp_visuals_dir().join(&safe_pid).join(&safe_name);
+                        if candidate_in_proj.is_file() {
+                            temp_candidate = candidate_in_proj;
+                        }
+                    }
+                    if temp_candidate.is_file() {
+                        images_to_pack.insert(safe_name.clone(), temp_candidate);
+                    }
+                    *s = format!("visuals/{}", safe_name);
+                }
+                return;
+            }
+
+            // Case B: Path is a file on disk
+            let p = Path::new(str_val);
+            if p.is_file() {
+                if let Some(ext) = p.extension().and_then(|e| e.to_str()) {
+                    if is_image_extension(ext) {
+                        if let Some(already_mapped) = seen_paths.get(str_val) {
+                            *s = already_mapped.clone();
+                            return;
+                        }
+
+                        let raw_name = p
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .unwrap_or("image.png");
+                        let mut safe_name = sanitize_file_name(raw_name);
+                        if safe_name.is_empty() {
+                            safe_name = format!("img_{}.{}", images_to_pack.len(), ext);
+                        }
+
+                        // Avoid name collisions for different source files
+                        if images_to_pack.contains_key(&safe_name)
+                            && images_to_pack.get(&safe_name) != Some(&p.to_path_buf())
+                        {
+                            safe_name = format!("{}_{}", images_to_pack.len(), safe_name);
+                        }
+
+                        let rel_path = format!("visuals/{}", safe_name);
+                        seen_paths.insert(str_val.to_string(), rel_path.clone());
+                        images_to_pack.insert(safe_name, p.to_path_buf());
+                        *s = rel_path;
+                    }
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Helper to rewrite relative `"visuals/<name>"` and `"images/<name>"` paths
+/// into absolute paths pointing to the system temporary directory.
+fn resolve_visual_paths_to_temp(val: &mut serde_json::Value, temp_dir: &Path) {
+    match val {
+        serde_json::Value::Object(map) => {
+            // If this object represents an image (e.g. has "path" or "name")
+            // and we have its file in temp_dir, ensure "base64" or "src" is populated with a data URL
+            let mut resolved_filename: Option<String> = None;
+            for (_key, v) in map.iter_mut() {
+                resolve_visual_paths_to_temp(v, temp_dir);
+            }
+
+            if let Some(path_val) = map.get("path").and_then(|p| p.as_str()) {
+                let p = Path::new(path_val);
+                if let Some(file_name) = p.file_name().and_then(|f| f.to_str()) {
+                    resolved_filename = Some(sanitize_file_name(file_name));
+                }
+            } else if let Some(name_val) = map.get("name").and_then(|n| n.as_str()) {
+                resolved_filename = Some(sanitize_file_name(name_val));
+            }
+
+            if let Some(fname) = resolved_filename {
+                let file_path = temp_dir.join(&fname);
+                if file_path.is_file() {
+                    map.insert(
+                        "path".to_string(),
+                        serde_json::Value::String(file_path.to_string_lossy().to_string()),
+                    );
+                    let need_base64 = map.get("base64").and_then(|b| b.as_str()).map_or(true, |s| s.is_empty());
+                    if need_base64 {
+                        if let Ok(bytes) = fs::read(&file_path) {
+                            let ext = file_path
+                                .extension()
+                                .and_then(|e| e.to_str())
+                                .map(|e| e.to_lowercase())
+                                .unwrap_or_else(|| "png".to_string());
+                            let mime = match ext.as_str() {
+                                "jpg" | "jpeg" => "image/jpeg",
+                                "png" => "image/png",
+                                "gif" => "image/gif",
+                                "webp" => "image/webp",
+                                "svg" => "image/svg+xml",
+                                "avif" => "image/avif",
+                                "bmp" => "image/bmp",
+                                "ico" => "image/x-icon",
+                                _ => "image/png",
+                            };
+                            use base64::Engine;
+                            let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+                            let data_url = format!("data:{mime};base64,{b64}");
+                            map.insert("base64".to_string(), serde_json::Value::String(data_url.clone()));
+                            map.insert("src".to_string(), serde_json::Value::String(data_url));
+                        }
+                    }
+                }
+            }
+        }
+        serde_json::Value::Array(arr) => {
+            for v in arr.iter_mut() {
+                resolve_visual_paths_to_temp(v, temp_dir);
+            }
+        }
+        serde_json::Value::String(s) => {
+            let str_val = s.trim();
+            if str_val.starts_with("visuals/") || str_val.starts_with("images/") {
+                let filename = str_val
+                    .strip_prefix("visuals/")
+                    .or_else(|| str_val.strip_prefix("images/"))
+                    .unwrap_or(str_val);
+                let safe_name = sanitize_file_name(filename);
+                if !safe_name.is_empty() {
+                    let abs_path = temp_dir.join(&safe_name);
+                    *s = abs_path.to_string_lossy().to_string();
+                }
+            }
+        }
+        _ => {}
+    }
+}
 
 /// Saves a Foliant project bundle into a single `.foliant` compressed ZIP archive.
 ///
 /// Inside the ZIP archive:
-/// - `project.json`: Project metadata with scene contents stripped to empty strings.
+/// - `project.json`: Project metadata with scene contents stripped to empty strings
+///   and image paths stored as portable relative `"visuals/<filename>"`.
 /// - `scenes/{scene_id}.md`: Markdown content for each scene.
-/// - `images/{filename}` (optional): Any embedded asset images.
+/// - `visuals/{filename}`: Bundled visual image assets.
 ///
 /// Overwrites the target file cleanly in a single operation.
 #[tauri::command]
@@ -66,14 +256,28 @@ pub fn save_project_bundle_sync(
         }
     }
 
-    // 3. Build ZIP archive in memory
+    // 3. Scan metadata for visual image paths, collect files, and convert to relative "visuals/..."
+    let mut images_to_pack: HashMap<String, PathBuf> = HashMap::new();
+    let mut seen_paths: HashMap<String, String> = HashMap::new();
+    let project_id_owned = metadata_project
+        .get("id")
+        .and_then(|i| i.as_str())
+        .map(String::from);
+    process_visual_paths_for_save(
+        &mut metadata_project,
+        &mut images_to_pack,
+        &mut seen_paths,
+        project_id_owned.as_deref(),
+    );
+
+    // 4. Build ZIP archive in memory
     let mut buffer = Cursor::new(Vec::new());
     {
         let mut zip = ZipWriter::new(&mut buffer);
         let options = SimpleFileOptions::default()
             .compression_method(zip::CompressionMethod::Deflated);
 
-        // 3a. Write project.json
+        // 4a. Write project.json
         let serialized_metadata = serde_json::to_string_pretty(&metadata_project)
             .map_err(|e| format!("Failed to serialize project metadata: {e}"))?;
 
@@ -82,12 +286,9 @@ pub fn save_project_bundle_sync(
         zip.write_all(serialized_metadata.as_bytes())
             .map_err(|e| format!("Failed to write 'project.json': {e}"))?;
 
-        // 3b. Write scenes/{scene_id}.md
+        // 4b. Write scenes/{scene_id}.md
         for (scene_id, content) in &scene_map {
-            let safe_id: String = scene_id
-                .chars()
-                .filter(|c| !matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|'))
-                .collect();
+            let safe_id = sanitize_file_name(scene_id);
             let entry_name = format!("scenes/{safe_id}.md");
             zip.start_file(&entry_name, options)
                 .map_err(|e| format!("Failed to create '{entry_name}' in archive: {e}"))?;
@@ -95,14 +296,23 @@ pub fn save_project_bundle_sync(
                 .map_err(|e| format!("Failed to write '{entry_name}': {e}"))?;
         }
 
-        // 3c. Optional images
+        // 4c. Write collected visual images into visuals/{filename}
+        for (img_name, src_path) in &images_to_pack {
+            let safe_name = sanitize_file_name(img_name);
+            let entry_name = format!("visuals/{safe_name}");
+            if let Ok(bytes) = fs::read(src_path) {
+                zip.start_file(&entry_name, options)
+                    .map_err(|e| format!("Failed to create '{entry_name}' in archive: {e}"))?;
+                zip.write_all(&bytes)
+                    .map_err(|e| format!("Failed to write '{entry_name}': {e}"))?;
+            }
+        }
+
+        // 4d. Optional images explicitly passed via arguments
         if let Some(imgs) = images {
             for (img_name, img_data) in imgs {
-                let safe_name: String = img_name
-                    .chars()
-                    .filter(|c| !matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|'))
-                    .collect();
-                let entry_name = format!("images/{safe_name}");
+                let safe_name = sanitize_file_name(&img_name);
+                let entry_name = format!("visuals/{safe_name}");
                 zip.start_file(&entry_name, options)
                     .map_err(|e| format!("Failed to create '{entry_name}' in archive: {e}"))?;
 
@@ -129,7 +339,7 @@ pub fn save_project_bundle_sync(
             .map_err(|e| format!("Failed to finalize ZIP archive: {e}"))?;
     }
 
-    // 4. Atomically write the ZIP bytes to the target destination
+    // 5. Atomically write the ZIP bytes to the target destination
     let zip_bytes = buffer.into_inner();
     let dest_path = Path::new(file_path);
 
@@ -149,7 +359,8 @@ pub fn save_project_bundle_sync(
 /// Loads a Foliant project bundle from a `.foliant` ZIP archive.
 ///
 /// Unpacks `project.json` and all `scenes/*.md` files into memory,
-/// reassembles the full scene contents into the project chapters,
+/// extracts `visuals/` assets into the system temp directory,
+/// reassembles scene contents and resolves visual paths,
 /// and returns the unified `FoliantProject` JSON value.
 #[tauri::command]
 pub async fn load_project_bundle(file_path: String) -> Result<serde_json::Value, String> {
@@ -194,8 +405,15 @@ pub fn load_project_bundle_sync(file_path: &str) -> Result<serde_json::Value, St
     let mut project: serde_json::Value = serde_json::from_str(&project_json_str)
         .map_err(|e| format!("Corrupted Foliant project: invalid JSON in 'project.json': {e}"))?;
 
-    // 2. Read all scene markdown files from scenes/
+    // 2. Read all scene markdown files from scenes/ and extract visuals/ into project-scoped temp dir
     let mut scenes_content: HashMap<String, String> = HashMap::new();
+    let project_id = project
+        .get("id")
+        .and_then(|i| i.as_str())
+        .unwrap_or("default");
+    let safe_project_id = sanitize_file_name(project_id);
+    let temp_dir = temp_visuals_dir().join(&safe_project_id);
+    let _ = fs::create_dir_all(&temp_dir);
 
     for i in 0..archive.len() {
         let mut entry = archive
@@ -207,6 +425,7 @@ pub fn load_project_bundle_sync(file_path: &str) -> Result<serde_json::Value, St
             .to_string();
         let normalized = entry_name.replace('\\', "/");
 
+        // 2a. Scenes
         if normalized.starts_with("scenes/") && normalized.ends_with(".md") {
             let scene_id = normalized
                 .strip_prefix("scenes/")
@@ -220,6 +439,23 @@ pub fn load_project_bundle_sync(file_path: &str) -> Result<serde_json::Value, St
                     .read_to_string(&mut content)
                     .map_err(|e| format!("Failed to read scene file '{entry_name}': {e}"))?;
                 scenes_content.insert(scene_id.to_string(), content);
+            }
+        }
+
+        // 2b. Visuals / Images extraction to temp directory
+        if (normalized.starts_with("visuals/") || normalized.starts_with("images/"))
+            && !normalized.ends_with('/')
+        {
+            let filename = normalized
+                .strip_prefix("visuals/")
+                .or_else(|| normalized.strip_prefix("images/"))
+                .unwrap_or(&normalized);
+            let safe_name = sanitize_file_name(filename);
+            if !safe_name.is_empty() {
+                let target_path = temp_dir.join(&safe_name);
+                if let Ok(mut out_file) = fs::File::create(&target_path) {
+                    let _ = std::io::copy(&mut entry, &mut out_file);
+                }
             }
         }
     }
@@ -240,6 +476,9 @@ pub fn load_project_bundle_sync(file_path: &str) -> Result<serde_json::Value, St
             }
         }
     }
+
+    // 4. Resolve relative "visuals/..." paths to absolute paths in system temp directory
+    resolve_visual_paths_to_temp(&mut project, &temp_dir);
 
     Ok(project)
 }
@@ -417,5 +656,87 @@ mod tests {
 
         let nonexistent = temp_dir.path().join("deleted.foliant");
         assert!(!check_file_exists(nonexistent.to_str().unwrap().to_string()));
+    }
+
+    #[test]
+    fn test_visuals_portability_in_bundle() {
+        let temp_dir = tempfile::tempdir().unwrap();
+
+        // Create a mock physical image file on disk
+        let mock_image_path = temp_dir.path().join("sample_test_asset.jpg");
+        let mock_bytes = b"MOCK_JPEG_IMAGE_DATA_BYTES";
+        fs::write(&mock_image_path, mock_bytes).unwrap();
+
+        let bundle_path = temp_dir.path().join("portable_novel.foliant");
+        let bundle_path_str = bundle_path.to_str().unwrap();
+
+        let project_with_visuals = json!({
+            "id": "proj-visuals",
+            "title": "Visual Novel",
+            "chapters": [],
+            "characters": [
+                {
+                    "id": "char-1",
+                    "name": "Knight",
+                    "avatarUrl": mock_image_path.to_str().unwrap()
+                }
+            ],
+            "visuals": [
+                {
+                    "id": "vis-1",
+                    "name": "sample_test_asset.jpg",
+                    "path": mock_image_path.to_str().unwrap()
+                }
+            ]
+        });
+
+        // 1. Save bundle
+        save_project_bundle_sync(bundle_path_str, project_with_visuals, None, None).unwrap();
+
+        // 2. Inspect ZIP directly: verify relative path in project.json and file in visuals/
+        let zip_file = fs::File::open(&bundle_path).unwrap();
+        let mut archive = ZipArchive::new(zip_file).unwrap();
+
+        let mut project_entry = archive.by_name("project.json").unwrap();
+        let mut project_json_str = String::new();
+        project_entry.read_to_string(&mut project_json_str).unwrap();
+        drop(project_entry);
+
+        let parsed_metadata: serde_json::Value = serde_json::from_str(&project_json_str).unwrap();
+        assert_eq!(
+            parsed_metadata["characters"][0]["avatarUrl"],
+            "visuals/sample_test_asset.jpg",
+            "Avatar path in project.json must be relative"
+        );
+        assert_eq!(
+            parsed_metadata["visuals"][0]["path"],
+            "visuals/sample_test_asset.jpg",
+            "Visual path in project.json must be relative"
+        );
+
+        let mut visual_entry = archive.by_name("visuals/sample_test_asset.jpg").unwrap();
+        let mut extracted_bytes = Vec::new();
+        visual_entry.read_to_end(&mut extracted_bytes).unwrap();
+        assert_eq!(extracted_bytes, mock_bytes);
+        drop(visual_entry);
+        drop(archive);
+
+        // 3. Load bundle: verify paths resolve to project-scoped system temp directory and file is extracted
+        let loaded = load_project_bundle_sync(bundle_path_str).unwrap();
+        let expected_temp_path = temp_visuals_dir().join("proj-visuals").join("sample_test_asset.jpg");
+        let expected_temp_path_str = expected_temp_path.to_str().unwrap();
+
+        assert_eq!(
+            loaded["characters"][0]["avatarUrl"],
+            expected_temp_path_str,
+            "Avatar path on load must point to system temp directory"
+        );
+        assert_eq!(
+            loaded["visuals"][0]["path"],
+            expected_temp_path_str,
+            "Visual path on load must point to system temp directory"
+        );
+        assert!(expected_temp_path.exists(), "Extracted image must exist in system temp dir");
+        let _ = fs::remove_dir_all(expected_temp_path.parent().unwrap());
     }
 }

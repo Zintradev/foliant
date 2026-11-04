@@ -1,933 +1,990 @@
 <!doctype html>
 <html lang="es" data-lang="es" class="scroll-smooth">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
-    <link rel="alternate icon" type="image/png" href="/logo.png" />
-    <title>Foliant — Entorno de Escritura y Arquitectura Narrativa</title>
-    <meta
-      name="description"
-      content="Foliant es una suite de escritura literaria y worldbuilding moderna, modular y privada para autores, novelistas y creadores de mundos."
-    />
 
-    <!-- Google Fonts for literary and clean UI typography -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap"
-      rel="stylesheet"
-    />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; img-src 'self' asset: http://asset.localhost data:;">
+  <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+  <link rel="alternate icon" type="image/png" href="/logo.png" />
+  <title>Foliant — Entorno de Escritura y Arquitectura Narrativa</title>
+  <meta name="description"
+    content="Foliant es una suite de escritura literaria y worldbuilding moderna, modular y privada para autores, novelistas y creadores de mundos." />
 
-    <!-- Shared Tailwind CSS -->
-    <link rel="stylesheet" href="/src/index.css" />
+  <!-- Google Fonts for literary and clean UI typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap"
+    rel="stylesheet" />
 
-    <style>
-      .font-serif-literary {
-        font-family: 'Newsreader', Georgia, serif;
-      }
-      .font-cinzel {
-        font-family: 'Cinzel', serif;
-      }
-      .gradient-glow {
-        background: radial-gradient(
-          circle at 50% 20%,
+  <!-- Shared Tailwind CSS -->
+  <link rel="stylesheet" href="/src/index.css" />
+
+  <style>
+    .font-serif-literary {
+      font-family: 'Newsreader', Georgia, serif;
+    }
+
+    .font-cinzel {
+      font-family: 'Cinzel', serif;
+    }
+
+    .gradient-glow {
+      background: radial-gradient(circle at 50% 20%,
           rgba(16, 185, 129, 0.12) 0%,
-          rgba(9, 9, 11, 0) 70%
-        );
-      }
-      .glow-border {
-        box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.2);
-      }
+          rgba(9, 9, 11, 0) 70%);
+    }
 
-      /* Language visibility rules */
-      html[data-lang="es"] .lang-en {
-        display: none !important;
+    .glow-border {
+      box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.2);
+    }
+
+    /* Language visibility rules */
+    html[data-lang="es"] .lang-en {
+      display: none !important;
+    }
+
+    html[data-lang="en"] .lang-es {
+      display: none !important;
+    }
+  </style>
+
+  <script>
+    // If opened inside Tauri desktop app, redirect immediately to the workspace studio
+    if (window.__TAURI_INTERNALS__) {
+      window.location.replace('./app/');
+    }
+
+    function setLanguage(lang) {
+      document.documentElement.setAttribute('data-lang', lang);
+      document.documentElement.setAttribute('lang', lang);
+      try {
+        localStorage.setItem('foliant-lang', lang);
+      } catch (_) { }
+      updateLangButtons(lang);
+    }
+
+    function updateLangButtons(lang) {
+      const btnEs = document.getElementById('btn-lang-es');
+      const btnEn = document.getElementById('btn-lang-en');
+      if (!btnEs || !btnEn) return;
+
+      const activeClasses = 'px-2.5 py-1 rounded-md font-mono text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition shadow-sm';
+      const inactiveClasses = 'px-2.5 py-1 rounded-md font-mono text-xs font-medium text-zinc-400 hover:text-zinc-200 transition border border-transparent';
+
+      if (lang === 'es') {
+        btnEs.className = activeClasses;
+        btnEn.className = inactiveClasses;
+      } else {
+        btnEn.className = activeClasses;
+        btnEs.className = inactiveClasses;
       }
-      html[data-lang="en"] .lang-es {
-        display: none !important;
-      }
-    </style>
+    }
 
-    <script>
-      // If opened inside Tauri desktop app, redirect immediately to the workspace studio
-      if (window.__TAURI_INTERNALS__) {
-        window.location.replace('./app/');
-      }
-
-      function setLanguage(lang) {
-        document.documentElement.setAttribute('data-lang', lang);
-        document.documentElement.setAttribute('lang', lang);
-        try {
-          localStorage.setItem('foliant-lang', lang);
-        } catch (_) {}
-        updateLangButtons(lang);
-      }
-
-      function updateLangButtons(lang) {
-        const btnEs = document.getElementById('btn-lang-es');
-        const btnEn = document.getElementById('btn-lang-en');
-        if (!btnEs || !btnEn) return;
-
-        const activeClasses = 'px-2.5 py-1 rounded-md font-mono text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition shadow-sm';
-        const inactiveClasses = 'px-2.5 py-1 rounded-md font-mono text-xs font-medium text-zinc-400 hover:text-zinc-200 transition border border-transparent';
-
-        if (lang === 'es') {
-          btnEs.className = activeClasses;
-          btnEn.className = inactiveClasses;
-        } else {
-          btnEn.className = activeClasses;
-          btnEs.className = inactiveClasses;
+    (function () {
+      let initial = 'es';
+      try {
+        const saved = localStorage.getItem('foliant-lang');
+        if (saved === 'en' || saved === 'es') {
+          initial = saved;
+        } else if (navigator.language && !navigator.language.toLowerCase().startsWith('es')) {
+          initial = 'en';
         }
-      }
+      } catch (_) { }
+      document.documentElement.setAttribute('data-lang', initial);
+      document.documentElement.setAttribute('lang', initial);
+    })();
 
-      (function () {
-        let initial = 'es';
-        try {
-          const saved = localStorage.getItem('foliant-lang');
-          if (saved === 'en' || saved === 'es') {
-            initial = saved;
-          } else if (navigator.language && !navigator.language.toLowerCase().startsWith('es')) {
-            initial = 'en';
+    document.addEventListener('DOMContentLoaded', function () {
+      const current = document.documentElement.getAttribute('data-lang') || 'es';
+      updateLangButtons(current);
+    });
+
+    // Dynamically sync version with latest GitHub release without hardcoding
+    (async function fetchLatestReleaseVersion() {
+      try {
+        const res = await fetch('https://api.github.com/repos/Zintradev/foliant/releases/latest');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.tag_name) {
+            const tag = data.tag_name;
+            document.querySelectorAll('.app-version-badge').forEach(function (el) {
+              el.textContent = tag;
+            });
+            document.querySelectorAll('.app-version-text').forEach(function (el) {
+              el.textContent = tag;
+            });
           }
-        } catch (_) {}
-        document.documentElement.setAttribute('data-lang', initial);
-        document.documentElement.setAttribute('lang', initial);
-      })();
+        }
+      } catch (_) { }
+    })();
+  </script>
+</head>
 
-      document.addEventListener('DOMContentLoaded', function () {
-        const current = document.documentElement.getAttribute('data-lang') || 'es';
-        updateLangButtons(current);
-      });
+<body
+  class="bg-zinc-950 text-zinc-100 font-sans antialiased selection:bg-emerald-500/20 selection:text-emerald-300 min-h-screen flex flex-col relative overflow-x-hidden">
+  <!-- Atmospheric background gradient -->
+  <div class="fixed inset-0 pointer-events-none gradient-glow z-0"></div>
 
-      // Dynamically sync version with latest GitHub release without hardcoding
-      (async function fetchLatestReleaseVersion() {
-        try {
-          const res = await fetch('https://api.github.com/repos/Zintradev/foliant/releases/latest');
-          if (res.ok) {
-            const data = await res.json();
-            if (data && data.tag_name) {
-              const tag = data.tag_name;
-              document.querySelectorAll('.app-version-badge').forEach(function (el) {
-                el.textContent = tag;
-              });
-              document.querySelectorAll('.app-version-text').forEach(function (el) {
-                el.textContent = tag;
-              });
-            }
-          }
-        } catch (_) {}
-      })();
-    </script>
-  </head>
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-50 backdrop-blur-md bg-zinc-950/80 border-b border-zinc-800/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <a href="#" class="flex items-center gap-2.5 group">
+        <img src="/logo.svg" alt="Foliant"
+          class="w-12 h-12 object-contain drop-shadow-md group-hover:scale-105 transition-transform" />
+        <span
+          class="app-version-badge text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">v0.1.0</span>
+      </a>
 
-  <body class="bg-zinc-950 text-zinc-100 font-sans antialiased selection:bg-emerald-500/20 selection:text-emerald-300 min-h-screen flex flex-col relative overflow-x-hidden">
-    <!-- Atmospheric background gradient -->
-    <div class="fixed inset-0 pointer-events-none gradient-glow z-0"></div>
+      <!-- Desktop Navigation Links -->
+      <nav class="hidden md:flex items-center gap-8 text-sm text-zinc-400">
+        <a href="#caracteristicas" class="hover:text-zinc-100 transition">
+          <span class="lang-es">Características</span>
+          <span class="lang-en">Features</span>
+        </a>
+        <a href="#modulos" class="hover:text-zinc-100 transition">
+          <span class="lang-es">Módulos</span>
+          <span class="lang-en">Modules</span>
+        </a>
+        <a href="#plataformas" class="hover:text-zinc-100 transition">
+          <span class="lang-es">Escritorio vs Web</span>
+          <span class="lang-en">Desktop vs Web</span>
+        </a>
+        <a href="https://github.com/Zintradev/foliant" target="_blank" rel="noopener noreferrer"
+          class="hover:text-zinc-100 transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path fill-rule="evenodd" clip-rule="evenodd"
+              d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+          </svg>
+          <span>GitHub</span>
+        </a>
+      </nav>
 
-    <!-- Top Navigation Bar -->
-    <header class="sticky top-0 z-50 backdrop-blur-md bg-zinc-950/80 border-b border-zinc-800/80">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <a href="#" class="flex items-center gap-2.5 group">
-          <img
-            src="/logo.svg"
-            alt="Foliant"
-            class="w-12 h-12 object-contain drop-shadow-md group-hover:scale-105 transition-transform"
-          />
-          <span class="app-version-badge text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">v0.1.0</span>
+      <!-- Right Side: Language Switcher Tabs & Web App Button -->
+      <div class="flex items-center gap-3">
+        <!-- Language Toggle Tabs -->
+        <div class="flex items-center rounded-lg bg-zinc-900 border border-zinc-800 p-0.5" role="tablist"
+          aria-label="Language Selector">
+          <button id="btn-lang-es" type="button" onclick="setLanguage('es')"
+            class="px-2.5 py-1 rounded-md font-mono text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition shadow-sm"
+            title="Cambiar a Español">
+            ES
+          </button>
+          <button id="btn-lang-en" type="button" onclick="setLanguage('en')"
+            class="px-2.5 py-1 rounded-md font-mono text-xs font-medium text-zinc-400 hover:text-zinc-200 transition border border-transparent"
+            title="Switch to English">
+            EN
+          </button>
+        </div>
+
+        <!-- Top CTA: Probar en la web -->
+        <a href="./app/"
+          class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
+          <span class="lang-es">Probar en la web</span>
+          <span class="lang-en">Try on Web</span>
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow z-10">
+    <!-- Hero Section -->
+    <section class="relative pt-16 pb-16 md:pt-24 md:pb-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto text-center">
+      <!-- Brand Badge Pill -->
+      <div
+        class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-zinc-800 text-xs text-zinc-300 mb-8 backdrop-blur shadow-sm hover:border-emerald-500/40 transition">
+        <img src="/logo.svg" alt="Foliant Logo" class="w-4 h-4 object-contain" />
+        <span class="text-emerald-400 font-medium lang-es">Estudio Literario & Arquitectura Narrativa</span>
+        <span class="text-emerald-400 font-medium lang-en">Literary Studio & Narrative Architecture</span>
+      </div>
+
+      <!-- Main Powerful Title -->
+      <h1
+        class="font-cinzel text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-zinc-100 max-w-4xl mx-auto leading-tight sm:leading-tight md:leading-[1.15]">
+        <span class="lang-es">
+          Donde tus historias cobran vida,
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-200">
+            capítulo a capítulo.
+          </span>
+        </span>
+        <span class="lang-en">
+          Where your stories come to life,
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-200">
+            chapter by chapter.
+          </span>
+        </span>
+      </h1>
+
+      <!-- Narrative Subtitle -->
+      <p
+        class="mt-6 text-base sm:text-lg md:text-xl text-zinc-400 max-w-3xl mx-auto font-serif-literary leading-relaxed text-balance">
+        <span class="lang-es">
+          Foliant es el estudio de escritura y construcción de mundos que combina un editor libre de distracciones con
+          diagramas de relaciones, líneas temporales multihilo y taxonomía de lore. Una suite modular, ágil y 100%
+          privada diseñada para la narrativa compleja.
+        </span>
+        <span class="lang-en">
+          Foliant is the focused writing and worldbuilding studio combining a distraction-free editor with relationship
+          graphs, multi-thread timelines, and rich lore taxonomy. A modular, agile, and 100% private suite crafted for
+          complex narratives.
+        </span>
+      </p>
+
+      <!-- CTAs Section: Web Trial + Direct Download Buttons -->
+      <div class="mt-10 flex flex-wrap items-center justify-center gap-3.5 max-w-4xl mx-auto">
+        <!-- CTA 1: Probar en la web -->
+        <a href="./app/"
+          class="w-full sm:w-auto h-[58px] inline-flex items-center justify-center gap-3 px-5 rounded-xl text-sm font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:translate-y-0 text-center">
+          <svg class="w-5 h-5 text-zinc-950 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+          </svg>
+          <div class="text-left whitespace-nowrap">
+            <span class="block leading-tight font-bold lang-es">Probar en la web</span>
+            <span class="block leading-tight font-bold lang-en">Try on the Web</span>
+            <span class="block text-[11px] font-normal text-zinc-900/80 lang-es">Sin instalación previa • Demo</span>
+            <span class="block text-[11px] font-normal text-zinc-900/80 lang-en">No install required • Demo</span>
+          </div>
         </a>
 
-        <!-- Desktop Navigation Links -->
-        <nav class="hidden md:flex items-center gap-8 text-sm text-zinc-400">
-          <a href="#caracteristicas" class="hover:text-zinc-100 transition">
-            <span class="lang-es">Características</span>
-            <span class="lang-en">Features</span>
-          </a>
-          <a href="#modulos" class="hover:text-zinc-100 transition">
-            <span class="lang-es">Módulos</span>
-            <span class="lang-en">Modules</span>
-          </a>
-          <a href="#plataformas" class="hover:text-zinc-100 transition">
-            <span class="lang-es">Escritorio vs Web</span>
-            <span class="lang-en">Desktop vs Web</span>
-          </a>
-          <a href="https://github.com/Zintradev/foliant" target="_blank" rel="noopener noreferrer" class="hover:text-zinc-100 transition flex items-center gap-1.5">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
-            </svg>
-            <span>GitHub</span>
-          </a>
-        </nav>
-
-        <!-- Right Side: Language Switcher Tabs & Web App Button -->
-        <div class="flex items-center gap-3">
-          <!-- Language Toggle Tabs -->
-          <div class="flex items-center rounded-lg bg-zinc-900 border border-zinc-800 p-0.5" role="tablist" aria-label="Language Selector">
-            <button
-              id="btn-lang-es"
-              type="button"
-              onclick="setLanguage('es')"
-              class="px-2.5 py-1 rounded-md font-mono text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition shadow-sm"
-              title="Cambiar a Español"
-            >
-              ES
-            </button>
-            <button
-              id="btn-lang-en"
-              type="button"
-              onclick="setLanguage('en')"
-              class="px-2.5 py-1 rounded-md font-mono text-xs font-medium text-zinc-400 hover:text-zinc-200 transition border border-transparent"
-              title="Switch to English"
-            >
-              EN
-            </button>
+        <!-- CTA 2: Direct Download for Windows -->
+        <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows.exe" download
+          class="w-full sm:w-auto h-[58px] inline-flex items-center justify-center gap-3 px-5 rounded-xl text-sm font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-100 border border-zinc-700/80 hover:border-emerald-500/60 transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 text-center">
+          <!-- Windows Icon -->
+          <svg class="w-5 h-5 text-sky-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.949-1.801" />
+          </svg>
+          <div class="text-left whitespace-nowrap">
+            <span class="block leading-tight font-bold lang-es">Descargar Windows</span>
+            <span class="block leading-tight font-bold lang-en">Download Windows</span>
+            <span class="block text-[11px] font-normal text-zinc-400">.exe directa (<span
+                class="app-version-text">v0.1.0</span>)</span>
           </div>
+        </a>
 
-          <!-- Top CTA: Probar en la web -->
-          <a
-            href="./app/"
-            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <span class="lang-es">Probar en la web</span>
-            <span class="lang-en">Try on Web</span>
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+        <!-- CTA 3: Windows Portable (.zip) -->
+        <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows-Portable.zip" download
+          class="w-full sm:w-auto h-[58px] inline-flex items-center justify-center gap-3 px-5 rounded-xl text-sm font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-100 border border-zinc-700/80 hover:border-emerald-500/60 transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 text-center">
+          <!-- Portable / Folder Icon -->
+          <svg class="w-5 h-5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+          </svg>
+          <div class="text-left whitespace-nowrap">
+            <span class="block leading-tight font-bold lang-es">Windows Portable</span>
+            <span class="block leading-tight font-bold lang-en">Windows Portable</span>
+            <span class="block text-[11px] font-normal text-zinc-400">.zip sin instalación</span>
+          </div>
+        </a>
+
+        <!-- CTA 4: Direct Download for Mac -->
+        <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Mac.dmg" download
+          class="w-full sm:w-auto h-[58px] inline-flex items-center justify-center gap-3 px-5 rounded-xl text-sm font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-100 border border-zinc-700/80 hover:border-emerald-500/60 transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 text-center">
+          <!-- Apple Icon -->
+          <svg class="w-5 h-5 text-zinc-300 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.64-.78 1.08-1.86.96-2.95-1 .04-2.12.67-2.78 1.44-.58.67-1.1 1.77-.96 2.84 1.12.09 2.14-.55 2.78-1.33z" />
+          </svg>
+          <div class="text-left whitespace-nowrap">
+            <span class="block leading-tight font-bold lang-es">Descargar Mac</span>
+            <span class="block leading-tight font-bold lang-en">Download Mac</span>
+            <span class="block text-[11px] font-normal text-zinc-400">.dmg directa (<span
+                class="app-version-text">v0.1.0</span>)</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Subtle Unified Web & Desktop Security Notice -->
+      <div
+        class="mt-5 max-w-2xl mx-auto p-3 rounded-lg bg-zinc-900/40 border border-zinc-800/60 text-left text-[11px] text-zinc-400 font-sans">
+        <div class="flex items-start gap-2.5">
+          <div class="text-zinc-500 mt-0.5 shrink-0">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
             </svg>
-          </a>
+          </div>
+          <div class="space-y-1.5 leading-relaxed min-w-0 flex-1">
+            <div class="lang-es space-y-1">
+              <p>
+                <strong class="text-zinc-300">Versión Web:</strong> los cambios se conservan para la sesión actual del
+                navegador; usa <kbd
+                  class="px-1 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-750 text-zinc-300">Guardar
+                  como</kbd> (<kbd
+                  class="px-1 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-750 text-zinc-300">Ctrl+Shift+S</kbd>)
+                para descargar tu archivo en local.
+              </p>
+              <p class="text-zinc-500">
+                <strong class="text-zinc-400">Instalación en Escritorio:</strong> Foliant es 100% de código abierto y
+                auditable. Al ser un proyecto independiente sin certificados corporativos comerciales, Defender
+                (SmartScreen) o Gatekeeper pueden mostrar un aviso preventivo de editor desconocido al instalar.
+              </p>
+            </div>
+            <div class="lang-en space-y-1">
+              <p>
+                <strong class="text-zinc-300">Web Version:</strong> changes are retained for the active browser session;
+                use <kbd
+                  class="px-1 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-750 text-zinc-300">Save
+                  As</kbd> (<kbd
+                  class="px-1 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-750 text-zinc-300">Ctrl+Shift+S</kbd>)
+                to download a local copy.
+              </p>
+              <p class="text-zinc-500">
+                <strong class="text-zinc-400">Desktop Installation:</strong> Foliant is 100% open source and auditable.
+                As an independent project without commercial certificates, Defender (SmartScreen) or Gatekeeper may
+                display a preventive unknown publisher note during installation.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
-    </header>
 
-    <main class="flex-grow z-10">
-      <!-- Hero Section -->
-      <section class="relative pt-16 pb-16 md:pt-24 md:pb-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto text-center">
-        <!-- Brand Badge Pill -->
-        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-zinc-800 text-xs text-zinc-300 mb-8 backdrop-blur shadow-sm hover:border-emerald-500/40 transition">
-          <img src="/logo.svg" alt="Foliant Logo" class="w-4 h-4 object-contain" />
-          <span class="text-emerald-400 font-medium lang-es">Estudio Literario & Arquitectura Narrativa</span>
-          <span class="text-emerald-400 font-medium lang-en">Literary Studio & Narrative Architecture</span>
+      <!-- Secondary release link for Linux & checksums -->
+      <div class="mt-3 text-center">
+        <a href="https://github.com/Zintradev/foliant/releases/latest" target="_blank" rel="noopener noreferrer"
+          class="text-[11px] text-zinc-500 hover:text-zinc-300 underline decoration-zinc-800 transition">
+          <span class="lang-es">¿Buscas versión Linux o todas las notas de versión? Ver en GitHub Releases →</span>
+          <span class="lang-en">Looking for Linux build or release notes? Browse on GitHub Releases →</span>
+        </a>
+      </div>
+
+      <!-- Workspace UI Mockup Showcase -->
+      <div class="mt-14 relative rounded-xl border border-zinc-800 bg-zinc-900/70 p-2 sm:p-3 shadow-2xl glow-border">
+        <div
+          class="flex items-center justify-between pb-2 px-2 border-b border-zinc-800/80 text-[11px] text-zinc-500 font-mono">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-500/60 inline-block"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500/60 inline-block"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/60 inline-block"></span>
+            <span class="ml-2 text-zinc-400">The Sunken Crown: Chronicles of the Obsidian Veil</span>
+          </div>
+          <div class="hidden sm:flex items-center gap-3">
+            <span class="text-emerald-400 lang-es">● 4 Actos • 18 Escenas</span>
+            <span class="text-emerald-400 lang-en">● 4 Acts • 18 Scenes</span>
+            <span class="lang-es">120.000 palabras obj.</span>
+            <span class="lang-en">120,000 words target</span>
+          </div>
         </div>
 
-        <!-- Main Powerful Title -->
-        <h1 class="font-cinzel text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-zinc-100 max-w-4xl mx-auto leading-tight sm:leading-tight md:leading-[1.15]">
-          <span class="lang-es">
-            Donde tus historias cobran vida,
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-200">
-              capítulo a capítulo.
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mt-3 text-left">
+          <!-- Mock Outline Dock -->
+          <div class="hidden md:block md:col-span-3 bg-zinc-950/80 rounded border border-zinc-800/80 p-3 text-xs">
+            <div class="font-semibold text-zinc-300 mb-2.5 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+              <span class="lang-es">Estructura del Manuscrito</span>
+              <span class="lang-en">Manuscript Structure</span>
+            </div>
+            <ul class="space-y-1.5 text-zinc-400 text-[11px]">
+              <li class="font-medium text-zinc-200">▾ Act I: The Shattered Eclipse</li>
+              <li class="pl-3 text-emerald-300 bg-emerald-500/10 rounded py-0.5 px-1 border-l-2 border-emerald-400">Ch
+                1: The Ash Upon the Throne</li>
+              <li class="pl-3">Ch 2: The Inquisitor’s Lantern</li>
+              <li class="pl-3">Ch 3: The Silvered Crypt</li>
+              <li class="font-medium text-zinc-200 mt-2">▸ Act II: Beneath the Black Boughs</li>
+              <li class="font-medium text-zinc-200">▸ Act III: The Forge of Shadows</li>
+            </ul>
+          </div>
+
+          <!-- Mock Editor Canvas -->
+          <div
+            class="col-span-1 md:col-span-6 bg-zinc-950 rounded border border-zinc-800/80 p-4 sm:p-6 flex flex-col justify-between">
+            <div>
+              <div
+                class="flex items-center justify-between text-[11px] text-zinc-500 border-b border-zinc-800/60 pb-2 mb-3">
+                <span class="text-zinc-300 font-medium">Chapter 1: The Ash Upon the Throne</span>
+                <span class="font-mono text-emerald-400 lang-es">4.500 / 4.500 palabras</span>
+                <span class="font-mono text-emerald-400 lang-en">4,500 / 4,500 words</span>
+              </div>
+              <h3 class="font-serif-literary text-lg font-semibold text-zinc-200 mb-3 italic">
+                <span class="lang-es">"El trono no cayó con estruendo; se deshizo en sebo negro antes de rozar el
+                  mármol..."</span>
+                <span class="lang-en">"The crown did not fall with a clang; it melted into black tallow before it even
+                  touched the marble dais..."</span>
+              </h3>
+              <p class="font-serif-literary text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                <span class="lang-es">
+                  Valerius Sterling contempló el fuego rúnico que goteaba de sus guanteletes. Fuera, las puertas de
+                  bronce de la catedral crujían bajo los arietes de la Guardia de la Ciudad. El rey había muerto sin
+                  pronunciar una sola plegaria, susurrando únicamente una coordenada hacia las criptas del Valle de
+                  Whisperwood...
+                </span>
+                <span class="lang-en">
+                  Valerius Sterling stood motionless before the scorched throne, his gauntlets dripping with runic wax
+                  that chilled his skin rather than burning it. Behind him, the great brass doors groaned under the
+                  battering rams of the City Guard. The king had died whispering only a coordinate that led deep into
+                  the sunken crypts of Whisperwood...
+                </span>
+              </p>
+            </div>
+            <div
+              class="mt-4 pt-3 border-t border-zinc-800/60 flex items-center justify-between text-[11px] text-zinc-500">
+              <span class="flex items-center gap-1.5 text-emerald-400">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span class="lang-es">Autoguardado continuo</span>
+                <span class="lang-en">Continuous autosave</span>
+              </span>
+              <span class="font-mono">TipTap + ProseMirror Engine</span>
+            </div>
+          </div>
+
+          <!-- Mock Graph / Timeline Dock -->
+          <div class="hidden md:block md:col-span-3 bg-zinc-950/80 rounded border border-zinc-800/80 p-3 text-xs">
+            <div class="font-semibold text-zinc-300 mb-2 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              <span class="lang-es">Grafo de Relaciones</span>
+              <span class="lang-en">Relationship Graph</span>
+            </div>
+            <div class="space-y-2 mt-2">
+              <div class="p-2 rounded bg-zinc-900 border border-zinc-800">
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-zinc-200 font-semibold">Valerius Sterling</span>
+                  <span class="text-[9px] px-1 bg-zinc-800 rounded text-emerald-300 lang-es">Protagonista</span>
+                  <span class="text-[9px] px-1 bg-zinc-800 rounded text-emerald-300 lang-en">Protagonist</span>
+                </div>
+                <div class="text-[10px] text-zinc-400 mt-1 flex items-center gap-1">
+                  <span class="text-rose-400 lang-es">⚔ Enemistad:</span>
+                  <span class="text-rose-400 lang-en">⚔ Rivalry:</span>
+                  <span>Inquisitor Morvath</span>
+                </div>
+                <div class="text-[10px] text-zinc-400 flex items-center gap-1">
+                  <span class="text-teal-400 lang-es">✦ Alianza:</span>
+                  <span class="text-teal-400 lang-en">✦ Alliance:</span>
+                  <span>Vespera</span>
+                </div>
+              </div>
+
+              <div class="p-2 rounded bg-zinc-900 border border-zinc-800">
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-zinc-200 font-semibold">Inquisitor Morvath</span>
+                  <span class="text-[9px] px-1 bg-zinc-800 rounded text-amber-300 lang-es">Antagonista</span>
+                  <span class="text-[9px] px-1 bg-zinc-800 rounded text-amber-300 lang-en">Antagonist</span>
+                </div>
+                <div class="text-[10px] text-zinc-400 mt-1">
+                  <span class="lang-es">Fiel al Cónclave de la Llama</span>
+                  <span class="lang-en">Loyal to Black Flame Conclave</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Key Features Section -->
+    <section id="caracteristicas" class="py-20 bg-zinc-900/40 border-y border-zinc-800/80 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-6xl mx-auto">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+          <h2 class="font-cinzel text-3xl sm:text-4xl font-bold text-zinc-100">
+            <span class="lang-es">Diseñado para autores con historias complejas</span>
+            <span class="lang-en">Engineered for authors crafting deep stories</span>
+          </h2>
+          <p class="mt-4 text-base text-zinc-400 font-serif-literary">
+            <span class="lang-es">
+              Las novelas no son sólo texto lineal: son tramas interconectadas, cronologías densas y universos vivos.
+              Foliant te da el control de cada dimensión de tu narrativa.
             </span>
-          </span>
-          <span class="lang-en">
-            Where your stories come to life,
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-200">
-              chapter by chapter.
+            <span class="lang-en">
+              Novels are more than linear text: they are interwoven subplots, intricate timelines, and living worlds.
+              Foliant gives you mastery over every layer of your narrative.
             </span>
-          </span>
-        </h1>
-
-        <!-- Narrative Subtitle -->
-        <p class="mt-6 text-base sm:text-lg md:text-xl text-zinc-400 max-w-3xl mx-auto font-serif-literary leading-relaxed text-balance">
-          <span class="lang-es">
-            Foliant es el estudio de escritura y construcción de mundos que combina un editor libre de distracciones con diagramas de relaciones, líneas temporales multihilo y taxonomía de lore. Una suite modular, ágil y 100% privada diseñada para la narrativa compleja.
-          </span>
-          <span class="lang-en">
-            Foliant is the focused writing and worldbuilding studio combining a distraction-free editor with relationship graphs, multi-thread timelines, and rich lore taxonomy. A modular, agile, and 100% private suite crafted for complex narratives.
-          </span>
-        </p>
-
-        <!-- CTAs Section: Web Trial + Direct Download Buttons -->
-        <div class="mt-10 flex flex-wrap items-center justify-center gap-3.5 max-w-4xl mx-auto">
-          <!-- CTA 1: Probar en la web -->
-          <a
-            href="./app/"
-            class="w-full sm:w-auto h-[58px] inline-flex items-center justify-center gap-3 px-5 rounded-xl text-sm font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:translate-y-0 text-center"
-          >
-            <svg class="w-5 h-5 text-zinc-950 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
-            </svg>
-            <div class="text-left whitespace-nowrap">
-              <span class="block leading-tight font-bold lang-es">Probar en la web</span>
-              <span class="block leading-tight font-bold lang-en">Try on the Web</span>
-              <span class="block text-[11px] font-normal text-zinc-900/80 lang-es">Sin instalación previa • Demo</span>
-              <span class="block text-[11px] font-normal text-zinc-900/80 lang-en">No install required • Demo</span>
-            </div>
-          </a>
-
-          <!-- CTA 2: Direct Download for Windows -->
-          <a
-            href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows.exe"
-            download
-            class="w-full sm:w-auto h-[58px] inline-flex items-center justify-center gap-3 px-5 rounded-xl text-sm font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-100 border border-zinc-700/80 hover:border-emerald-500/60 transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 text-center"
-          >
-            <!-- Windows Icon -->
-            <svg class="w-5 h-5 text-sky-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.949-1.801"/>
-            </svg>
-            <div class="text-left whitespace-nowrap">
-              <span class="block leading-tight font-bold lang-es">Descargar Windows</span>
-              <span class="block leading-tight font-bold lang-en">Download Windows</span>
-              <span class="block text-[11px] font-normal text-zinc-400">.exe directa (<span class="app-version-text">v0.1.0</span>)</span>
-            </div>
-          </a>
-
-          <!-- CTA 3: Windows Portable (.zip) -->
-          <a
-            href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows-Portable.zip"
-            download
-            class="w-full sm:w-auto h-[58px] inline-flex items-center justify-center gap-3 px-5 rounded-xl text-sm font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-100 border border-zinc-700/80 hover:border-emerald-500/60 transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 text-center"
-          >
-            <!-- Portable / Folder Icon -->
-            <svg class="w-5 h-5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
-            </svg>
-            <div class="text-left whitespace-nowrap">
-              <span class="block leading-tight font-bold lang-es">Windows Portable</span>
-              <span class="block leading-tight font-bold lang-en">Windows Portable</span>
-              <span class="block text-[11px] font-normal text-zinc-400">.zip sin instalación</span>
-            </div>
-          </a>
-
-          <!-- CTA 4: Direct Download for Mac -->
-          <a
-            href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Mac.dmg"
-            download
-            class="w-full sm:w-auto h-[58px] inline-flex items-center justify-center gap-3 px-5 rounded-xl text-sm font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-100 border border-zinc-700/80 hover:border-emerald-500/60 transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 text-center"
-          >
-            <!-- Apple Icon -->
-            <svg class="w-5 h-5 text-zinc-300 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.64-.78 1.08-1.86.96-2.95-1 .04-2.12.67-2.78 1.44-.58.67-1.1 1.77-.96 2.84 1.12.09 2.14-.55 2.78-1.33z"/>
-            </svg>
-            <div class="text-left whitespace-nowrap">
-              <span class="block leading-tight font-bold lang-es">Descargar Mac</span>
-              <span class="block leading-tight font-bold lang-en">Download Mac</span>
-              <span class="block text-[11px] font-normal text-zinc-400">.dmg directa (<span class="app-version-text">v0.1.0</span>)</span>
-            </div>
-          </a>
+          </p>
         </div>
 
-        <!-- Subtle Unified Web & Desktop Security Notice -->
-        <div class="mt-5 max-w-2xl mx-auto p-3 rounded-lg bg-zinc-900/40 border border-zinc-800/60 text-left text-[11px] text-zinc-400 font-sans">
-          <div class="flex items-start gap-2.5">
-            <div class="text-zinc-500 mt-0.5 shrink-0">
-              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <!-- Feature 1: Modular Design -->
+          <div class="p-6 rounded-xl bg-zinc-950 border border-zinc-800 hover:border-zinc-700 transition">
+            <div
+              class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-5">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
               </svg>
             </div>
-            <div class="space-y-1.5 leading-relaxed min-w-0 flex-1">
-              <div class="lang-es space-y-1">
-                <p>
-                  <strong class="text-zinc-300">Versión Web:</strong> los cambios se conservan para la sesión actual del navegador; usa <kbd class="px-1 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-750 text-zinc-300">Guardar como</kbd> (<kbd class="px-1 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-750 text-zinc-300">Ctrl+Shift+S</kbd>) para descargar tu archivo en local.
-                </p>
-                <p class="text-zinc-500">
-                  <strong class="text-zinc-400">Instalación en Escritorio:</strong> Foliant es 100% de código abierto y auditable. Al ser un proyecto independiente sin certificados corporativos comerciales, Defender (SmartScreen) o Gatekeeper pueden mostrar un aviso preventivo de editor desconocido al instalar.
-                </p>
-              </div>
-              <div class="lang-en space-y-1">
-                <p>
-                  <strong class="text-zinc-300">Web Version:</strong> changes are retained for the active browser session; use <kbd class="px-1 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-750 text-zinc-300">Save As</kbd> (<kbd class="px-1 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-750 text-zinc-300">Ctrl+Shift+S</kbd>) to download a local copy.
-                </p>
-                <p class="text-zinc-500">
-                  <strong class="text-zinc-400">Desktop Installation:</strong> Foliant is 100% open source and auditable. As an independent project without commercial certificates, Defender (SmartScreen) or Gatekeeper may display a preventive unknown publisher note during installation.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Secondary release link for Linux & checksums -->
-        <div class="mt-3 text-center">
-          <a
-            href="https://github.com/Zintradev/foliant/releases/latest"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-[11px] text-zinc-500 hover:text-zinc-300 underline decoration-zinc-800 transition"
-          >
-            <span class="lang-es">¿Buscas versión Linux o todas las notas de versión? Ver en GitHub Releases →</span>
-            <span class="lang-en">Looking for Linux build or release notes? Browse on GitHub Releases →</span>
-          </a>
-        </div>
-
-        <!-- Workspace UI Mockup Showcase -->
-        <div class="mt-14 relative rounded-xl border border-zinc-800 bg-zinc-900/70 p-2 sm:p-3 shadow-2xl glow-border">
-          <div class="flex items-center justify-between pb-2 px-2 border-b border-zinc-800/80 text-[11px] text-zinc-500 font-mono">
-            <div class="flex items-center gap-1.5">
-              <span class="w-2.5 h-2.5 rounded-full bg-red-500/60 inline-block"></span>
-              <span class="w-2.5 h-2.5 rounded-full bg-amber-500/60 inline-block"></span>
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/60 inline-block"></span>
-              <span class="ml-2 text-zinc-400">The Sunken Crown: Chronicles of the Obsidian Veil</span>
-            </div>
-            <div class="hidden sm:flex items-center gap-3">
-              <span class="text-emerald-400 lang-es">● 4 Actos • 18 Escenas</span>
-              <span class="text-emerald-400 lang-en">● 4 Acts • 18 Scenes</span>
-              <span class="lang-es">120.000 palabras obj.</span>
-              <span class="lang-en">120,000 words target</span>
-            </div>
+            <h3 class="text-lg font-semibold text-zinc-100 mb-2">
+              <span class="lang-es">Diseño Modular y Flexible</span>
+              <span class="lang-en">Modular & Flexible Workspace</span>
+            </h3>
+            <p class="text-sm text-zinc-400 leading-relaxed font-serif-literary">
+              <span class="lang-es">
+                Distribuye tu entorno como prefieras: paneles acoplables, línea de tiempo estilo 'Subway Map' o carriles
+                de capítulos, cuadrícula de escenas y búsqueda global relámpago con atajos de teclado.
+              </span>
+              <span class="lang-en">
+                Configure your studio freely: collapsible docks, 'Subway Map' or chapter lane timelines, corkboard scene
+                grids, and instant global search with keyboard shortcuts.
+              </span>
+            </p>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mt-3 text-left">
-            <!-- Mock Outline Dock -->
-            <div class="hidden md:block md:col-span-3 bg-zinc-950/80 rounded border border-zinc-800/80 p-3 text-xs">
-              <div class="font-semibold text-zinc-300 mb-2.5 flex items-center gap-1.5">
-                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                </svg>
-                <span class="lang-es">Estructura del Manuscrito</span>
-                <span class="lang-en">Manuscript Structure</span>
+          <!-- Feature 2: Privacy / Local-First -->
+          <div class="p-6 rounded-xl bg-zinc-950 border border-zinc-800 hover:border-zinc-700 transition">
+            <div
+              class="w-10 h-10 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center mb-5">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-zinc-100 mb-2">
+              <span class="lang-es">Privacidad y Local-First</span>
+              <span class="lang-en">Privacy & Local-First</span>
+            </h3>
+            <p class="text-sm text-zinc-400 leading-relaxed font-serif-literary">
+              <span class="lang-es">
+                Tus historias te pertenecen a ti, nunca a un servidor ajeno. Sin telemetría abusiva, sin nubes forzadas
+                ni suscripciones. En escritorio guardas en formatos legibles y carpetas transparentes.
+              </span>
+              <span class="lang-en">
+                Your manuscripts belong to you alone. No telemetry, forced clouds, or subscriptions. On desktop, Foliant
+                stores files locally in clean, human-readable directory bundles.
+              </span>
+            </p>
+          </div>
+
+          <!-- Feature 3: Open Source / PolyForm -->
+          <div class="p-6 rounded-xl bg-zinc-950 border border-zinc-800 hover:border-zinc-700 transition">
+            <div
+              class="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-5">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-zinc-100 mb-2">
+              <span class="lang-es">Código Abierto y Formatos Libres</span>
+              <span class="lang-en">Open Source & Free Formats</span>
+            </h3>
+            <p class="text-sm text-zinc-400 leading-relaxed font-serif-literary">
+              <span class="lang-es">
+                Importa sin fricciones proyectos creados en <strong>Manuskript</strong> y exporta a formato estándar
+                <strong>EPUB 3</strong> con metadatos completos y tabla de contenidos navegable.
+              </span>
+              <span class="lang-en">
+                Seamlessly import existing projects from <strong>Manuskript</strong> and export polished <strong>EPUB
+                  3</strong> eBooks with full metadata and navigable table of contents.
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Modules Section -->
+    <section id="modulos" class="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <h2 class="font-cinzel text-3xl sm:text-4xl font-bold text-zinc-100">
+          <span class="lang-es">Una suite completa de herramientas narrativas</span>
+          <span class="lang-en">A complete suite of narrative craft tools</span>
+        </h2>
+        <p class="mt-4 text-base text-zinc-400 font-serif-literary">
+          <span class="lang-es">Cada pestaña de Foliant resuelve un reto concreto en el proceso creativo del
+            autor.</span>
+          <span class="lang-en">Each Foliant module addresses a specific craft challenge in an author's creative
+            workflow.</span>
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
+        <div class="p-5 rounded-lg bg-zinc-900/50 border border-zinc-800">
+          <span class="text-emerald-400 font-mono text-xs uppercase tracking-wider block mb-2">
+            <span class="lang-es">01 • Redacción</span>
+            <span class="lang-en">01 • Writing</span>
+          </span>
+          <h4 class="text-base font-semibold text-zinc-200 mb-1.5">
+            <span class="lang-es">Editor TipTap Inmersivo</span>
+            <span class="lang-en">Immersive TipTap Editor</span>
+          </h4>
+          <p class="text-xs text-zinc-400 font-serif-literary">
+            <span class="lang-es">Formato enriquecido, resaltados cromáticos, notas al margen y cálculo de palabras en
+              tiempo real.</span>
+            <span class="lang-en">Rich formatting, color highlights, margin notes, and instant real-time word count
+              tracking.</span>
+          </p>
+        </div>
+
+        <div class="p-5 rounded-lg bg-zinc-900/50 border border-zinc-800">
+          <span class="text-teal-400 font-mono text-xs uppercase tracking-wider block mb-2">
+            <span class="lang-es">02 • Cronología</span>
+            <span class="lang-en">02 • Timeline</span>
+          </span>
+          <h4 class="text-base font-semibold text-zinc-200 mb-1.5">
+            <span class="lang-es">Línea de Tiempo Multivía</span>
+            <span class="lang-en">Multi-thread Timeline</span>
+          </h4>
+          <p class="text-xs text-zinc-400 font-serif-literary">
+            <span class="lang-es">Visualiza subtramas y arcos en carriles paralelos con vista mapa de metro o capítulos
+              ordenados.</span>
+            <span class="lang-en">Track plotlines and arcs across parallel tracks with Subway Map or Chapter Lane visual
+              modes.</span>
+          </p>
+        </div>
+
+        <div class="p-5 rounded-lg bg-zinc-900/50 border border-zinc-800">
+          <span class="text-amber-400 font-mono text-xs uppercase tracking-wider block mb-2">
+            <span class="lang-es">03 • Personajes</span>
+            <span class="lang-en">03 • Characters</span>
+          </span>
+          <h4 class="text-base font-semibold text-zinc-200 mb-1.5">
+            <span class="lang-es">Grafo de Relaciones</span>
+            <span class="lang-en">Relationship Graph</span>
+          </h4>
+          <p class="text-xs text-zinc-400 font-serif-literary">
+            <span class="lang-es">Inspecciona afinidades, conflictos, linajes y secretos entre tu elenco con enlaces
+              dinámicos.</span>
+            <span class="lang-en">Inspect affinities, rivalries, bloodlines, and secrets between your cast with
+              interactive graph nodes.</span>
+          </p>
+        </div>
+
+        <div class="p-5 rounded-lg bg-zinc-900/50 border border-zinc-800">
+          <span class="text-indigo-400 font-mono text-xs uppercase tracking-wider block mb-2">
+            <span class="lang-es">04 • Worldbuilding</span>
+            <span class="lang-en">04 • Worldbuilding</span>
+          </span>
+          <h4 class="text-base font-semibold text-zinc-200 mb-1.5">
+            <span class="lang-es">Enciclopedia de Lore</span>
+            <span class="lang-en">Lore Encyclopedia</span>
+          </h4>
+          <p class="text-xs text-zinc-400 font-serif-literary">
+            <span class="lang-es">Facciones, reinos, reliquias y magia catalogados con taxonomías cromáticas
+              personalizables.</span>
+            <span class="lang-en">Factions, realms, relics, and magic cataloged with customizable color-coded
+              taxonomy.</span>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Platforms Comparison Section -->
+    <section id="plataformas" class="py-16 bg-zinc-900/30 border-t border-zinc-800/80 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-12">
+          <h2 class="font-cinzel text-3xl font-bold text-zinc-100">
+            <span class="lang-es">Escritorio o Navegador Web</span>
+            <span class="lang-en">Desktop or Web Browser</span>
+          </h2>
+          <p class="mt-3 text-sm text-zinc-400 font-serif-literary">
+            <span class="lang-es">Elige cómo prefieres disfrutar de Foliant según tu flujo de trabajo.</span>
+            <span class="lang-en">Choose how you prefer to run Foliant according to your creative workflow.</span>
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Web Card -->
+          <div class="p-6 rounded-xl bg-zinc-950 border border-emerald-500/30 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <span
+                  class="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                  <span class="lang-es">Versión Web</span>
+                  <span class="lang-en">Web Version</span>
+                </span>
+                <span class="text-xs text-zinc-400">GitHub Pages</span>
               </div>
-              <ul class="space-y-1.5 text-zinc-400 text-[11px]">
-                <li class="font-medium text-zinc-200">▾ Act I: The Shattered Eclipse</li>
-                <li class="pl-3 text-emerald-300 bg-emerald-500/10 rounded py-0.5 px-1 border-l-2 border-emerald-400">Ch 1: The Ash Upon the Throne</li>
-                <li class="pl-3">Ch 2: The Inquisitor’s Lantern</li>
-                <li class="pl-3">Ch 3: The Silvered Crypt</li>
-                <li class="font-medium text-zinc-200 mt-2">▸ Act II: Beneath the Black Boughs</li>
-                <li class="font-medium text-zinc-200">▸ Act III: The Forge of Shadows</li>
+              <h3 class="text-xl font-bold text-zinc-100 mb-2">
+                <span class="lang-es">Probar al Instante</span>
+                <span class="lang-en">Instant Web Studio</span>
+              </h3>
+              <p class="text-xs text-zinc-400 leading-relaxed font-serif-literary mb-4">
+                <span class="lang-es">
+                  Accede inmediatamente desde cualquier navegador sin descargar ejecutables. Incluye precargado el
+                  proyecto de fantasía <em>"The Sunken Crown"</em> para que explores todas las vistas desde el primer
+                  segundo.
+                </span>
+                <span class="lang-en">
+                  Access immediately from any modern browser without installing software. Includes the preloaded fantasy
+                  epic <em>"The Sunken Crown"</em> so you can explore all features right away.
+                </span>
+              </p>
+              <ul class="text-xs text-zinc-300 space-y-2 mb-6">
+                <li class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span class="lang-es">Cero instalación y cero registro</span>
+                  <span class="lang-en">Zero install, no account required</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span class="lang-es">Proyecto de ejemplo precargado</span>
+                  <span class="lang-en">Preloaded sample project</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span class="lang-es">Exportación y prueba de todas las herramientas</span>
+                  <span class="lang-en">Full export and workspace feature set</span>
+                </li>
+              </ul>
+              <div
+                class="mb-4 p-3 rounded-lg bg-zinc-900 border border-zinc-750 shadow-md text-xs text-zinc-400 flex items-start gap-2.5">
+                <div
+                  class="p-1.5 rounded-full bg-amber-950/60 border border-amber-800/80 text-amber-400 shrink-0 mt-0.5">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                  </svg>
+                </div>
+                <div class="leading-relaxed min-w-0 flex-1 text-[11px]">
+                  <span class="lang-es">
+                    <strong class="text-zinc-200">Aviso:</strong> La versión web guarda cambios para la <em>misma
+                      sesión</em>. Usa <kbd
+                      class="px-1 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-700 text-zinc-200">Guardar
+                      como</kbd> para descargar tu proyecto en local.
+                  </span>
+                  <span class="lang-en">
+                    <strong class="text-zinc-200">Notice:</strong> Web version saves changes for the <em>current
+                      session</em>. Use <kbd
+                      class="px-1 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-700 text-zinc-200">Save
+                      As</kbd> to download your project locally.
+                  </span>
+                </div>
+              </div>
+            </div>
+            <a href="./app/"
+              class="block w-full py-2.5 text-center rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition">
+              <span class="lang-es">Abrir Foliant en la Web →</span>
+              <span class="lang-en">Launch Foliant in Web →</span>
+            </a>
+          </div>
+
+          <!-- Desktop Card -->
+          <div class="p-6 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <span
+                  class="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700">
+                  <span class="lang-es">App Nativa</span>
+                  <span class="lang-en">Native App</span>
+                </span>
+                <span class="text-xs text-zinc-400">Tauri v2 + Rust</span>
+              </div>
+              <h3 class="text-xl font-bold text-zinc-100 mb-2">
+                <span class="lang-es">Instalación en Escritorio</span>
+                <span class="lang-en">Desktop Installation</span>
+              </h3>
+              <p class="text-xs text-zinc-400 leading-relaxed font-serif-literary mb-4">
+                <span class="lang-es">
+                  El entorno nativo para tu ordenador personal. Ofrece sincronización directa con carpetas del sistema
+                  de archivos, menor uso de memoria y modo 100% offline.
+                </span>
+                <span class="lang-en">
+                  The native environment for your personal computer. Offers direct folder filesystem sync, ultra-low
+                  memory usage, and 100% offline capability.
+                </span>
+              </p>
+              <ul class="text-xs text-zinc-300 space-y-2 mb-6">
+                <li class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span class="lang-es">Guardado modular en carpetas del disco</span>
+                  <span class="lang-en">Modular disk persistence in clean folders</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span class="lang-es">Importación directa de archivos locales</span>
+                  <span class="lang-en">Direct local file import (Manuskript)</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span class="lang-es">Arquitectura ultraligera basada en Tauri v2</span>
+                  <span class="lang-en">Lightweight binary powered by Tauri v2</span>
+                </li>
               </ul>
             </div>
 
-            <!-- Mock Editor Canvas -->
-            <div class="col-span-1 md:col-span-6 bg-zinc-950 rounded border border-zinc-800/80 p-4 sm:p-6 flex flex-col justify-between">
-              <div>
-                <div class="flex items-center justify-between text-[11px] text-zinc-500 border-b border-zinc-800/60 pb-2 mb-3">
-                  <span class="text-zinc-300 font-medium">Chapter 1: The Ash Upon the Throne</span>
-                  <span class="font-mono text-emerald-400 lang-es">4.500 / 4.500 palabras</span>
-                  <span class="font-mono text-emerald-400 lang-en">4,500 / 4,500 words</span>
-                </div>
-                <h3 class="font-serif-literary text-lg font-semibold text-zinc-200 mb-3 italic">
-                  <span class="lang-es">"El trono no cayó con estruendo; se deshizo en sebo negro antes de rozar el mármol..."</span>
-                  <span class="lang-en">"The crown did not fall with a clang; it melted into black tallow before it even touched the marble dais..."</span>
-                </h3>
-                <p class="font-serif-literary text-xs sm:text-sm text-zinc-400 leading-relaxed">
-                  <span class="lang-es">
-                    Valerius Sterling contempló el fuego rúnico que goteaba de sus guanteletes. Fuera, las puertas de bronce de la catedral crujían bajo los arietes de la Guardia de la Ciudad. El rey había muerto sin pronunciar una sola plegaria, susurrando únicamente una coordenada hacia las criptas del Valle de Whisperwood...
-                  </span>
-                  <span class="lang-en">
-                    Valerius Sterling stood motionless before the scorched throne, his gauntlets dripping with runic wax that chilled his skin rather than burning it. Behind him, the great brass doors groaned under the battering rams of the City Guard. The king had died whispering only a coordinate that led deep into the sunken crypts of Whisperwood...
-                  </span>
-                </p>
-              </div>
-              <div class="mt-4 pt-3 border-t border-zinc-800/60 flex items-center justify-between text-[11px] text-zinc-500">
-                <span class="flex items-center gap-1.5 text-emerald-400">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                  <span class="lang-es">Autoguardado continuo</span>
-                  <span class="lang-en">Continuous autosave</span>
-                </span>
-                <span class="font-mono">TipTap + ProseMirror Engine</span>
-              </div>
-            </div>
-
-            <!-- Mock Graph / Timeline Dock -->
-            <div class="hidden md:block md:col-span-3 bg-zinc-950/80 rounded border border-zinc-800/80 p-3 text-xs">
-              <div class="font-semibold text-zinc-300 mb-2 flex items-center gap-1.5">
-                <svg class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                </svg>
-                <span class="lang-es">Grafo de Relaciones</span>
-                <span class="lang-en">Relationship Graph</span>
-              </div>
-              <div class="space-y-2 mt-2">
-                <div class="p-2 rounded bg-zinc-900 border border-zinc-800">
-                  <div class="flex items-center justify-between text-[11px]">
-                    <span class="text-zinc-200 font-semibold">Valerius Sterling</span>
-                    <span class="text-[9px] px-1 bg-zinc-800 rounded text-emerald-300 lang-es">Protagonista</span>
-                    <span class="text-[9px] px-1 bg-zinc-800 rounded text-emerald-300 lang-en">Protagonist</span>
-                  </div>
-                  <div class="text-[10px] text-zinc-400 mt-1 flex items-center gap-1">
-                    <span class="text-rose-400 lang-es">⚔ Enemistad:</span>
-                    <span class="text-rose-400 lang-en">⚔ Rivalry:</span>
-                    <span>Inquisitor Morvath</span>
-                  </div>
-                  <div class="text-[10px] text-zinc-400 flex items-center gap-1">
-                    <span class="text-teal-400 lang-es">✦ Alianza:</span>
-                    <span class="text-teal-400 lang-en">✦ Alliance:</span>
-                    <span>Vespera</span>
-                  </div>
-                </div>
-
-                <div class="p-2 rounded bg-zinc-900 border border-zinc-800">
-                  <div class="flex items-center justify-between text-[11px]">
-                    <span class="text-zinc-200 font-semibold">Inquisitor Morvath</span>
-                    <span class="text-[9px] px-1 bg-zinc-800 rounded text-amber-300 lang-es">Antagonista</span>
-                    <span class="text-[9px] px-1 bg-zinc-800 rounded text-amber-300 lang-en">Antagonist</span>
-                  </div>
-                  <div class="text-[10px] text-zinc-400 mt-1">
-                    <span class="lang-es">Fiel al Cónclave de la Llama</span>
-                    <span class="lang-en">Loyal to Black Flame Conclave</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Key Features Section -->
-      <section id="caracteristicas" class="py-20 bg-zinc-900/40 border-y border-zinc-800/80 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-6xl mx-auto">
-          <div class="text-center max-w-3xl mx-auto mb-16">
-            <h2 class="font-cinzel text-3xl sm:text-4xl font-bold text-zinc-100">
-              <span class="lang-es">Diseñado para autores con historias complejas</span>
-              <span class="lang-en">Engineered for authors crafting deep stories</span>
-            </h2>
-            <p class="mt-4 text-base text-zinc-400 font-serif-literary">
-              <span class="lang-es">
-                Las novelas no son sólo texto lineal: son tramas interconectadas, cronologías densas y universos vivos. Foliant te da el control de cada dimensión de tu narrativa.
-              </span>
-              <span class="lang-en">
-                Novels are more than linear text: they are interwoven subplots, intricate timelines, and living worlds. Foliant gives you mastery over every layer of your narrative.
-              </span>
-            </p>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <!-- Feature 1: Modular Design -->
-            <div class="p-6 rounded-xl bg-zinc-950 border border-zinc-800 hover:border-zinc-700 transition">
-              <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-5">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
-                </svg>
-              </div>
-              <h3 class="text-lg font-semibold text-zinc-100 mb-2">
-                <span class="lang-es">Diseño Modular y Flexible</span>
-                <span class="lang-en">Modular & Flexible Workspace</span>
-              </h3>
-              <p class="text-sm text-zinc-400 leading-relaxed font-serif-literary">
-                <span class="lang-es">
-                  Distribuye tu entorno como prefieras: paneles acoplables, línea de tiempo estilo 'Subway Map' o carriles de capítulos, cuadrícula de escenas y búsqueda global relámpago con atajos de teclado.
-                </span>
-                <span class="lang-en">
-                  Configure your studio freely: collapsible docks, 'Subway Map' or chapter lane timelines, corkboard scene grids, and instant global search with keyboard shortcuts.
-                </span>
-              </p>
-            </div>
-
-            <!-- Feature 2: Privacy / Local-First -->
-            <div class="p-6 rounded-xl bg-zinc-950 border border-zinc-800 hover:border-zinc-700 transition">
-              <div class="w-10 h-10 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center mb-5">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-                </svg>
-              </div>
-              <h3 class="text-lg font-semibold text-zinc-100 mb-2">
-                <span class="lang-es">Privacidad y Local-First</span>
-                <span class="lang-en">Privacy & Local-First</span>
-              </h3>
-              <p class="text-sm text-zinc-400 leading-relaxed font-serif-literary">
-                <span class="lang-es">
-                  Tus historias te pertenecen a ti, nunca a un servidor ajeno. Sin telemetría abusiva, sin nubes forzadas ni suscripciones. En escritorio guardas en formatos legibles y carpetas transparentes.
-                </span>
-                <span class="lang-en">
-                  Your manuscripts belong to you alone. No telemetry, forced clouds, or subscriptions. On desktop, Foliant stores files locally in clean, human-readable directory bundles.
-                </span>
-              </p>
-            </div>
-
-            <!-- Feature 3: Open Source / PolyForm -->
-            <div class="p-6 rounded-xl bg-zinc-950 border border-zinc-800 hover:border-zinc-700 transition">
-              <div class="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-5">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" />
-                </svg>
-              </div>
-              <h3 class="text-lg font-semibold text-zinc-100 mb-2">
-                <span class="lang-es">Código Abierto y Formatos Libres</span>
-                <span class="lang-en">Open Source & Free Formats</span>
-              </h3>
-              <p class="text-sm text-zinc-400 leading-relaxed font-serif-literary">
-                <span class="lang-es">
-                  Importa sin fricciones proyectos creados en <strong>Manuskript</strong> y exporta a formato estándar <strong>EPUB 3</strong> con metadatos completos y tabla de contenidos navegable.
-                </span>
-                <span class="lang-en">
-                  Seamlessly import existing projects from <strong>Manuskript</strong> and export polished <strong>EPUB 3</strong> eBooks with full metadata and navigable table of contents.
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Modules Section -->
-      <section id="modulos" class="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
-        <div class="text-center max-w-2xl mx-auto mb-16">
-          <h2 class="font-cinzel text-3xl sm:text-4xl font-bold text-zinc-100">
-            <span class="lang-es">Una suite completa de herramientas narrativas</span>
-            <span class="lang-en">A complete suite of narrative craft tools</span>
-          </h2>
-          <p class="mt-4 text-base text-zinc-400 font-serif-literary">
-            <span class="lang-es">Cada pestaña de Foliant resuelve un reto concreto en el proceso creativo del autor.</span>
-            <span class="lang-en">Each Foliant module addresses a specific craft challenge in an author's creative workflow.</span>
-          </p>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
-          <div class="p-5 rounded-lg bg-zinc-900/50 border border-zinc-800">
-            <span class="text-emerald-400 font-mono text-xs uppercase tracking-wider block mb-2">
-              <span class="lang-es">01 • Redacción</span>
-              <span class="lang-en">01 • Writing</span>
-            </span>
-            <h4 class="text-base font-semibold text-zinc-200 mb-1.5">
-              <span class="lang-es">Editor TipTap Inmersivo</span>
-              <span class="lang-en">Immersive TipTap Editor</span>
-            </h4>
-            <p class="text-xs text-zinc-400 font-serif-literary">
-              <span class="lang-es">Formato enriquecido, resaltados cromáticos, notas al margen y cálculo de palabras en tiempo real.</span>
-              <span class="lang-en">Rich formatting, color highlights, margin notes, and instant real-time word count tracking.</span>
-            </p>
-          </div>
-
-          <div class="p-5 rounded-lg bg-zinc-900/50 border border-zinc-800">
-            <span class="text-teal-400 font-mono text-xs uppercase tracking-wider block mb-2">
-              <span class="lang-es">02 • Cronología</span>
-              <span class="lang-en">02 • Timeline</span>
-            </span>
-            <h4 class="text-base font-semibold text-zinc-200 mb-1.5">
-              <span class="lang-es">Línea de Tiempo Multivía</span>
-              <span class="lang-en">Multi-thread Timeline</span>
-            </h4>
-            <p class="text-xs text-zinc-400 font-serif-literary">
-              <span class="lang-es">Visualiza subtramas y arcos en carriles paralelos con vista mapa de metro o capítulos ordenados.</span>
-              <span class="lang-en">Track plotlines and arcs across parallel tracks with Subway Map or Chapter Lane visual modes.</span>
-            </p>
-          </div>
-
-          <div class="p-5 rounded-lg bg-zinc-900/50 border border-zinc-800">
-            <span class="text-amber-400 font-mono text-xs uppercase tracking-wider block mb-2">
-              <span class="lang-es">03 • Personajes</span>
-              <span class="lang-en">03 • Characters</span>
-            </span>
-            <h4 class="text-base font-semibold text-zinc-200 mb-1.5">
-              <span class="lang-es">Grafo de Relaciones</span>
-              <span class="lang-en">Relationship Graph</span>
-            </h4>
-            <p class="text-xs text-zinc-400 font-serif-literary">
-              <span class="lang-es">Inspecciona afinidades, conflictos, linajes y secretos entre tu elenco con enlaces dinámicos.</span>
-              <span class="lang-en">Inspect affinities, rivalries, bloodlines, and secrets between your cast with interactive graph nodes.</span>
-            </p>
-          </div>
-
-          <div class="p-5 rounded-lg bg-zinc-900/50 border border-zinc-800">
-            <span class="text-indigo-400 font-mono text-xs uppercase tracking-wider block mb-2">
-              <span class="lang-es">04 • Worldbuilding</span>
-              <span class="lang-en">04 • Worldbuilding</span>
-            </span>
-            <h4 class="text-base font-semibold text-zinc-200 mb-1.5">
-              <span class="lang-es">Enciclopedia de Lore</span>
-              <span class="lang-en">Lore Encyclopedia</span>
-            </h4>
-            <p class="text-xs text-zinc-400 font-serif-literary">
-              <span class="lang-es">Facciones, reinos, reliquias y magia catalogados con taxonomías cromáticas personalizables.</span>
-              <span class="lang-en">Factions, realms, relics, and magic cataloged with customizable color-coded taxonomy.</span>
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Platforms Comparison Section -->
-      <section id="plataformas" class="py-16 bg-zinc-900/30 border-t border-zinc-800/80 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-4xl mx-auto">
-          <div class="text-center mb-12">
-            <h2 class="font-cinzel text-3xl font-bold text-zinc-100">
-              <span class="lang-es">Escritorio o Navegador Web</span>
-              <span class="lang-en">Desktop or Web Browser</span>
-            </h2>
-            <p class="mt-3 text-sm text-zinc-400 font-serif-literary">
-              <span class="lang-es">Elige cómo prefieres disfrutar de Foliant según tu flujo de trabajo.</span>
-              <span class="lang-en">Choose how you prefer to run Foliant according to your creative workflow.</span>
-            </p>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Web Card -->
-            <div class="p-6 rounded-xl bg-zinc-950 border border-emerald-500/30 flex flex-col justify-between">
-              <div>
-                <div class="flex items-center justify-between mb-4">
-                  <span class="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
-                    <span class="lang-es">Versión Web</span>
-                    <span class="lang-en">Web Version</span>
-                  </span>
-                  <span class="text-xs text-zinc-400">GitHub Pages</span>
-                </div>
-                <h3 class="text-xl font-bold text-zinc-100 mb-2">
-                  <span class="lang-es">Probar al Instante</span>
-                  <span class="lang-en">Instant Web Studio</span>
-                </h3>
-                <p class="text-xs text-zinc-400 leading-relaxed font-serif-literary mb-4">
-                  <span class="lang-es">
-                    Accede inmediatamente desde cualquier navegador sin descargar ejecutables. Incluye precargado el proyecto de fantasía <em>"The Sunken Crown"</em> para que explores todas las vistas desde el primer segundo.
-                  </span>
-                  <span class="lang-en">
-                    Access immediately from any modern browser without installing software. Includes the preloaded fantasy epic <em>"The Sunken Crown"</em> so you can explore all features right away.
-                  </span>
-                </p>
-                <ul class="text-xs text-zinc-300 space-y-2 mb-6">
-                  <li class="flex items-center gap-2">
-                    <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                    <span class="lang-es">Cero instalación y cero registro</span>
-                    <span class="lang-en">Zero install, no account required</span>
-                  </li>
-                  <li class="flex items-center gap-2">
-                    <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                    <span class="lang-es">Proyecto de ejemplo precargado</span>
-                    <span class="lang-en">Preloaded sample project</span>
-                  </li>
-                  <li class="flex items-center gap-2">
-                    <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                    <span class="lang-es">Exportación y prueba de todas las herramientas</span>
-                    <span class="lang-en">Full export and workspace feature set</span>
-                  </li>
-                </ul>
-                <div class="mb-4 p-3 rounded-lg bg-zinc-900 border border-zinc-750 shadow-md text-xs text-zinc-400 flex items-start gap-2.5">
-                  <div class="p-1.5 rounded-full bg-amber-950/60 border border-amber-800/80 text-amber-400 shrink-0 mt-0.5">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-                    </svg>
-                  </div>
-                  <div class="leading-relaxed min-w-0 flex-1 text-[11px]">
-                    <span class="lang-es">
-                      <strong class="text-zinc-200">Aviso:</strong> La versión web guarda cambios para la <em>misma sesión</em>. Usa <kbd class="px-1 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-700 text-zinc-200">Guardar como</kbd> para descargar tu proyecto en local.
-                    </span>
-                    <span class="lang-en">
-                      <strong class="text-zinc-200">Notice:</strong> Web version saves changes for the <em>current session</em>. Use <kbd class="px-1 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-700 text-zinc-200">Save As</kbd> to download your project locally.
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <a
-                href="./app/"
-                class="block w-full py-2.5 text-center rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition"
-              >
-                <span class="lang-es">Abrir Foliant en la Web →</span>
-                <span class="lang-en">Launch Foliant in Web →</span>
-              </a>
-            </div>
-
-            <!-- Desktop Card -->
-            <div class="p-6 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col justify-between">
-              <div>
-                <div class="flex items-center justify-between mb-4">
-                  <span class="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700">
-                    <span class="lang-es">App Nativa</span>
-                    <span class="lang-en">Native App</span>
-                  </span>
-                  <span class="text-xs text-zinc-400">Tauri v2 + Rust</span>
-                </div>
-                <h3 class="text-xl font-bold text-zinc-100 mb-2">
-                  <span class="lang-es">Instalación en Escritorio</span>
-                  <span class="lang-en">Desktop Installation</span>
-                </h3>
-                <p class="text-xs text-zinc-400 leading-relaxed font-serif-literary mb-4">
-                  <span class="lang-es">
-                    El entorno nativo para tu ordenador personal. Ofrece sincronización directa con carpetas del sistema de archivos, menor uso de memoria y modo 100% offline.
-                  </span>
-                  <span class="lang-en">
-                    The native environment for your personal computer. Offers direct folder filesystem sync, ultra-low memory usage, and 100% offline capability.
-                  </span>
-                </p>
-                <ul class="text-xs text-zinc-300 space-y-2 mb-6">
-                  <li class="flex items-center gap-2">
-                    <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                    <span class="lang-es">Guardado modular en carpetas del disco</span>
-                    <span class="lang-en">Modular disk persistence in clean folders</span>
-                  </li>
-                  <li class="flex items-center gap-2">
-                    <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                    <span class="lang-es">Importación directa de archivos locales</span>
-                    <span class="lang-en">Direct local file import (Manuskript)</span>
-                  </li>
-                  <li class="flex items-center gap-2">
-                    <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                    <span class="lang-es">Arquitectura ultraligera basada en Tauri v2</span>
-                    <span class="lang-en">Lightweight binary powered by Tauri v2</span>
-                  </li>
-                </ul>
-              </div>
-
-              <!-- Direct Downloads on Desktop card -->
-              <div class="space-y-2">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <a
-                    href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows.exe"
-                    download
-                    class="h-10 px-3 whitespace-nowrap text-center rounded-lg text-xs font-semibold bg-zinc-850 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/80 hover:border-emerald-500/50 transition flex items-center justify-center gap-2"
-                  >
-                    <svg class="w-3.5 h-3.5 text-sky-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.949-1.801"/>
-                    </svg>
-                    <span>Windows (.exe)</span>
-                  </a>
-                  <a
-                    href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows-Portable.zip"
-                    download
-                    class="h-10 px-3 whitespace-nowrap text-center rounded-lg text-xs font-semibold bg-zinc-850 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/80 hover:border-emerald-500/50 transition flex items-center justify-center gap-2"
-                  >
-                    <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
-                    </svg>
-                    <span>Portable (.zip)</span>
-                  </a>
-                  <a
-                    href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Mac.dmg"
-                    download
-                    class="h-10 px-3 whitespace-nowrap text-center rounded-lg text-xs font-semibold bg-zinc-850 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/80 hover:border-emerald-500/50 transition flex items-center justify-center gap-2"
-                  >
-                    <svg class="w-3.5 h-3.5 text-zinc-300 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.64-.78 1.08-1.86.96-2.95-1 .04-2.12.67-2.78 1.44-.58.67-1.1 1.77-.96 2.84 1.12.09 2.14-.55 2.78-1.33z"/>
-                    </svg>
-                    <span>Mac (.dmg)</span>
-                  </a>
-                </div>
-                <a
-                  href="https://github.com/Zintradev/foliant/releases/latest"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="block text-center text-[11px] text-zinc-400 hover:text-zinc-200 transition py-1"
-                >
-                  <span class="lang-es">Ver todos los archivos en GitHub Releases →</span>
-                  <span class="lang-en">View all artifacts on GitHub Releases →</span>
+            <!-- Direct Downloads on Desktop card -->
+            <div class="space-y-2">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows.exe" download
+                  class="h-10 px-3 whitespace-nowrap text-center rounded-lg text-xs font-semibold bg-zinc-850 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/80 hover:border-emerald-500/50 transition flex items-center justify-center gap-2">
+                  <svg class="w-3.5 h-3.5 text-sky-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                      d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.949-1.801" />
+                  </svg>
+                  <span>Windows (.exe)</span>
+                </a>
+                <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows-Portable.zip"
+                  download
+                  class="h-10 px-3 whitespace-nowrap text-center rounded-lg text-xs font-semibold bg-zinc-850 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/80 hover:border-emerald-500/50 transition flex items-center justify-center gap-2">
+                  <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                  </svg>
+                  <span>Portable (.zip)</span>
+                </a>
+                <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Mac.dmg" download
+                  class="h-10 px-3 whitespace-nowrap text-center rounded-lg text-xs font-semibold bg-zinc-850 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/80 hover:border-emerald-500/50 transition flex items-center justify-center gap-2">
+                  <svg class="w-3.5 h-3.5 text-zinc-300 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                      d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.64-.78 1.08-1.86.96-2.95-1 .04-2.12.67-2.78 1.44-.58.67-1.1 1.77-.96 2.84 1.12.09 2.14-.55 2.78-1.33z" />
+                  </svg>
+                  <span>Mac (.dmg)</span>
                 </a>
               </div>
+              <a href="https://github.com/Zintradev/foliant/releases/latest" target="_blank" rel="noopener noreferrer"
+                class="block text-center text-[11px] text-zinc-400 hover:text-zinc-200 transition py-1">
+                <span class="lang-es">Ver todos los archivos en GitHub Releases →</span>
+                <span class="lang-en">View all artifacts on GitHub Releases →</span>
+              </a>
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- Bottom Banner Call-to-Action -->
-      <section class="py-16 px-4 sm:px-6 lg:px-8 text-center max-w-4xl mx-auto">
-        <h2 class="font-cinzel text-2xl sm:text-3xl font-bold text-zinc-100">
-          <span class="lang-es">Comienza a escribir tu próxima obra hoy</span>
-          <span class="lang-en">Start writing your next story today</span>
-        </h2>
-        <p class="mt-3 text-sm text-zinc-400 font-serif-literary max-w-xl mx-auto">
-          <span class="lang-es">Prueba el proyecto de demostración en la web o descarga Foliant para tu ordenador con un solo clic.</span>
-          <span class="lang-en">Try the demo project directly in your browser or download Foliant for your computer with one click.</span>
-        </p>
-        <div class="mt-8 flex flex-wrap justify-center gap-3">
-          <a
-            href="./app/"
-            class="h-11 px-5 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-md transition"
-          >
-            <span class="lang-es">Probar Foliant Web</span>
-            <span class="lang-en">Launch Foliant Web</span>
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-            </svg>
-          </a>
-          <a
-            href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows.exe"
-            download
-            class="h-11 px-5 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-200 border border-zinc-700/80 transition"
-          >
-            <svg class="w-3.5 h-3.5 text-sky-400" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.949-1.801"/>
-            </svg>
-            <span>Windows (.exe)</span>
-          </a>
-          <a
-            href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows-Portable.zip"
-            download
-            class="h-11 px-5 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-200 border border-zinc-700/80 transition"
-          >
-            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
-            </svg>
-            <span>Portable (.zip)</span>
-          </a>
-          <a
-            href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Mac.dmg"
-            download
-            class="h-11 px-5 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-200 border border-zinc-700/80 transition"
-          >
-            <svg class="w-3.5 h-3.5 text-zinc-300" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.64-.78 1.08-1.86.96-2.95-1 .04-2.12.67-2.78 1.44-.58.67-1.1 1.77-.96 2.84 1.12.09 2.14-.55 2.78-1.33z"/>
-            </svg>
-            <span>Mac (.dmg)</span>
-          </a>
-          <a
-            href="https://github.com/Zintradev/foliant"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="h-11 px-4 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-semibold bg-zinc-950 hover:bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800 transition"
-          >
-            <span>GitHub</span>
-          </a>
-        </div>
-      </section>
-    </main>
+    <!-- Bottom Banner Call-to-Action -->
+    <section class="py-16 px-4 sm:px-6 lg:px-8 text-center max-w-4xl mx-auto">
+      <h2 class="font-cinzel text-2xl sm:text-3xl font-bold text-zinc-100">
+        <span class="lang-es">Comienza a escribir tu próxima obra hoy</span>
+        <span class="lang-en">Start writing your next story today</span>
+      </h2>
+      <p class="mt-3 text-sm text-zinc-400 font-serif-literary max-w-xl mx-auto">
+        <span class="lang-es">Prueba el proyecto de demostración en la web o descarga Foliant para tu ordenador con un
+          solo clic.</span>
+        <span class="lang-en">Try the demo project directly in your browser or download Foliant for your computer with
+          one click.</span>
+      </p>
+      <div class="mt-8 flex flex-wrap justify-center gap-3">
+        <a href="./app/"
+          class="h-11 px-5 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-md transition">
+          <span class="lang-es">Probar Foliant Web</span>
+          <span class="lang-en">Launch Foliant Web</span>
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+          </svg>
+        </a>
+        <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows.exe" download
+          class="h-11 px-5 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-200 border border-zinc-700/80 transition">
+          <svg class="w-3.5 h-3.5 text-sky-400" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.949-1.801" />
+          </svg>
+          <span>Windows (.exe)</span>
+        </a>
+        <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows-Portable.zip" download
+          class="h-11 px-5 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-200 border border-zinc-700/80 transition">
+          <svg class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+          </svg>
+          <span>Portable (.zip)</span>
+        </a>
+        <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Mac.dmg" download
+          class="h-11 px-5 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-200 border border-zinc-700/80 transition">
+          <svg class="w-3.5 h-3.5 text-zinc-300" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.64-.78 1.08-1.86.96-2.95-1 .04-2.12.67-2.78 1.44-.58.67-1.1 1.77-.96 2.84 1.12.09 2.14-.55 2.78-1.33z" />
+          </svg>
+          <span>Mac (.dmg)</span>
+        </a>
+        <a href="https://github.com/Zintradev/foliant" target="_blank" rel="noopener noreferrer"
+          class="h-11 px-4 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-semibold bg-zinc-950 hover:bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800 transition">
+          <span>GitHub</span>
+        </a>
+      </div>
+    </section>
+  </main>
 
-    <!-- Footer -->
-    <footer class="border-t border-zinc-800/80 bg-zinc-950 py-10 px-4 sm:px-6 lg:px-8 text-xs text-zinc-500 z-10">
-      <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-        <div class="flex items-center gap-3">
-          <img src="/logo.svg" alt="Foliant Logo" class="w-6 h-6 object-contain" />
-          <div>
-            <span class="font-cinzel font-semibold text-zinc-300">Foliant</span>
-            <span class="mx-2">•</span>
-            <span class="lang-es">© 2026 Foliant. Creado por Zintradev.</span>
-            <span class="lang-en">© 2026 Foliant. Crafted by Zintradev.</span>
-          </div>
-        </div>
-
-        <!-- Ko-fi Discreet Support Link (Footer only) -->
-        <div class="flex items-center shrink-0">
-          <a
-            href="https://ko-fi.com/zintradev"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex flex-row items-center gap-2 px-3 py-1.5 rounded-md border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800/80 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 text-xs font-mono transition-colors duration-150 group select-none no-underline whitespace-nowrap shrink-0"
-            title="Ko-fi"
-          >
-            <svg class="w-3.5 h-3.5 text-zinc-400 group-hover:text-amber-400 transition-colors shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 8h1a4 4 0 1 1 0 8h-1"></path>
-              <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"></path>
-              <line x1="6" y1="2" x2="6" y2="4"></line>
-              <line x1="10" y1="2" x2="10" y2="4"></line>
-              <line x1="14" y1="2" x2="14" y2="4"></line>
-            </svg>
-            <span class="lang-es whitespace-nowrap">Apoyar en Ko-fi</span>
-            <span class="lang-en whitespace-nowrap">Support on Ko-fi</span>
-          </a>
-        </div>
-
-        <!-- License Notice (PolyForm Noncommercial) -->
-        <div class="text-center md:text-right max-w-md">
-          <p class="leading-relaxed">
-            <span class="lang-es">
-              Distribuido bajo licencia 
-              <a
-                href="https://polyformproject.org/licenses/noncommercial/1.0.0/"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="text-zinc-400 hover:text-emerald-400 underline decoration-zinc-700 transition"
-              >
-                PolyForm Noncommercial 1.0.0
-              </a>.
-              Uso libre para fines no comerciales, comunitarios y personales.
-            </span>
-            <span class="lang-en">
-              Distributed under the 
-              <a
-                href="https://polyformproject.org/licenses/noncommercial/1.0.0/"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="text-zinc-400 hover:text-emerald-400 underline decoration-zinc-700 transition"
-              >
-                PolyForm Noncommercial 1.0.0
-              </a>
-              license. Free for noncommercial, community, and personal use.
-            </span>
-          </p>
+  <!-- Footer -->
+  <footer class="border-t border-zinc-800/80 bg-zinc-950 py-10 px-4 sm:px-6 lg:px-8 text-xs text-zinc-500 z-10">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <img src="/logo.svg" alt="Foliant Logo" class="w-6 h-6 object-contain" />
+        <div>
+          <span class="font-cinzel font-semibold text-zinc-300">Foliant</span>
+          <span class="mx-2">•</span>
+          <span class="lang-es">© 2026 Foliant. Creado por Zintradev.</span>
+          <span class="lang-en">© 2026 Foliant. Crafted by Zintradev.</span>
         </div>
       </div>
 
-      <!-- Manuskript Acknowledgment in Landing Page Footer -->
-      <div class="max-w-6xl mx-auto mt-6 pt-6 border-t border-zinc-900 text-center text-[11px] text-zinc-500">
+      <!-- Ko-fi Discreet Support Link (Footer only) -->
+      <div class="flex items-center shrink-0">
+        <a href="https://ko-fi.com/zintradev" target="_blank" rel="noopener noreferrer"
+          class="inline-flex flex-row items-center gap-2 px-3 py-1.5 rounded-md border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800/80 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 text-xs font-mono transition-colors duration-150 group select-none no-underline whitespace-nowrap shrink-0"
+          title="Ko-fi">
+          <svg class="w-3.5 h-3.5 text-zinc-400 group-hover:text-amber-400 transition-colors shrink-0"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M17 8h1a4 4 0 1 1 0 8h-1"></path>
+            <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"></path>
+            <line x1="6" y1="2" x2="6" y2="4"></line>
+            <line x1="10" y1="2" x2="10" y2="4"></line>
+            <line x1="14" y1="2" x2="14" y2="4"></line>
+          </svg>
+          <span class="lang-es whitespace-nowrap">Apoyar en Ko-fi</span>
+          <span class="lang-en whitespace-nowrap">Support on Ko-fi</span>
+        </a>
+      </div>
+
+      <!-- License Notice (PolyForm Noncommercial) -->
+      <div class="text-center md:text-right max-w-md">
         <p class="leading-relaxed">
           <span class="lang-es">
-            Con especial agradecimiento a la aplicación de código abierto <a href="https://www.theologeek.ch/manuskript/" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-emerald-400 underline decoration-zinc-800 transition">Manuskript</a> por haber sido la inspiración original para la arquitectura narrativa de Foliant.
+            Distribuido bajo licencia
+            <a href="https://polyformproject.org/licenses/noncommercial/1.0.0/" target="_blank"
+              rel="noopener noreferrer"
+              class="text-zinc-400 hover:text-emerald-400 underline decoration-zinc-700 transition">
+              PolyForm Noncommercial 1.0.0
+            </a>.
+            Uso libre para fines no comerciales, comunitarios y personales.
           </span>
           <span class="lang-en">
-            With special thanks to the open-source application <a href="https://www.theologeek.ch/manuskript/" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-emerald-400 underline decoration-zinc-800 transition">Manuskript</a> for serving as the original inspiration for Foliant's narrative architecture.
+            Distributed under the
+            <a href="https://polyformproject.org/licenses/noncommercial/1.0.0/" target="_blank"
+              rel="noopener noreferrer"
+              class="text-zinc-400 hover:text-emerald-400 underline decoration-zinc-700 transition">
+              PolyForm Noncommercial 1.0.0
+            </a>
+            license. Free for noncommercial, community, and personal use.
           </span>
         </p>
       </div>
-    </footer>
-  </body>
+    </div>
+
+    <!-- Manuskript Acknowledgment in Landing Page Footer -->
+    <div class="max-w-6xl mx-auto mt-6 pt-6 border-t border-zinc-900 text-center text-[11px] text-zinc-500">
+      <p class="leading-relaxed">
+        <span class="lang-es">
+          Con especial agradecimiento a la aplicación de código abierto <a href="https://www.theologeek.ch/manuskript/"
+            target="_blank" rel="noopener noreferrer"
+            class="text-zinc-400 hover:text-emerald-400 underline decoration-zinc-800 transition">Manuskript</a> por
+          haber sido la inspiración original para la arquitectura narrativa de Foliant.
+        </span>
+        <span class="lang-en">
+          With special thanks to the open-source application <a href="https://www.theologeek.ch/manuskript/"
+            target="_blank" rel="noopener noreferrer"
+            class="text-zinc-400 hover:text-emerald-400 underline decoration-zinc-800 transition">Manuskript</a> for
+          serving as the original inspiration for Foliant's narrative architecture.
+        </span>
+      </p>
+    </div>
+  </footer>
+</body>
+
 </html>

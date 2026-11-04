@@ -2,7 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tauri::Manager;
 
 mod bundle;
@@ -32,21 +32,63 @@ fn images_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 // Commands
 // ---------------------------------------------------------------------------
 
-/// Copies a local image file into the Foliant assets directory.
+/// Resolves the visuals directory for a project.
+///
+/// If `project_path` is provided, resolves `<project_directory>/visuals/`
+/// (or `<project_file_dir>/visuals/` if `project_path` points to a `.foliant` file).
+/// If not provided or empty, falls back to the system temp directory `temp_visuals_dir()`.
+fn resolve_project_visuals_dir(
+    app: &tauri::AppHandle,
+    project_path: Option<&str>,
+    project_id: Option<&str>,
+) -> Result<PathBuf, String> {
+    if let Some(path_str) = project_path {
+        let trimmed = path_str.trim();
+        if !trimmed.is_empty() {
+            let p = Path::new(trimmed);
+            let base_dir = if p.is_file() || trimmed.to_lowercase().ends_with(".foliant") {
+                p.parent().unwrap_or(p)
+            } else {
+                p
+            };
+            let dir = base_dir.join("visuals");
+            fs::create_dir_all(&dir)
+                .map_err(|e| format!("Failed to create project visuals directory '{}': {e}", dir.display()))?;
+            return Ok(dir);
+        }
+    }
+
+    let safe_proj_id = project_id
+        .map(|s| bundle::sanitize_file_name(s))
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "default".to_string());
+
+    let temp_visuals = std::env::temp_dir().join("foliant_visuals").join(&safe_proj_id);
+    let _ = fs::create_dir_all(&temp_visuals);
+    if temp_visuals.exists() {
+        return Ok(temp_visuals);
+    }
+
+    images_dir(app)
+}
+
+/// Copies a local image file into the project's visuals directory.
 ///
 /// # Arguments
 /// * `source_path` – Absolute path to the original image on the user's disk.
-/// * `file_name`   – Desired file name inside the assets directory (e.g. "cover.png").
+/// * `file_name`   – Desired file name inside the visuals directory (e.g. "cover.png").
 ///                   If empty the source file name is used.
+/// * `project_path` – Optional path to current project folder or .foliant file.
 ///
 /// # Returns
-/// The absolute path of the copied asset as a String, ready to be used as a
-/// Tauri asset URL (`asset://localhost/<path>` or `convertFileSrc(path)`).
+/// The absolute path of the copied asset as a String.
 #[tauri::command]
 async fn save_reference_image(
     app: tauri::AppHandle,
     source_path: String,
     file_name: String,
+    project_path: Option<String>,
+    project_id: Option<String>,
 ) -> Result<String, String> {
     let src = PathBuf::from(&source_path);
 
@@ -87,7 +129,8 @@ async fn save_reference_image(
             .collect()
     };
 
-    let dest = images_dir(&app)?.join(&dest_name);
+    let target_dir = resolve_project_visuals_dir(&app, project_path.as_deref(), project_id.as_deref())?;
+    let dest = target_dir.join(&dest_name);
 
     fs::copy(&src, &dest).map_err(|e| {
         format!(
@@ -97,18 +140,28 @@ async fn save_reference_image(
         )
     })?;
 
+    // Also keep a copy in project-scoped temp visuals directory
+    let safe_proj_id = project_id
+        .as_deref()
+        .map(bundle::sanitize_file_name)
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "default".to_string());
+    let temp_visuals = std::env::temp_dir().join("foliant_visuals").join(&safe_proj_id);
+    let _ = fs::create_dir_all(&temp_visuals);
+    let _ = fs::copy(&src, temp_visuals.join(&dest_name));
+
     Ok(dest
         .to_str()
         .ok_or("Destination path contains invalid UTF-8")?
         .to_string())
 }
 
-/// Saves a base64-encoded image (e.g. from a paste or drag-and-drop event
-/// in the frontend) directly into the assets directory.
+/// Saves a base64-encoded image directly into the project's visuals/ directory.
 ///
 /// # Arguments
 /// * `file_name`    – Target file name including extension (e.g. "sketch.png").
-/// * `data_base64`  – Raw base64 string (no data-URI prefix).
+/// * `data_base64`  – Raw base64 string (or data-URI prefix).
+/// * `project_path` – Optional path to current project folder or .foliant file.
 ///
 /// # Returns
 /// The absolute path of the saved asset as a String.
@@ -117,8 +170,17 @@ async fn save_reference_image_base64(
     app: tauri::AppHandle,
     file_name: String,
     data_base64: String,
+    project_path: Option<String>,
+    project_id: Option<String>,
 ) -> Result<String, String> {
+    eprintln!(
+        "[Rust:save_reference_image_base64] Received request for file: '{file_name}' (payload len: {}, project: {:?}, id: {:?})",
+        data_base64.len(),
+        project_path,
+        project_id
+    );
     if file_name.trim().is_empty() {
+        eprintln!("[Rust:save_reference_image_base64] Error: file_name is empty");
         return Err("file_name must not be empty".to_string());
     }
 
@@ -140,9 +202,13 @@ async fn save_reference_image_base64(
         let mut buf = Vec::new();
         decoder
             .read_to_end(&mut buf)
-            .map_err(|e| format!("Failed to decode base64 image data: {e}"))?;
+            .map_err(|e| {
+                eprintln!("[Rust:save_reference_image_base64] Base64 decode error: {e}");
+                format!("Failed to decode base64 image data: {e}")
+            })?;
         buf
     };
+    eprintln!("[Rust:save_reference_image_base64] Decoded {} bytes for '{file_name}'", bytes.len());
 
     // Sanitise the file name
     let safe_name: String = file_name
@@ -150,10 +216,27 @@ async fn save_reference_image_base64(
         .filter(|c| !matches!(c, '/' | '\\' | ':'))
         .collect();
 
-    let dest = images_dir(&app)?.join(&safe_name);
+    let target_dir = resolve_project_visuals_dir(&app, project_path.as_deref(), project_id.as_deref())?;
+    let dest = target_dir.join(&safe_name);
 
     fs::write(&dest, &bytes)
-        .map_err(|e| format!("Failed to write image '{}': {e}", dest.display()))?;
+        .map_err(|e| {
+            eprintln!("[Rust:save_reference_image_base64] Write error at '{}': {e}", dest.display());
+            format!("Failed to write image '{}': {e}", dest.display())
+        })?;
+    eprintln!("[Rust:save_reference_image_base64] Saved successfully to project visuals: '{}'", dest.display());
+
+    // Also write to project-scoped temp visuals directory
+    let safe_proj_id = project_id
+        .as_deref()
+        .map(bundle::sanitize_file_name)
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "default".to_string());
+    let temp_visuals = std::env::temp_dir().join("foliant_visuals").join(&safe_proj_id);
+    let _ = fs::create_dir_all(&temp_visuals);
+    let temp_dest = temp_visuals.join(&safe_name);
+    let _ = fs::write(&temp_dest, &bytes);
+    eprintln!("[Rust:save_reference_image_base64] Saved copy to temp visuals: '{}'", temp_dest.display());
 
     Ok(dest
         .to_str()
@@ -161,66 +244,139 @@ async fn save_reference_image_base64(
         .to_string())
 }
 
-/// Lists all reference images currently stored in the assets directory.
+/// Lists all reference images currently stored in the project's visuals directory.
+///
+/// # Arguments
+/// * `project_path` – Optional path to current project folder or .foliant file.
+/// * `project_id`   – Optional project unique identifier.
 ///
 /// # Returns
 /// A Vec of absolute path strings, one per image file found.
 #[tauri::command]
-async fn list_reference_images(app: tauri::AppHandle) -> Result<Vec<String>, String> {
-    let dir = images_dir(&app)?;
+async fn list_reference_images(
+    app: tauri::AppHandle,
+    project_path: Option<String>,
+    project_id: Option<String>,
+) -> Result<Vec<String>, String> {
+    eprintln!("[Rust:list_reference_images] START: project_path={:?}, project_id={:?}", project_path, project_id);
     let allowed_extensions = ["png", "jpg", "jpeg", "gif", "webp", "svg", "avif"];
-
-    let entries = fs::read_dir(&dir)
-        .map_err(|e| format!("Failed to read images directory '{}': {e}", dir.display()))?;
-
     let mut paths = Vec::new();
+    let mut seen_filenames = std::collections::HashSet::new();
 
-    for entry in entries {
-        let entry = entry.map_err(|e| format!("Failed to read directory entry: {e}"))?;
-        let path = entry.path();
+    // 1. Scan the project's visuals directory (from project_path if any)
+    if let Ok(dir) = resolve_project_visuals_dir(&app, project_path.as_deref(), project_id.as_deref()) {
+        if dir.exists() && dir.is_dir() {
+            if let Ok(entries) = fs::read_dir(&dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if path.is_file() {
+                        let ext = path
+                            .extension()
+                            .and_then(|e| e.to_str())
+                            .map(|e| e.to_lowercase())
+                            .unwrap_or_default();
 
-        if path.is_file() {
-            let ext = path
-                .extension()
-                .and_then(|e| e.to_str())
-                .map(|e| e.to_lowercase())
-                .unwrap_or_default();
+                        if allowed_extensions.contains(&ext.as_str()) {
+                            if let Some(file_name) = path.file_name().and_then(|f| f.to_str()) {
+                                if !seen_filenames.contains(file_name) {
+                                    seen_filenames.insert(file_name.to_string());
+                                    if let Some(s) = path.to_str() {
+                                        paths.push(s.to_string());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
-            if allowed_extensions.contains(&ext.as_str())
-                && let Some(s) = path.to_str()
-            {
-                paths.push(s.to_string());
+    // 2. Also scan project-scoped temp directory (where .foliant ZIP bundles are unpacked)
+    let safe_proj_id = project_id
+        .as_deref()
+        .map(bundle::sanitize_file_name)
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "default".to_string());
+    let temp_visuals = std::env::temp_dir().join("foliant_visuals").join(&safe_proj_id);
+    if temp_visuals.exists() && temp_visuals.is_dir() {
+        if let Ok(entries) = fs::read_dir(&temp_visuals) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() {
+                    let ext = path
+                        .extension()
+                        .and_then(|e| e.to_str())
+                        .map(|e| e.to_lowercase())
+                        .unwrap_or_default();
+
+                    if allowed_extensions.contains(&ext.as_str()) {
+                        if let Some(file_name) = path.file_name().and_then(|f| f.to_str()) {
+                            if !seen_filenames.contains(file_name) {
+                                seen_filenames.insert(file_name.to_string());
+                                if let Some(s) = path.to_str() {
+                                    paths.push(s.to_string());
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 
     // Sort alphabetically for deterministic ordering in the UI
     paths.sort();
+    eprintln!("[Rust:list_reference_images] RETURN: found {} images: {:?}", paths.len(), paths);
     Ok(paths)
 }
 
-/// Deletes a specific reference image from the assets directory.
+/// Deletes a specific reference image from the project's visuals directory.
 ///
 /// # Arguments
 /// * `file_name` – File name only (no directory component) of the image to delete.
-///
-/// # Safety
-/// The file name is validated to contain no path separators, preventing
-/// directory traversal attacks.
+/// * `project_path` – Optional path to current project folder or .foliant file.
+/// * `project_id`   – Optional project unique identifier.
 #[tauri::command]
-async fn delete_reference_image(app: tauri::AppHandle, file_name: String) -> Result<(), String> {
+async fn delete_reference_image(
+    app: tauri::AppHandle,
+    file_name: String,
+    project_path: Option<String>,
+    project_id: Option<String>,
+) -> Result<(), String> {
     // Reject any path traversal attempts
     if file_name.contains('/') || file_name.contains('\\') || file_name.contains(':') {
         return Err(format!("Invalid file name: '{file_name}'"));
     }
 
-    let path = images_dir(&app)?.join(&file_name);
+    let target_dir = resolve_project_visuals_dir(&app, project_path.as_deref(), project_id.as_deref())?;
+    let path = target_dir.join(&file_name);
 
-    if !path.exists() {
-        return Err(format!("Image not found: '{file_name}'"));
+    if path.exists() {
+        fs::remove_file(&path).map_err(|e| format!("Failed to delete '{}': {e}", path.display()))?;
     }
 
-    fs::remove_file(&path).map_err(|e| format!("Failed to delete '{}': {e}", path.display()))
+    // Also remove from project-scoped temp visuals if present
+    let safe_proj_id = project_id
+        .as_deref()
+        .map(bundle::sanitize_file_name)
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "default".to_string());
+    let temp_path = std::env::temp_dir()
+        .join("foliant_visuals")
+        .join(&safe_proj_id)
+        .join(&file_name);
+    if temp_path.exists() {
+        let _ = fs::remove_file(&temp_path);
+    }
+
+    // Legacy un-scoped fallback cleanup
+    let legacy_temp = std::env::temp_dir().join("foliant_visuals").join(&file_name);
+    if legacy_temp.exists() {
+        let _ = fs::remove_file(&legacy_temp);
+    }
+
+    Ok(())
 }
 
 /// Saves a chapter's markdown/HTML content to disk.
@@ -228,6 +384,38 @@ async fn delete_reference_image(app: tauri::AppHandle, file_name: String) -> Res
 #[tauri::command]
 async fn save_chapter_file(path: String, content: String) -> Result<(), String> {
     fs::write(&path, content).map_err(|e| format!("Failed to write file to '{path}': {e}"))
+}
+
+/// Reads an image from disk and encodes it into a standard data URL (`data:image/...;base64,...`).
+/// Bypasses asset protocol and scope restrictions, ensuring instant preview.
+#[tauri::command]
+async fn read_image_as_data_url(file_path: String) -> Result<String, String> {
+    let path = std::path::Path::new(&file_path);
+    if !path.exists() || !path.is_file() {
+        return Err(format!("File not found: '{file_path}'"));
+    }
+    let bytes = fs::read(path).map_err(|e| format!("Failed to read '{file_path}': {e}"))?;
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_lowercase())
+        .unwrap_or_else(|| "png".to_string());
+
+    let mime = match ext.as_str() {
+        "jpg" | "jpeg" => "image/jpeg",
+        "png" => "image/png",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "svg" => "image/svg+xml",
+        "avif" => "image/avif",
+        "bmp" => "image/bmp",
+        "ico" => "image/x-icon",
+        _ => "image/png",
+    };
+
+    use base64::Engine;
+    let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    Ok(format!("data:{mime};base64,{b64}"))
 }
 
 /// Exits the application process cleanly.
@@ -252,6 +440,7 @@ fn main() {
             save_chapter_file,
             save_reference_image,
             save_reference_image_base64,
+            read_image_as_data_url,
             list_reference_images,
             delete_reference_image,
             save_project_bundle,

@@ -16,9 +16,16 @@ describe('MoodboardBlock Component', () => {
     localStorage.clear();
     (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ = { invoke: vi.fn() };
     (invoke as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([
-      'C:/images/castle.jpg',
+      'C:/images/landscape.jpg',
       'C:/images/forest.png',
     ]);
+    localStorage.setItem(
+      MOODBOARD_CACHE_KEY,
+      JSON.stringify([
+        { id: '1', path: 'C:/images/landscape.jpg', name: 'landscape.jpg', sectionId: 'general' },
+        { id: '2', path: 'C:/images/forest.png', name: 'forest.png', sectionId: 'general' },
+      ])
+    );
   });
 
   it('renders multi-select file input', async () => {
@@ -61,13 +68,13 @@ describe('MoodboardBlock Component', () => {
     render(<MoodboardBlock title="Moodboard" />);
 
     await waitFor(() => {
-      expect(screen.getByText('castle.jpg')).toBeInTheDocument();
+      expect(screen.getByText('landscape.jpg')).toBeInTheDocument();
     });
 
     const masonryGrid = document.querySelector('.columns-2.md\\:columns-4');
     expect(masonryGrid).toBeInTheDocument();
 
-    const thumbnail = screen.getByText('castle.jpg').closest('div.break-inside-avoid');
+    const thumbnail = screen.getByText('landscape.jpg').closest('div.break-inside-avoid');
     expect(thumbnail).toBeInTheDocument();
     expect(thumbnail).toHaveAttribute('draggable', 'true');
   });
@@ -76,11 +83,11 @@ describe('MoodboardBlock Component', () => {
     render(<MoodboardBlock title="Moodboard" />);
 
     await waitFor(() => {
-      expect(screen.getByText('castle.jpg')).toBeInTheDocument();
+      expect(screen.getByText('landscape.jpg')).toBeInTheDocument();
     });
 
-    const castleCard = screen.getByText('castle.jpg').closest('div[draggable="true"]')!;
-    expect(castleCard).toBeInTheDocument();
+    const landscapeCard = screen.getByText('landscape.jpg').closest('div[draggable="true"]')!;
+    expect(landscapeCard).toBeInTheDocument();
 
     // Start drag
     const dataTransfer = {
@@ -93,7 +100,7 @@ describe('MoodboardBlock Component', () => {
     const atmosphereHeader = screen.getByText('Atmosphere').closest('div[role="button"]')!;
     expect(atmosphereHeader).toHaveTextContent('0');
 
-    fireEvent.dragStart(castleCard, { dataTransfer });
+    fireEvent.dragStart(landscapeCard, { dataTransfer });
     fireEvent.dragOver(atmosphereHeader, { dataTransfer });
 
     // Drop on Atmosphere folder
@@ -114,13 +121,13 @@ describe('MoodboardBlock Component', () => {
     render(<MoodboardBlock title="Moodboard" />);
 
     await waitFor(() => {
-      expect(screen.getByText('castle.jpg')).toBeInTheDocument();
+      expect(screen.getByText('landscape.jpg')).toBeInTheDocument();
     });
 
-    const castleCard = screen.getByText('castle.jpg').closest('div[draggable="true"]')!;
-    expect(castleCard).toBeInTheDocument();
+    const landscapeCard = screen.getByText('landscape.jpg').closest('div[draggable="true"]')!;
+    expect(landscapeCard).toBeInTheDocument();
 
-    const internalElements = castleCard.querySelectorAll('img, div, span, button, svg');
+    const internalElements = landscapeCard.querySelectorAll('img, div, span, button, svg');
     expect(internalElements.length).toBeGreaterThan(0);
     internalElements.forEach((el) => {
       expect(el).toHaveClass('pointer-events-none');
@@ -134,8 +141,8 @@ describe('MoodboardBlock Component', () => {
       JSON.stringify([
         {
           id: 'web-1',
-          path: 'web-castle.jpg',
-          name: 'web-castle.jpg',
+          path: 'web-sample.jpg',
+          name: 'web-sample.jpg',
           sectionId: 'general',
           base64: 'data:image/png;base64,mockWebImg',
         },
@@ -144,7 +151,71 @@ describe('MoodboardBlock Component', () => {
 
     render(<MoodboardBlock title="Moodboard" />);
     await waitFor(() => {
-      expect(screen.getByText('web-castle.jpg')).toBeInTheDocument();
+      expect(screen.getByText('web-sample.jpg')).toBeInTheDocument();
+    });
+  });
+
+  it('actively strips and rejects castle.jpg if present in localStorage or disk', async () => {
+    localStorage.setItem(
+      MOODBOARD_CACHE_KEY,
+      JSON.stringify([
+        { id: 'bad-1', path: 'C:/visuals/castle.jpg', name: 'castle.jpg', sectionId: 'general' },
+        { id: 'ok-1', path: 'C:/visuals/valid.png', name: 'valid.png', sectionId: 'general' },
+      ])
+    );
+    (invoke as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([
+      'C:/visuals/castle.jpg',
+      'C:/visuals/valid.png',
+    ]);
+
+    render(<MoodboardBlock title="Moodboard" />);
+    await waitFor(() => {
+      expect(screen.getByText('valid.png')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('castle.jpg')).not.toBeInTheDocument();
+  });
+
+  it('supports swapping image positions when visualsDropMode is swap', async () => {
+    const onUpdate = vi.fn();
+    render(<MoodboardBlock title="Moodboard" visualsDropMode="swap" onUpdateVisuals={onUpdate} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('landscape.jpg')).toBeInTheDocument();
+      expect(screen.getByText('forest.png')).toBeInTheDocument();
+    });
+
+    const landscapeCard = screen.getByText('landscape.jpg').closest('div[draggable="true"]')!;
+    const forestCard = screen.getByText('forest.png').closest('div[draggable="true"]')!;
+
+    const dataTransfer = {
+      setData: vi.fn(),
+      getData: vi.fn((key: string) => (key === 'text/plain' ? '1' : '')),
+      types: ['text/plain', 'text/image-id'],
+      effectAllowed: 'move',
+    };
+
+    fireEvent.dragStart(landscapeCard, { dataTransfer });
+    fireEvent.dragEnter(forestCard, { dataTransfer });
+    fireEvent.dragOver(forestCard, { dataTransfer, clientY: 100 });
+    fireEvent.drop(forestCard, { dataTransfer });
+
+    expect(onUpdate).toHaveBeenCalledWith([
+      expect.objectContaining({ id: '2', name: 'forest.png' }),
+      expect.objectContaining({ id: '1', name: 'landscape.jpg' }),
+    ]);
+  });
+
+  it('does not display rogue files from disk when cache is empty for an unsaved project', async () => {
+    localStorage.clear();
+    (invoke as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([
+      'C:/temp/castle.jpg',
+      'C:/temp/rogue.png',
+    ]);
+
+    render(<MoodboardBlock title="Moodboard" projectId="new-proj" />);
+    await waitFor(() => {
+      expect(screen.queryByText('castle.jpg')).not.toBeInTheDocument();
+      expect(screen.queryByText('rogue.png')).not.toBeInTheDocument();
     });
   });
 });

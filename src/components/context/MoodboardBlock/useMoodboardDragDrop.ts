@@ -5,12 +5,14 @@ interface UseMoodboardDragDropOptions {
   images: ReferenceImage[];
   commitImages: (updated: ReferenceImage[]) => void;
   uploadFile: (file: File, targetSectionId: string) => Promise<void>;
+  visualsDropMode?: 'shift' | 'swap';
 }
 
 export function useMoodboardDragDrop({
   images,
   commitImages,
   uploadFile,
+  visualsDropMode = 'shift',
 }: UseMoodboardDragDropOptions) {
   const [isCanvasDragging, setIsCanvasDragging] = useState(false);
   const [draggedImageId, setDraggedImageId] = useState<string | null>(null);
@@ -20,20 +22,39 @@ export function useMoodboardDragDrop({
 
   const dragItemIndex = useRef<number | null>(null);
   const dragNode = useRef<HTMLElement | null>(null);
+  const lastDragOverTimeRef = useRef(0);
 
   const previewImages = useMemo(() => {
     if (!draggedImageId || !dragOverImageId) return images;
     const sourceIdx = images.findIndex((img) => img.id === draggedImageId);
     if (sourceIdx === -1) return images;
 
+    const targetIdx = images.findIndex((img) => img.id === dragOverImageId);
+    if (targetIdx === -1 || sourceIdx === targetIdx) return images;
+
+    if (visualsDropMode === 'swap') {
+      const swapped = [...images];
+      const sourceItem = {
+        ...images[sourceIdx],
+        sectionId: dragOverSectionId || images[targetIdx].sectionId,
+      };
+      const targetItem = {
+        ...images[targetIdx],
+        sectionId: images[sourceIdx].sectionId,
+      };
+      swapped[sourceIdx] = targetItem;
+      swapped[targetIdx] = sourceItem;
+      return swapped;
+    }
+
     const draggedItem = images[sourceIdx];
     const listWithoutDragged = images.filter((img) => img.id !== draggedImageId);
-    const targetIdx = listWithoutDragged.findIndex((img) => img.id === dragOverImageId);
-    if (targetIdx === -1) return images;
+    const targetIdxInNext = listWithoutDragged.findIndex((img) => img.id === dragOverImageId);
+    if (targetIdxInNext === -1) return images;
 
-    const insertIdx = dragOverPosition === 'after' ? targetIdx + 1 : targetIdx;
+    const insertIdx = dragOverPosition === 'after' ? targetIdxInNext + 1 : targetIdxInNext;
     const targetSec =
-      dragOverSectionId || listWithoutDragged[targetIdx]?.sectionId || draggedItem.sectionId;
+      dragOverSectionId || listWithoutDragged[targetIdxInNext]?.sectionId || draggedItem.sectionId;
     const updatedMoved: ReferenceImage = {
       ...draggedItem,
       sectionId: targetSec,
@@ -42,7 +63,7 @@ export function useMoodboardDragDrop({
     const reordered = [...listWithoutDragged];
     reordered.splice(insertIdx, 0, updatedMoved);
     return reordered;
-  }, [images, draggedImageId, dragOverImageId, dragOverPosition, dragOverSectionId]);
+  }, [images, draggedImageId, dragOverImageId, dragOverPosition, dragOverSectionId, visualsDropMode]);
 
   // Canvas External File Upload Handlers
   const handleDragOver = (e: React.DragEvent) => {
@@ -70,13 +91,18 @@ export function useMoodboardDragDrop({
 
     try {
       const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
+      console.log(`[MoodboardDragDrop] Dropped ${files.length} file(s) onto canvas`);
       const imageFiles = files.filter((f) => f.type.startsWith('image/'));
 
       if (imageFiles.length > 0) {
         const targetSec = dragOverSectionId || 'general';
+        console.log(`[MoodboardDragDrop] Processing ${imageFiles.length} image file(s) into section "${targetSec}"`);
         for (const file of imageFiles) {
+          console.log(`[MoodboardDragDrop] Uploading dropped image: "${file.name}"`);
           await uploadFile(file, targetSec);
         }
+      } else {
+        console.warn('[MoodboardDragDrop] Dropped files contained no image MIME types:', files.map(f => `${f.name} (${f.type})`));
       }
     } catch (error) {
       console.error('[D&D - MoodboardBlock - Canvas Drop Error]', error);
@@ -110,12 +136,32 @@ export function useMoodboardDragDrop({
 
     if (!draggedImageId || draggedImageId === targetImg.id) return;
 
+    // Throttle dragover state changes to ~30fps (32ms) to let DOM and FLIP animations settle
+    const now = performance.now();
+    if (now - lastDragOverTimeRef.current < 32) {
+      return;
+    }
+
     const rect = e.currentTarget.getBoundingClientRect();
     const offsetY = e.clientY - rect.top;
-    const isAfter = offsetY > rect.height * 0.5;
-    const newPos = isAfter ? 'after' : 'before';
+
+    // Hysteresis deadband: prevent rapid oscillation at the 50% boundary.
+    // If we are already hovering this specific target card:
+    // - Stay 'before' until pointer moves past 65% of the card height
+    // - Stay 'after' until pointer moves above 35% of the card height
+    let newPos: 'before' | 'after' = dragOverPosition;
+    if (dragOverImageId === targetImg.id) {
+      if (dragOverPosition === 'before' && offsetY > rect.height * 0.65) {
+        newPos = 'after';
+      } else if (dragOverPosition === 'after' && offsetY < rect.height * 0.35) {
+        newPos = 'before';
+      }
+    } else {
+      newPos = offsetY > rect.height * 0.5 ? 'after' : 'before';
+    }
 
     if (dragOverImageId !== targetImg.id || dragOverPosition !== newPos) {
+      lastDragOverTimeRef.current = now;
       setDragOverImageId(targetImg.id);
       setDragOverPosition(newPos);
       setDragOverSectionId(targetImg.sectionId);
@@ -141,19 +187,29 @@ export function useMoodboardDragDrop({
 
         if (sourceId && targetImg && sourceId !== targetImg.id) {
           const sourceIdx = images.findIndex((img) => img.id === sourceId);
-          if (sourceIdx !== -1) {
-            const draggedItem = images[sourceIdx];
-            const next = images.filter((img) => img.id !== sourceId);
-            const targetIdxInNext = next.findIndex((img) => img.id === targetImg.id);
-            if (targetIdxInNext !== -1) {
-              const insertIdx =
-                dragOverPosition === 'after' ? targetIdxInNext + 1 : targetIdxInNext;
-              const updatedMoved: ReferenceImage = {
-                ...draggedItem,
-                sectionId: targetImg.sectionId,
-              };
-              next.splice(insertIdx, 0, updatedMoved);
-              commitImages(next);
+          const targetIdx = images.findIndex((img) => img.id === targetImg.id);
+          if (sourceIdx !== -1 && targetIdx !== -1) {
+            if (visualsDropMode === 'swap') {
+              const swapped = [...images];
+              const sourceItem = { ...images[sourceIdx], sectionId: targetImg.sectionId };
+              const targetItem = { ...images[targetIdx], sectionId: images[sourceIdx].sectionId };
+              swapped[sourceIdx] = targetItem;
+              swapped[targetIdx] = sourceItem;
+              commitImages(swapped);
+            } else {
+              const draggedItem = images[sourceIdx];
+              const next = images.filter((img) => img.id !== sourceId);
+              const targetIdxInNext = next.findIndex((img) => img.id === targetImg.id);
+              if (targetIdxInNext !== -1) {
+                const insertIdx =
+                  dragOverPosition === 'after' ? targetIdxInNext + 1 : targetIdxInNext;
+                const updatedMoved: ReferenceImage = {
+                  ...draggedItem,
+                  sectionId: targetImg.sectionId,
+                };
+                next.splice(insertIdx, 0, updatedMoved);
+                commitImages(next);
+              }
             }
           }
         }

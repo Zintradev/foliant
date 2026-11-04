@@ -1,5 +1,8 @@
 import { useEffect, memo } from 'react';
 import { X, Trash2 } from 'lucide-react';
+import { convertFileSrc } from '@tauri-apps/api/core';
+import { isTauriApp } from '../../../utils/platform';
+import { normalizeAssetPath } from './constants';
 import { useTranslation } from '../../../i18n/translations';
 import { ReferenceImage } from './types';
 
@@ -24,7 +27,8 @@ export const MoodboardLightbox = memo(function MoodboardLightbox({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  const displaySrc = image.base64 || image.src;
+  const normalizedPath = image.path ? normalizeAssetPath(image.path) : '';
+  const displaySrc = isTauriApp() && normalizedPath ? convertFileSrc(normalizedPath) : image.src || normalizedPath;
 
   return (
     <div
@@ -70,6 +74,7 @@ export const MoodboardLightbox = memo(function MoodboardLightbox({
           <img
             src={displaySrc}
             alt={image.name}
+            decoding="async"
             className="max-h-[82vh] w-auto max-w-[88vw] object-contain rounded-sm border border-zinc-800 shadow-2xl transition-transform"
           />
         </div>

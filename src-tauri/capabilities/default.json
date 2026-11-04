@@ -45,7 +45,9 @@
         "$HOME/**",
         "$DESKTOP/**",
         "$DOCUMENT/**",
-        "$DOWNLOAD/**"
+        "$DOWNLOAD/**",
+        "$PICTURES/**",
+        "**"
       ]
     },
     {
@@ -54,7 +56,9 @@
         "$HOME/**",
         "$DESKTOP/**",
         "$DOCUMENT/**",
-        "$DOWNLOAD/**"
+        "$DOWNLOAD/**",
+        "$PICTURES/**",
+        "**"
       ]
     },
     {
@@ -83,6 +87,18 @@
         "$DESKTOP/**",
         "$DOCUMENT/**",
         "$DOWNLOAD/**",
+        "**"
+      ]
+    },
+    "fs:allow-read-file",
+    {
+      "identifier": "fs:allow-read-file",
+      "allow": [
+        "$HOME/**",
+        "$DESKTOP/**",
+        "$DOCUMENT/**",
+        "$DOWNLOAD/**",
+        "$PICTURES/**",
         "**"
       ]
     }

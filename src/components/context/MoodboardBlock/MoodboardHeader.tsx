@@ -44,8 +44,13 @@ export const MoodboardHeader = memo(function MoodboardHeader({
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = e.target.files;
+    console.log('[MoodboardHeader] Input files selected count:', fileList ? fileList.length : 0);
     if (fileList && fileList.length > 0) {
-      onFilesSelected(Array.from(fileList));
+      const filesArray = Array.from(fileList);
+      filesArray.forEach((f, i) => {
+        console.log(`[MoodboardHeader] File #${i + 1}: ${f.name} (${f.type}, ${f.size} bytes)`);
+      });
+      onFilesSelected(filesArray);
     }
     e.target.value = '';
   };

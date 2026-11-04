@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { FoliantProject, createEmptyProject } from '../types/project';
 import { isTauriApp } from '../utils/platform';
 import { downloadFileInBrowser } from '../utils/browserDownload';
@@ -11,12 +11,12 @@ import {
 import {
   promptOpenProjectFile,
   promptSaveProjectFile,
-  promptSelectDirectory,
   executeSaveBundle,
   executeReadBundle,
   checkFileExists,
   LAST_FOLIANT_PROJECT_KEY,
 } from './projectPersistenceUtils';
+import { getMoodboardCacheKey, isCastleOrLegacyArtifact } from '../components/context/MoodboardBlock/constants';
 
 export {
   extractFileName,
@@ -62,6 +62,16 @@ export function useProjectPersistence({
   onProjectLoaded,
   onError,
 }: UseProjectPersistenceOptions): UseProjectPersistenceReturn {
+  const onProjectLoadedRef = useRef(onProjectLoaded);
+  useEffect(() => {
+    onProjectLoadedRef.current = onProjectLoaded;
+  }, [onProjectLoaded]);
+
+  const onErrorRef = useRef(onError);
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
+
   const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -88,12 +98,12 @@ export function useProjectPersistence({
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[Foliant Persistence] ${prefix}:`, err);
       setError(msg);
-      onError?.(msg);
+      onErrorRef.current?.(msg);
       setSyncStatus('unsaved');
       setIsSaving(false);
       return false;
     },
-    [onError]
+    []
   );
 
   const saveProjectAs = useCallback(async (): Promise<boolean> => {
@@ -134,7 +144,7 @@ export function useProjectPersistence({
         setLastSavedAt(now);
         setSyncStatus('saved');
         setIsSaving(false);
-        onProjectLoaded(projectToSave);
+        onProjectLoadedRef.current(projectToSave);
         return true;
       }
 
@@ -166,12 +176,12 @@ export function useProjectPersistence({
         // ignore storage errors
       }
 
-      onProjectLoaded(updatedProject);
+      onProjectLoadedRef.current(updatedProject);
       return true;
     } catch (err: unknown) {
       return handlePersistenceError('Save Project As failed', err);
     }
-  }, [project, currentFilePath, onProjectLoaded, handlePersistenceError]);
+  }, [project, currentFilePath, handlePersistenceError]);
 
   const saveProject = useCallback(async (): Promise<boolean> => {
     if (!isTauriApp()) {
@@ -196,7 +206,7 @@ export function useProjectPersistence({
         setLastSavedAt(now);
         setSyncStatus('saved');
         setIsSaving(false);
-        onProjectLoaded(projectToSave);
+        onProjectLoadedRef.current(projectToSave);
         return true;
       } catch (err: unknown) {
         setIsSaving(false);
@@ -233,12 +243,12 @@ export function useProjectPersistence({
         // ignore storage errors
       }
 
-      onProjectLoaded(updatedProject);
+      onProjectLoadedRef.current(updatedProject);
       return true;
     } catch (err: unknown) {
       return handlePersistenceError(`Save to '${trimmedPath}' failed`, err);
     }
-  }, [currentFilePath, project, saveProjectAs, onProjectLoaded, handlePersistenceError]);
+  }, [currentFilePath, project, saveProjectAs, handlePersistenceError]);
 
   const openProject = useCallback(async (): Promise<boolean> => {
     try {
@@ -261,7 +271,7 @@ export function useProjectPersistence({
               const text = await file.text();
               const parsed = JSON.parse(text);
               const loaded = normalizeLoadedProject(parsed);
-              onProjectLoaded(loaded);
+              onProjectLoadedRef.current(loaded);
               setCurrentFilePath(file.name);
               setLastSavedAt(loaded.lastModified);
               setSyncStatus('saved');
@@ -295,7 +305,7 @@ export function useProjectPersistence({
 
       const loadedProject = await executeReadBundle(targetPath);
 
-      onProjectLoaded(loadedProject);
+      onProjectLoadedRef.current(loadedProject);
       setCurrentFilePath(targetPath);
       setLastSavedAt(loadedProject.lastModified);
       setSyncStatus('saved');
@@ -309,10 +319,10 @@ export function useProjectPersistence({
       const msg = err instanceof Error ? err.message : String(err);
       console.error('[Foliant Persistence] Open Project failed:', err);
       setError(msg);
-      onError?.(msg);
+      onErrorRef.current?.(msg);
       return false;
     }
-  }, [currentFilePath, onProjectLoaded, onError]);
+  }, [currentFilePath]);
 
   const saveSilently = useCallback(async (): Promise<boolean> => {
     if (!isTauriApp()) {
@@ -353,16 +363,22 @@ export function useProjectPersistence({
       setSyncStatus('unsaved');
       try {
         localStorage.removeItem(LAST_FOLIANT_PROJECT_KEY);
+        localStorage.removeItem('foliant_moodboard_cache_v1');
+        localStorage.removeItem(getMoodboardCacheKey(fresh.id));
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('foliant-visuals-loaded', { detail: [] }));
+        }
       } catch {
         // ignore storage errors
       }
-      onProjectLoaded(fresh);
+      onProjectLoadedRef.current(fresh);
     },
-    [onProjectLoaded]
+    []
   );
 
   const loadProject = useCallback(
     (loaded: FoliantProject, filePath: string | null = null) => {
+      console.log(`[useProjectPersistence:loadProject] Loading project "${loaded.title}" (id="${loaded.id}"), filePath="${filePath}"`);
       setCurrentFilePath(filePath);
       setLastSavedAt(filePath ? loaded.lastModified : null);
       setError(null);
@@ -374,9 +390,56 @@ export function useProjectPersistence({
           // ignore storage errors
         }
       }
-      onProjectLoaded(loaded);
+      try {
+        const rawVisuals = Array.isArray(loaded.visuals) ? loaded.visuals : [];
+        let visuals = rawVisuals.filter((v) => !isCastleOrLegacyArtifact(v));
+        console.log(`[useProjectPersistence:loadProject] rawVisuals in project object: ${rawVisuals.length}`);
+
+        // If loaded.visuals in the project was empty, check if this project has cached visuals in localStorage
+        if (visuals.length === 0) {
+          try {
+            const cachedStr =
+              localStorage.getItem(getMoodboardCacheKey(loaded.id)) ||
+              localStorage.getItem('foliant_moodboard_cache_v1');
+            if (cachedStr) {
+              const parsed = JSON.parse(cachedStr);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                const cleanCached = parsed.filter((v) => !isCastleOrLegacyArtifact(v));
+                if (cleanCached.length > 0) {
+                  console.log(`[useProjectPersistence:loadProject] Recovered ${cleanCached.length} visuals from localStorage for id "${loaded.id}"`);
+                  visuals = cleanCached;
+                }
+              }
+            }
+          } catch {
+            // ignore cache parse errors
+          }
+        }
+
+        loaded.visuals = visuals;
+
+        if (visuals.length > 0) {
+          const lightweight = visuals.map(({ id, path, name, sectionId }) => ({
+            id,
+            path,
+            name,
+            sectionId,
+          }));
+          console.log(`[useProjectPersistence:loadProject] Saving ${lightweight.length} visual(s) to cacheKey and dispatching foliant-visuals-loaded`);
+          localStorage.setItem(getMoodboardCacheKey(loaded.id), JSON.stringify(lightweight));
+          localStorage.setItem('foliant_moodboard_cache_v1', JSON.stringify(lightweight));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('foliant-visuals-loaded', { detail: visuals }));
+          }
+        } else {
+          console.log(`[useProjectPersistence:loadProject] No visuals found for project "${loaded.id}". Not dispatching event to avoid wiping.`);
+        }
+      } catch {
+        // ignore storage errors
+      }
+      onProjectLoadedRef.current(loaded);
     },
-    [onProjectLoaded]
+    []
   );
 
   return {

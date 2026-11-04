@@ -32,8 +32,21 @@ export function useFlipAnimation(isAnimating: boolean = true, draggedId?: string
   useLayoutEffect(() => {
     if (!isAnimating) {
       if (rectsRef.current.size > 0) rectsRef.current.clear();
+      elementsRef.current.forEach((el) => {
+        el.style.transition = '';
+        el.style.transform = '';
+        el.style.willChange = '';
+      });
       return;
     }
+
+    // 0. Reset active transforms to measure true layout positions
+    elementsRef.current.forEach((el) => {
+      if (el.style.transform) {
+        el.style.transition = 'none';
+        el.style.transform = '';
+      }
+    });
 
     // 1. Measure current "Last" positions
     const newRects = new Map<string, DOMRect>();
@@ -81,7 +94,7 @@ export function useFlipAnimation(isAnimating: boolean = true, draggedId?: string
       requestAnimationFrame(() => {
         for (let i = 0; i < movedElements.length; i++) {
           const { el } = movedElements[i];
-          el.style.transition = 'transform 300ms cubic-bezier(0.2, 0.9, 0.25, 1)';
+          el.style.transition = 'transform 180ms cubic-bezier(0.2, 0.9, 0.2, 1)';
           el.style.transform = 'translate3d(0, 0, 0)';
 
           const onEnd = (e: TransitionEvent) => {

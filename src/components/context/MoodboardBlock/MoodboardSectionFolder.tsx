@@ -166,7 +166,7 @@ export const MoodboardSectionFolder = React.memo(function MoodboardSectionFolder
                 <MoodboardThumbnailCard
                   key={image.id || image.path}
                   image={image}
-                  cardRef={(el) => registerCard(image.id, el)}
+                  registerCard={registerCard}
                   isDragging={draggedImageId === image.id}
                   isDragOver={dragOverImageId === image.id && draggedImageId !== image.id}
                   dragOverPosition={dragOverPosition}

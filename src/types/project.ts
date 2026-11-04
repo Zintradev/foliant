@@ -81,6 +81,16 @@ export interface FoliantProject {
   characterPositions?: CharacterNodePosition[];
   worldItems: WorldItem[];
   contextBlocks: ContextBlock[];
+  visuals?: ProjectVisualItem[];
+}
+
+export interface ProjectVisualItem {
+  id: string;
+  path: string;
+  src?: string;
+  name: string;
+  sectionId?: string;
+  base64?: string;
 }
 
 /**
@@ -103,5 +113,6 @@ export function createEmptyProject(
     characterPositions: [],
     worldItems: [],
     contextBlocks: [],
+    visuals: [],
   };
 }

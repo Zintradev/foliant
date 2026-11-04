@@ -16,6 +16,11 @@ export function MoodboardBlockComponent({
   collapsible = true,
   defaultCollapsed = false,
   isExpanded = false,
+  projectId,
+  projectFilePath,
+  initialVisuals,
+  visualsDropMode = 'shift',
+  onUpdateVisuals,
 }: MoodboardBlockProps) {
   const { t } = useTranslation();
   const [activeSectionId, setActiveSectionId] = useState<string>('general');
@@ -38,7 +43,7 @@ export function MoodboardBlockComponent({
     handleDeleteImage,
     handleAddSection,
     handleDeleteSection,
-  } = useMoodboardStorage();
+  } = useMoodboardStorage(projectId, projectFilePath, onUpdateVisuals, initialVisuals);
 
   const {
     isCanvasDragging,
@@ -59,7 +64,11 @@ export function MoodboardBlockComponent({
     handleImageDropOnImage,
     handleImageDragEnd,
     handleSectionDrop,
-  } = useMoodboardDragDrop({ images, commitImages, uploadFile });
+  } = useMoodboardDragDrop({ images, commitImages, uploadFile, visualsDropMode });
+
+  console.log(
+    `[MoodboardBlock:RENDER] images=${images.length}, previewImages=${previewImages.length}, loading=${loading}, projectId="${projectId}", projectFilePath="${projectFilePath}"`
+  );
 
   const registerCard = useFlipAnimation(Boolean(draggedImageId), draggedImageId);
 
@@ -82,7 +91,9 @@ export function MoodboardBlockComponent({
   const handleFilesSelected = useCallback(
     async (files: File[]) => {
       const targetSec = activeSectionId || 'general';
+      console.log(`[MoodboardBlock] handleFilesSelected: ${files.length} file(s) into section "${targetSec}"`);
       for (const file of files) {
+        console.log(`[MoodboardBlock] Uploading file: "${file.name}" to section "${targetSec}"`);
         await uploadFile(file, targetSec);
       }
     },
@@ -115,6 +126,21 @@ export function MoodboardBlockComponent({
     setNewSectionName('');
     setIsAddingSection(false);
   }, [handleAddSection, newSectionName]);
+
+  const onSectionDragEnter = useCallback((e: React.DragEvent, secId: string) => {
+    e.preventDefault();
+    setDragOverSectionId(secId);
+  }, [setDragOverSectionId]);
+
+  const onSectionDragOver = useCallback((e: React.DragEvent, secId: string) => {
+    e.preventDefault();
+    setDragOverSectionId(secId);
+  }, [setDragOverSectionId]);
+
+  const onSectionDragLeave = useCallback((e: React.DragEvent, secId: string) => {
+    e.preventDefault();
+    setDragOverSectionId((prev) => (prev === secId ? null : prev));
+  }, [setDragOverSectionId]);
 
   const activeSectionLabel = getSectionLabel(
     sections.find((s) => s.id === activeSectionId) || sections[0]
@@ -155,8 +181,8 @@ export function MoodboardBlockComponent({
           isOpen={Boolean(folderPendingDelete)}
           title={t('deleteFolder', 'Eliminar Carpeta')}
           message={t(
-            'confirmDeleteFolder',
-            '¿Estás seguro de que deseas eliminar esta carpeta? Las imágenes contenidas se moverán a la sección general.'
+            'confirmDeleteFolderVisuals',
+            '¿Estás seguro de que deseas eliminar esta carpeta? Las imágenes contenidas dentro también serán eliminadas.'
           )}
           itemName={folderPendingDelete.name}
           onConfirm={() => {
@@ -201,7 +227,7 @@ export function MoodboardBlockComponent({
               </div>
             )}
 
-            {loading ? (
+            {loading && previewImages.length === 0 ? (
               <div className="py-8 flex flex-col items-center justify-center text-zinc-500 gap-2">
                 <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
                 <span className="text-xs font-mono">{t('loadingImages')}</span>
@@ -237,18 +263,9 @@ export function MoodboardBlockComponent({
                       onSelect={() => setActiveSectionId(section.id)}
                       onToggleCollapse={() => toggleSectionCollapse(section.id)}
                       onSectionDrop={handleSectionDrop}
-                      onSectionDragEnter={(e, secId) => {
-                        e.preventDefault();
-                        setDragOverSectionId(secId);
-                      }}
-                      onSectionDragOver={(e, secId) => {
-                        e.preventDefault();
-                        setDragOverSectionId(secId);
-                      }}
-                      onSectionDragLeave={(e, secId) => {
-                        e.preventDefault();
-                        if (dragOverSectionId === secId) setDragOverSectionId(null);
-                      }}
+                      onSectionDragEnter={onSectionDragEnter}
+                      onSectionDragOver={onSectionDragOver}
+                      onSectionDragLeave={onSectionDragLeave}
                       registerCard={registerCard}
                       onPreview={setActiveLightbox}
                       onDeleteImage={requestDeleteImage}

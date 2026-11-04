@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ImageOff } from 'lucide-react';
+import { convertFileSrc } from '@tauri-apps/api/core';
+import { isTauriApp } from '../../../utils/platform';
+import { normalizeAssetPath } from './constants';
 import { ReferenceImage } from './types';
 
 interface MoodboardThumbnailCardProps {
@@ -16,6 +19,7 @@ interface MoodboardThumbnailCardProps {
   isDragOver?: boolean;
   dragOverPosition?: 'before' | 'after';
   anyDragging?: boolean;
+  registerCard?: (id: string, el: HTMLElement | null) => void;
   cardRef?: (el: HTMLElement | null) => void;
 }
 
@@ -32,15 +36,32 @@ export const MoodboardThumbnailCard = React.memo(function MoodboardThumbnailCard
   isDragging,
   isDragOver: _isDragOver,
   dragOverPosition: _dragOverPosition = 'after',
-  anyDragging: _anyDragging,
+  anyDragging,
+  registerCard,
   cardRef,
 }: MoodboardThumbnailCardProps) {
   const [loadError, setLoadError] = useState(false);
-  const displaySrc = image.base64 || image.src;
+
+  const displaySrc = useMemo(() => {
+    if (image.src) return image.src;
+    if (!image.path) return '';
+    const normalized = normalizeAssetPath(image.path);
+    return isTauriApp() && normalized ? convertFileSrc(normalized) : normalized;
+  }, [image.path, image.src]);
+
+  console.log(`[MoodboardThumbnailCard:RENDER] "${image.name}", id="${image.id}", path="${image.path}", displaySrc="${displaySrc?.slice(0, 70)}"`);
+
+  const setCardElement = React.useCallback(
+    (el: HTMLElement | null) => {
+      if (cardRef) cardRef(el);
+      if (registerCard) registerCard(image.id, el);
+    },
+    [cardRef, registerCard, image.id]
+  );
 
   return (
     <div
-      ref={cardRef}
+      ref={setCardElement}
       draggable={true}
       onDragStart={(e) => onDragStart(e, image)}
       onDragEnter={(e) => onDragEnter(e, image)}
@@ -59,9 +80,11 @@ export const MoodboardThumbnailCard = React.memo(function MoodboardThumbnailCard
         if (onDragEnd) onDragEnd();
       }}
       onClick={() => onPreview(image)}
-      className={`break-inside-avoid mb-4 group relative rounded-sm overflow-hidden select-none transition-all duration-200 ${
+      className={`break-inside-avoid mb-4 group relative rounded-sm overflow-hidden select-none ${
+        anyDragging ? '' : 'transition-all duration-200'
+      } ${
         isDragging
-          ? 'opacity-30 scale-[0.98] border-2 border-dashed border-emerald-500/80 bg-emerald-950/20 ring-2 ring-emerald-500/40 shadow-xl z-20'
+          ? 'opacity-30 scale-[0.98] border-2 border-dashed border-emerald-500/80 bg-emerald-950/20 ring-2 ring-emerald-500/40 shadow-xl z-20 pointer-events-none'
           : 'border border-zinc-800 bg-zinc-900 hover:border-zinc-650 hover:shadow-lg shadow-xs cursor-grab active:cursor-grabbing'
       }`}
     >
@@ -72,7 +95,7 @@ export const MoodboardThumbnailCard = React.memo(function MoodboardThumbnailCard
           </span>
         </div>
       )}
-      {loadError && !image.base64 ? (
+      {loadError && !image.base64 && !displaySrc ? (
         <div className="flex flex-col items-center justify-center w-full min-h-[140px] gap-1 p-3 text-zinc-600 bg-zinc-950/60 pointer-events-none">
           <ImageOff className="w-5 h-5 text-zinc-600 pointer-events-none" />
           <span className="text-[10px] text-center truncate w-full text-zinc-500 pointer-events-none">
@@ -83,8 +106,14 @@ export const MoodboardThumbnailCard = React.memo(function MoodboardThumbnailCard
         <img
           src={displaySrc || undefined}
           alt={image.name}
+          loading="lazy"
+          decoding="async"
           className="w-full h-auto object-cover transition-transform duration-200 group-hover:scale-[1.02] block pointer-events-none select-none"
-          onError={() => {
+          onLoad={() => {
+            console.log(`[MoodboardThumbnailCard] Image rendered successfully: "${image.name}" (src: ${displaySrc?.slice(0, 40)}...)`);
+          }}
+          onError={(e) => {
+            console.error(`[MoodboardThumbnailCard] Failed to load image: "${image.name}". displaySrc: "${displaySrc?.slice(0, 80)}", path: "${image.path}"`, e);
             if (!loadError && image.base64) {
               setLoadError(true);
             }

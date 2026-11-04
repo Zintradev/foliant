@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Languages, Save, Zap, Clock, Globe, StickyNote, Check, AlertCircle, RefreshCw, Loader2, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Languages, Save, Zap, Clock, Globe, StickyNote, Image as ImageIcon, Check, AlertCircle, RefreshCw, Loader2, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { Language, DeleteConfirmationPreferences, DEFAULT_DELETE_CONFIRMATIONS } from '../../../types/settings';
 import { PreferenceChangeHandler } from './types';
 import { GbFlag, EsFlag } from '../../common/FlagIcons';
@@ -13,6 +13,7 @@ interface SettingsGeneralSectionProps {
   timelineDropMode: 'shift' | 'swap';
   worldDropMode: 'shift' | 'swap';
   notesDropMode?: 'shift' | 'swap';
+  visualsDropMode?: 'shift' | 'swap';
   preserveManualSceneWidth: boolean;
   preserveManualPlotHeight: boolean;
   autoUpdateCheck?: boolean;
@@ -28,6 +29,7 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
   timelineDropMode,
   worldDropMode,
   notesDropMode = 'shift',
+  visualsDropMode = 'shift',
   preserveManualSceneWidth,
   preserveManualPlotHeight,
   autoUpdateCheck = false,
@@ -345,6 +347,46 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
             >
               <span>{t('swapMode')}</span>
               {notesDropMode === 'swap' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Moodboard / Visuals Drop Mode */}
+        <div className="p-3 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
+              <ImageIcon className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+              <span>{t('visualsDropMode')}</span>
+            </label>
+            <div className="text-[11px] text-zinc-500 mt-0.5 pl-5.5">
+              {t('visualsDropModeDesc')}
+            </div>
+          </div>
+
+          <div className="flex items-center p-0.5 bg-zinc-950 border border-zinc-800 rounded-md shrink-0">
+            <button
+              type="button"
+              onClick={() => onPreferenceChange('visualsDropMode', 'shift')}
+              className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                visualsDropMode === 'shift'
+                  ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                  : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+              }`}
+            >
+              <span>{t('shiftMode')}</span>
+              {visualsDropMode === 'shift' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => onPreferenceChange('visualsDropMode', 'swap')}
+              className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                visualsDropMode === 'swap'
+                  ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                  : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+              }`}
+            >
+              <span>{t('swapMode')}</span>
+              {visualsDropMode === 'swap' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
             </button>
           </div>
         </div>

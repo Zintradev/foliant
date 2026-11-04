@@ -77,19 +77,26 @@ export default function App() {
     return DEFAULT_PROJECT.chapters.find((c) => c.type === 'scene')?.id ?? '';
   });
 
+  const handleProjectLoaded = useCallback((loaded: FoliantProject) => {
+    setProject(loaded);
+    if (loaded.chapters.length > 0) {
+      setActiveChapterId((curr) => {
+        if (!curr || !loaded.chapters.some((c) => c.id === curr)) {
+          const firstScene = loaded.chapters.find((c) => c.type === 'scene') ?? loaded.chapters[0];
+          return firstScene.id;
+        }
+        return curr;
+      });
+    }
+  }, []);
+
   const {
     currentFilePath, error: persistenceError, saveProject, saveProjectAs,
     saveSilently, openProject, newProject, loadProject, clearError: clearPersistenceError,
     lastSavedAt,
   } = useProjectPersistence({
     project,
-    onProjectLoaded: (loaded) => {
-      setProject(loaded);
-      if (loaded.chapters.length > 0 && !loaded.chapters.some((c) => c.id === activeChapterId)) {
-        const firstScene = loaded.chapters.find((c) => c.type === 'scene') ?? loaded.chapters[0];
-        setActiveChapterId(firstScene.id);
-      }
-    },
+    onProjectLoaded: handleProjectLoaded,
   });
 
   const [isDirty, setIsDirty] = useState(false);
@@ -148,8 +155,17 @@ export default function App() {
     }
   }, []);
 
-  // Edge case 3: Silent auto-load of last project on desktop startup
+  // Edge case 3: Silent auto-load of last project on desktop startup (runs exactly once on mount)
+  const hasAutoLoadedRef = useRef(false);
+  const loadProjectRef = useRef(loadProject);
   useEffect(() => {
+    loadProjectRef.current = loadProject;
+  }, [loadProject]);
+
+  useEffect(() => {
+    if (hasAutoLoadedRef.current) return;
+    hasAutoLoadedRef.current = true;
+
     let isCancelled = false;
     const lastPath = typeof localStorage !== 'undefined'
       ? localStorage.getItem(LAST_FOLIANT_PROJECT_KEY)
@@ -162,15 +178,23 @@ export default function App() {
       return;
     }
 
+    const validPath: string = lastPath;
+
     async function autoLoadLastProject() {
       try {
-        const fileExists = await checkFileExists(lastPath);
+        console.log(`[App:autoLoadLastProject] Checking if project file exists at "${validPath}"...`);
+        const fileExists = await checkFileExists(validPath);
         if (!fileExists) {
           throw new Error('Project file no longer exists');
         }
-        const loaded = await executeReadBundle(lastPath);
-        if (isCancelled) return;
-        loadProject(loaded, lastPath);
+        console.log(`[App:autoLoadLastProject] File exists. Calling executeReadBundle...`);
+        const loaded = await executeReadBundle(validPath);
+        if (isCancelled) {
+          console.warn(`[App:autoLoadLastProject] Cancelled before loadProject`);
+          return;
+        }
+        console.log(`[App:autoLoadLastProject] executeReadBundle finished. Title="${loaded.title}", id="${loaded.id}", visuals=${loaded.visuals?.length ?? 0}`);
+        loadProjectRef.current(loaded, validPath);
         if (loaded.chapters.length > 0) {
           const firstScene = loaded.chapters.find((c) => c.type === 'scene') ?? loaded.chapters[0];
           setActiveChapterId(firstScene.id);
@@ -192,7 +216,7 @@ export default function App() {
     return () => {
       isCancelled = true;
     };
-  }, [loadProject]);
+  }, []);
 
   const { resetAutoSaveTimer } = useAppAutoSave({
     project,
@@ -363,9 +387,10 @@ export default function App() {
         handleUpdateCharacterPositions={mutations.handleUpdateCharacterPositions}
         handleUpdateWorldItems={mutations.handleUpdateWorldItems}
         handleUpdateContextBlocks={mutations.handleUpdateContextBlocks}
+        currentFilePath={currentFilePath}
       />
     ),
-    [project, activeChapterId, activeChapter, appSettings, timelineFilters, mutations, nav.handleSelectSearchResult, persistence.setEditorSaveStatus]
+    [project, activeChapterId, activeChapter, appSettings, timelineFilters, mutations, nav.handleSelectSearchResult, persistence.setEditorSaveStatus, currentFilePath]
   );
 
   return (

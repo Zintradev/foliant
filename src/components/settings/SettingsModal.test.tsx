@@ -255,6 +255,7 @@ describe('SettingsModal Component', () => {
     expect(screen.getByText(dict.en.timelineDropMode)).toBeInTheDocument();
     expect(screen.getByText(dict.en.worldDropMode)).toBeInTheDocument();
     expect(screen.getByText(dict.en.notesDropMode)).toBeInTheDocument();
+    expect(screen.getByText(dict.en.visualsDropMode)).toBeInTheDocument();
 
     // Timeline Drop Mode toggle
     const swapButtons = screen.getAllByText(dict.en.swapMode);
@@ -278,6 +279,14 @@ describe('SettingsModal Component', () => {
     expect(mockOnUpdateSettings).toHaveBeenCalledWith(
       expect.objectContaining({
         preferences: expect.objectContaining({ notesDropMode: 'swap' }),
+      })
+    );
+
+    // Moodboard Visuals Drop Mode toggle
+    fireEvent.click(swapButtons[3]);
+    expect(mockOnUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({ visualsDropMode: 'swap' }),
       })
     );
 

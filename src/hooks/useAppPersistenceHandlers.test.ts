@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAppPersistenceHandlers } from './useAppPersistenceHandlers';
-import { createEmptyProject } from '../types/project';
 
 describe('useAppPersistenceHandlers', () => {
   const saveProject = vi.fn();
