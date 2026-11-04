@@ -5,6 +5,9 @@ use std::fs;
 use std::path::PathBuf;
 use tauri::Manager;
 
+mod bundle;
+pub use bundle::{check_file_exists, load_project_bundle, save_project_bundle};
+
 // ---------------------------------------------------------------------------
 // Helper
 // ---------------------------------------------------------------------------
@@ -251,6 +254,9 @@ fn main() {
             save_reference_image_base64,
             list_reference_images,
             delete_reference_image,
+            save_project_bundle,
+            load_project_bundle,
+            check_file_exists,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

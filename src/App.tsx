@@ -1,6 +1,11 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { FoliantProject, createEmptyProject } from './types/project';
 import { useProjectPersistence } from './hooks/useProjectPersistence';
+import {
+  checkFileExists,
+  executeReadBundle,
+  LAST_FOLIANT_PROJECT_KEY,
+} from './hooks/projectPersistenceUtils';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 import { useEpubExport } from './hooks/useEpubExport';
 import { useDockLayout } from './hooks/useDockLayout';
@@ -25,8 +30,22 @@ import { normalizeLoadedProject } from './utils/projectBundle';
 import { checkForAppUpdates } from './utils/updater';
 
 export default function App() {
+  const hasSavedProjectKey = (() => {
+    try {
+      return Boolean(
+        typeof localStorage !== 'undefined' &&
+        localStorage.getItem(LAST_FOLIANT_PROJECT_KEY)
+      );
+    } catch {
+      return false;
+    }
+  })();
+
   const isFirstRun = (() => {
     try {
+      if (hasSavedProjectKey && isTauriApp()) {
+        return false;
+      }
       if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('foliant_welcome_answered') === 'true') {
         return false;
       }
@@ -61,6 +80,7 @@ export default function App() {
   const {
     currentFilePath, error: persistenceError, saveProject, saveProjectAs,
     saveSilently, openProject, newProject, loadProject, clearError: clearPersistenceError,
+    lastSavedAt,
   } = useProjectPersistence({
     project,
     onProjectLoaded: (loaded) => {
@@ -72,14 +92,24 @@ export default function App() {
     },
   });
 
+  const [isDirty, setIsDirty] = useState(false);
+  const resetAutoSaveRef = useRef<(() => void) | null>(null);
+
   const persistence = useAppPersistenceHandlers({
-    currentFilePath, saveProject, saveProjectAs, saveSilently, newProject, loadProject, setActiveChapterId,
+    currentFilePath,
+    saveProject,
+    saveProjectAs,
+    saveSilently,
+    newProject,
+    loadProject,
+    setActiveChapterId,
+    setIsDirty,
+    onSaveSuccess: () => resetAutoSaveRef.current?.(),
   });
 
   const epub = useEpubExport(project);
   const [activeMainView, setActiveMainView] = useState<MainViewId>('write');
   const [activeSearchTerm, setActiveSearchTerm] = useState<string | null>(null);
-  const [isDirty, setIsDirty] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHelpGuideOpen, setIsHelpGuideOpen] = useState(false);
   const [isGuidedTourActive, setIsGuidedTourActive] = useState(false);
@@ -118,14 +148,63 @@ export default function App() {
     }
   }, []);
 
-  useAppAutoSave({
+  // Edge case 3: Silent auto-load of last project on desktop startup
+  useEffect(() => {
+    let isCancelled = false;
+    const lastPath = typeof localStorage !== 'undefined'
+      ? localStorage.getItem(LAST_FOLIANT_PROJECT_KEY)
+      : null;
+
+    if (!lastPath || !isTauriApp()) {
+      if (!lastPath && !sessionStorage.getItem('foliant_welcome_answered')) {
+        setIsFirstRunPromptOpen(true);
+      }
+      return;
+    }
+
+    async function autoLoadLastProject() {
+      try {
+        const fileExists = await checkFileExists(lastPath);
+        if (!fileExists) {
+          throw new Error('Project file no longer exists');
+        }
+        const loaded = await executeReadBundle(lastPath);
+        if (isCancelled) return;
+        loadProject(loaded, lastPath);
+        if (loaded.chapters.length > 0) {
+          const firstScene = loaded.chapters.find((c) => c.type === 'scene') ?? loaded.chapters[0];
+          setActiveChapterId(firstScene.id);
+        }
+        setIsDirty(false);
+        setIsFirstRunPromptOpen(false);
+      } catch (err) {
+        console.warn('[Foliant Startup] Could not auto-load last project:', err);
+        if (isCancelled) return;
+        try {
+          localStorage.removeItem(LAST_FOLIANT_PROJECT_KEY);
+        } catch {}
+        setIsFirstRunPromptOpen(true);
+      }
+    }
+
+    void autoLoadLastProject();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [loadProject]);
+
+  const { resetAutoSaveTimer } = useAppAutoSave({
     project,
     isAutoSave: (appSettings.preferences?.saveMode || 'auto') === 'auto',
     autoSaveInterval: appSettings.preferences?.autoSaveInterval ?? 300,
     currentFilePath,
     saveSilently,
     setEditorSaveStatus: persistence.setEditorSaveStatus,
+    setIsDirty,
+    lastSavedAt,
   });
+  resetAutoSaveRef.current = resetAutoSaveTimer;
 
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
   const handleRequestCloseConfirm = useCallback(() => setIsCloseConfirmOpen(true), []);
@@ -222,10 +301,33 @@ export default function App() {
   }, [hasUnsavedChangesForTour, nav, startTourSafely]);
   const handleCloseGuidedTour = useCallback(() => setIsGuidedTourActive(false), []);
 
+  const handleOpenProjectWithDirtyReset = useCallback(async () => {
+    const success = await openProject();
+    if (success) {
+      setIsDirty(false);
+      resetAutoSaveRef.current?.();
+    }
+    return success;
+  }, [openProject]);
+
+  const handleOpenExistingFirstRun = useCallback(async () => {
+    const success = await handleOpenProjectWithDirtyReset();
+    if (success) {
+      try {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('foliant_welcome_answered', 'true');
+        }
+        localStorage.setItem('foliant_first_run_completed', 'true');
+        localStorage.setItem('foliant_welcome_completed', 'true');
+      } catch {}
+      setIsFirstRunPromptOpen(false);
+    }
+  }, [handleOpenProjectWithDirtyReset]);
+
   useGlobalShortcuts({
     onSave: persistence.handleManualSave,
     onSaveAs: persistence.handleManualSaveAs,
-    onOpen: openProject,
+    onOpen: handleOpenProjectWithDirtyReset,
     onSearch: layout.handleOpenSearchTab,
     onHelp: handleOpenHelpGuide,
   });
@@ -280,7 +382,7 @@ export default function App() {
           isAutoSave={(appSettings.preferences?.saveMode || 'auto') === 'auto'}
           onOpenSettings={handleOpenSettings}
           onNewProject={persistence.handleNewProject}
-          onOpenProject={openProject}
+          onOpenProject={handleOpenProjectWithDirtyReset}
           onSaveProject={persistence.handleManualSave}
           onSaveProjectAs={persistence.handleManualSaveAs}
           onImportManuskript={persistence.handleImportManuskript}
@@ -328,6 +430,7 @@ export default function App() {
           onCancelNewProject={persistence.handleCancelNewProject}
           onLoadDemoFirstRun={executeLoadDemoProject}
           onStartEmptyFirstRun={handleStartEmptyProject}
+          onOpenExistingFirstRun={handleOpenExistingFirstRun}
           onLoadDemoProject={handleRequestLoadDemoFromGuide}
           isLoadDemoConfirmOpen={isLoadDemoConfirmOpen}
           onConfirmLoadDemo={executeLoadDemoProject}

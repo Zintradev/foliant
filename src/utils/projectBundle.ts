@@ -1,8 +1,9 @@
-import { mkdir, readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
+import { invoke } from '@tauri-apps/api/core';
 import { FoliantProject } from '../types/project';
+import { isTauriApp } from './platform';
 
 /**
- * Extracts the project directory or bundle name from a POSIX or Windows path.
+ * Extracts the project file name from a POSIX or Windows path.
  */
 export function extractFileName(filePath: string | null): string | null {
   if (!filePath) return null;
@@ -32,6 +33,7 @@ export function normalizeLoadedProject(data: unknown): FoliantProject {
     characters: Array.isArray(raw.characters) ? raw.characters : [],
     relationships: Array.isArray(raw.relationships) ? raw.relationships : [],
     junctions: Array.isArray(raw.junctions) ? raw.junctions : [],
+    characterPositions: Array.isArray(raw.characterPositions) ? raw.characterPositions : [],
     worldItems: Array.isArray(raw.worldItems) ? raw.worldItems : [],
     contextBlocks: Array.isArray(raw.contextBlocks)
       ? raw.contextBlocks.map((b: any) => ({
@@ -47,102 +49,46 @@ export function normalizeLoadedProject(data: unknown): FoliantProject {
 }
 
 /**
- * Serializes and writes the novel into Foliant's industrial bundle directory architecture:
+ * Serializes and writes the novel into a single compressed `.foliant` bundle file.
  *
- * ### Architectural Rationale:
- * 1. **O(1) Incremental Auto-Save**: In a 100,000+ word project, serializing a single giant JSON
- *    string on every keystroke causes memory spikes and UI thread stutter. By storing structural
- *    metadata in `project.json` and scene bodies in `/scenes/${chapter.id}.md`, individual scenes
- *    can be flushed in isolation.
- * 2. **Corruption Fault Tolerance**: If a crash or power failure occurs mid-write, only the current
- *    scene's `.md` file is at risk; the project taxonomy, character registry, and other chapters remain
- *    completely uncorrupted.
- * 3. **Git & VCS Friendliness**: Authors using Git or cloud sync (Dropbox, OneDrive) get clean line-by-line
- *    text diffs per scene rather than continuous merge conflicts on a monolithic JSON blob.
+ * Calls the native Rust backend command `save_project_bundle` which creates a clean
+ * ZIP archive containing `project.json` and `scenes/` without leaving legacy loose files.
  */
 export async function writeProjectBundle(
-  baseDirectory: string,
+  filePath: string,
   projectToSave: FoliantProject
 ): Promise<void> {
-  const normalizedBase = baseDirectory.replace(/\\/g, '/').replace(/\/+$/, '');
-  const scenesDirectory = `${normalizedBase}/scenes`;
-
-  // 1. Ensure project root directory and scenes directory exist
-  await mkdir(normalizedBase, { recursive: true });
-  await mkdir(scenesDirectory, { recursive: true });
-
-  // 2. Write each scene text file individually
-  for (const chapter of projectToSave.chapters) {
-    if (chapter.type === 'scene') {
-      const sceneFilePath = `${scenesDirectory}/${chapter.id}.md`;
-      const sceneContent = typeof chapter.content === 'string' ? chapter.content : '';
-      await writeTextFile(sceneFilePath, sceneContent);
-    }
+  let normalizedPath = filePath.trim();
+  if (!normalizedPath.toLowerCase().endsWith('.foliant')) {
+    normalizedPath = `${normalizedPath}.foliant`;
   }
 
-  // 3. Prepare project.json: chapters metadata without scene content
-  const metadataProject: FoliantProject = {
-    ...projectToSave,
-    chapters: projectToSave.chapters.map((chapter) => {
-      if (chapter.type === 'scene') {
-        return {
-          ...chapter,
-          content: '',
-        };
-      }
-      return chapter;
-    }),
-  };
+  if (isTauriApp()) {
+    await invoke('save_project_bundle', {
+      filePath: normalizedPath,
+      project: projectToSave,
+    });
+    return;
+  }
 
-  const projectJsonPath = `${normalizedBase}/project.json`;
-  const serializedMetadata = JSON.stringify(metadataProject, null, 2);
-  await writeTextFile(projectJsonPath, serializedMetadata);
+  throw new Error('Native project saving is only available in desktop environment.');
 }
 
 /**
- * Reads a modular folder bundle:
- * 1. Reads and parses project.json.
- * 2. Iterates over chapters and reads each scene's content from /scenes/${chapter.id}.md.
- * 3. Reassembles the complete FoliantProject in memory with fallback for missing scene files.
+ * Reads a single compressed `.foliant` bundle via the native Rust command `load_project_bundle`.
+ *
+ * Unpacks and reassembles `project.json` and scene files from `scenes/` in memory,
+ * returning the complete unified FoliantProject.
  */
-export async function readProjectBundle(baseDirectory: string): Promise<FoliantProject> {
-  const normalizedBase = baseDirectory.replace(/\\/g, '/').replace(/\/+$/, '');
-  const projectJsonPath = `${normalizedBase}/project.json`;
-  const scenesDirectory = `${normalizedBase}/scenes`;
+export async function readProjectBundle(filePath: string): Promise<FoliantProject> {
+  const normalizedPath = filePath.trim();
 
-  // 1. Read root project metadata
-  const metadataContent = await readTextFile(projectJsonPath);
-  const parsedData = JSON.parse(metadataContent);
-  const normalizedProject = normalizeLoadedProject(parsedData);
+  if (isTauriApp()) {
+    const rawData = await invoke<unknown>('load_project_bundle', {
+      filePath: normalizedPath,
+    });
+    return normalizeLoadedProject(rawData);
+  }
 
-  // 2. Reassemble scene contents from individual files
-  const reassembledChapters = await Promise.all(
-    normalizedProject.chapters.map(async (chapter) => {
-      if (chapter.type === 'scene') {
-        const sceneFilePath = `${scenesDirectory}/${chapter.id}.md`;
-        try {
-          const content = await readTextFile(sceneFilePath);
-          return {
-            ...chapter,
-            content,
-          };
-        } catch (sceneErr: unknown) {
-          console.warn(
-            `[Foliant Persistence] Failed to read scene file '${sceneFilePath}'. Defaulting to empty content:`,
-            sceneErr
-          );
-          return {
-            ...chapter,
-            content: '',
-          };
-        }
-      }
-      return chapter;
-    })
-  );
-
-  return {
-    ...normalizedProject,
-    chapters: reassembledChapters,
-  };
+  throw new Error('Native project loading is only available in desktop environment.');
 }

@@ -89,7 +89,7 @@ export function useEditorPersistence({
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
 
       const intervalMs = isAutoSave
-        ? (autoSaveInterval != null ? Math.max(300, autoSaveInterval * 1000) : 1000)
+        ? (autoSaveInterval != null ? Math.min(Math.max(300, autoSaveInterval * 1000), 2000) : 1000)
         : 300;
 
       debounceTimerRef.current = setTimeout(() => {
@@ -100,6 +100,38 @@ export function useEditorPersistence({
     },
     [executeSave, isAutoSave, autoSaveInterval]
   );
+
+  // Immediate flush routine for manual save actions (Ctrl+S or menu clicks)
+  useEffect(() => {
+    const flushPending = () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = null;
+      }
+      if (editor && !editor.isDestroyed && isDirtyRef.current) {
+        const freshContent = editor.getHTML();
+        isDirtyRef.current = false;
+        onChangeRef.current?.(freshContent, activeChapterIdRef.current);
+      }
+    };
+
+    const handleWindowSave = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        flushPending();
+      }
+    };
+
+    window.addEventListener('keydown', handleWindowSave, true);
+    window.addEventListener('foliant-flush-editor', flushPending);
+    return () => {
+      window.removeEventListener('keydown', handleWindowSave, true);
+      window.removeEventListener('foliant-flush-editor', flushPending);
+    };
+  }, [editor]);
 
   // Chapter Switch Effect: Non-blocking Background Flush
   useEffect(() => {

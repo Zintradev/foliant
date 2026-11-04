@@ -9,12 +9,23 @@ import {
   normalizeLoadedProject,
 } from '../utils/projectBundle';
 import {
+  promptOpenProjectFile,
+  promptSaveProjectFile,
   promptSelectDirectory,
   executeSaveBundle,
   executeReadBundle,
+  checkFileExists,
+  LAST_FOLIANT_PROJECT_KEY,
 } from './projectPersistenceUtils';
 
-export { extractFileName, writeProjectBundle, readProjectBundle, normalizeLoadedProject };
+export {
+  extractFileName,
+  writeProjectBundle,
+  readProjectBundle,
+  normalizeLoadedProject,
+  checkFileExists,
+  LAST_FOLIANT_PROJECT_KEY,
+};
 
 export type SyncStatus = 'idle' | 'saving' | 'saved' | 'unsaved';
 export type SaveStatus = SyncStatus;
@@ -111,7 +122,7 @@ export function useProjectPersistence({
             .replace(/[^a-z0-9_-]/g, '-')
             .replace(/-+/g, '-')
             .replace(/^-|-$/g, '') || 'project';
-        const fileNameToSave = `${safeTitle}.foliant.json`;
+        const fileNameToSave = `${safeTitle}.foliant`;
 
         downloadFileInBrowser(
           JSON.stringify(projectToSave, null, 2),
@@ -127,23 +138,33 @@ export function useProjectPersistence({
         return true;
       }
 
-      const targetDirectory = await promptSelectDirectory(
-        'Select Foliant Project Directory',
-        currentFilePath
+      const defaultFileName = project.title
+        ? `${project.title.replace(/[/\\?%*:|"<>]/g, '-')}.foliant`
+        : 'novel.foliant';
+      const defaultPath = currentFilePath || defaultFileName;
+
+      const targetPath = await promptSaveProjectFile(
+        'Save Foliant Project As',
+        defaultPath
       );
 
-      if (!targetDirectory) {
+      if (!targetPath) {
         setIsSaving(false);
         setSyncStatus(currentFilePath ? 'idle' : 'unsaved');
         return false;
       }
 
-      const { updatedProject, timestamp } = await executeSaveBundle(targetDirectory, project);
+      const { updatedProject, timestamp } = await executeSaveBundle(targetPath, project);
 
-      setCurrentFilePath(targetDirectory);
+      setCurrentFilePath(targetPath);
       setLastSavedAt(timestamp);
       setSyncStatus('saved');
       setIsSaving(false);
+      try {
+        localStorage.setItem(LAST_FOLIANT_PROJECT_KEY, targetPath);
+      } catch {
+        // ignore storage errors
+      }
 
       onProjectLoaded(updatedProject);
       return true;
@@ -184,8 +205,15 @@ export function useProjectPersistence({
       }
     }
 
-    const trimmedDirectory = currentFilePath?.trim().replace(/[/\\]+$/, '');
-    if (!trimmedDirectory) {
+    const trimmedPath = currentFilePath?.trim();
+    if (!trimmedPath) {
+      return saveProjectAs();
+    }
+
+    // Edge case 1: Validate if the file still exists on the filesystem.
+    // If the file was deleted or moved externally, redirect to Save As.
+    const fileExists = await checkFileExists(trimmedPath);
+    if (!fileExists) {
       return saveProjectAs();
     }
 
@@ -194,16 +222,21 @@ export function useProjectPersistence({
       setSyncStatus('saving');
       setError(null);
 
-      const { updatedProject, timestamp } = await executeSaveBundle(trimmedDirectory, project);
+      const { updatedProject, timestamp } = await executeSaveBundle(trimmedPath, project);
 
       setLastSavedAt(timestamp);
       setSyncStatus('saved');
       setIsSaving(false);
+      try {
+        localStorage.setItem(LAST_FOLIANT_PROJECT_KEY, trimmedPath);
+      } catch {
+        // ignore storage errors
+      }
 
       onProjectLoaded(updatedProject);
       return true;
     } catch (err: unknown) {
-      return handlePersistenceError(`Save to '${trimmedDirectory}' failed`, err);
+      return handlePersistenceError(`Save to '${trimmedPath}' failed`, err);
     }
   }, [currentFilePath, project, saveProjectAs, onProjectLoaded, handlePersistenceError]);
 
@@ -254,17 +287,23 @@ export function useProjectPersistence({
         });
       }
 
-      const targetDirectory = await promptSelectDirectory(
-        'Open Foliant Project Directory'
+      const targetPath = await promptOpenProjectFile(
+        'Open Foliant Project',
+        currentFilePath
       );
-      if (!targetDirectory) return false;
+      if (!targetPath) return false;
 
-      const loadedProject = await executeReadBundle(targetDirectory);
+      const loadedProject = await executeReadBundle(targetPath);
 
       onProjectLoaded(loadedProject);
-      setCurrentFilePath(targetDirectory);
+      setCurrentFilePath(targetPath);
       setLastSavedAt(loadedProject.lastModified);
       setSyncStatus('saved');
+      try {
+        localStorage.setItem(LAST_FOLIANT_PROJECT_KEY, targetPath);
+      } catch {
+        // ignore storage errors
+      }
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -273,7 +312,7 @@ export function useProjectPersistence({
       onError?.(msg);
       return false;
     }
-  }, [onProjectLoaded, onError]);
+  }, [currentFilePath, onProjectLoaded, onError]);
 
   const saveSilently = useCallback(async (): Promise<boolean> => {
     if (!isTauriApp()) {
@@ -290,16 +329,16 @@ export function useProjectPersistence({
       }
     }
 
-    const trimmedDirectory = currentFilePath?.trim().replace(/[/\\]+$/, '');
-    if (!trimmedDirectory) return false;
+    const trimmedPath = currentFilePath?.trim();
+    if (!trimmedPath) return false;
 
     try {
-      const { timestamp } = await executeSaveBundle(trimmedDirectory, project);
+      const { timestamp } = await executeSaveBundle(trimmedPath, project);
       setLastSavedAt(timestamp);
       setSyncStatus('saved');
       return true;
     } catch (err: unknown) {
-      console.error(`[Foliant Persistence] Silent write to '${trimmedDirectory}' failed:`, err);
+      console.error(`[Foliant Persistence] Silent write to '${trimmedPath}' failed:`, err);
       setSyncStatus('unsaved');
       return false;
     }
@@ -312,6 +351,11 @@ export function useProjectPersistence({
       setLastSavedAt(null);
       setError(null);
       setSyncStatus('unsaved');
+      try {
+        localStorage.removeItem(LAST_FOLIANT_PROJECT_KEY);
+      } catch {
+        // ignore storage errors
+      }
       onProjectLoaded(fresh);
     },
     [onProjectLoaded]
@@ -323,6 +367,13 @@ export function useProjectPersistence({
       setLastSavedAt(filePath ? loaded.lastModified : null);
       setError(null);
       setSyncStatus(filePath ? 'saved' : 'unsaved');
+      if (filePath) {
+        try {
+          localStorage.setItem(LAST_FOLIANT_PROJECT_KEY, filePath);
+        } catch {
+          // ignore storage errors
+        }
+      }
       onProjectLoaded(loaded);
     },
     [onProjectLoaded]

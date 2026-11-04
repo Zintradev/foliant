@@ -4,6 +4,7 @@ import '@testing-library/jest-dom/vitest';
 import App from './App';
 import { open } from '@tauri-apps/plugin-dialog';
 import { readTextFile } from '@tauri-apps/plugin-fs';
+import { invoke } from '@tauri-apps/api/core';
 import { importManuskriptProject } from './utils/importManuskript';
 import { DEFAULT_PROJECT } from './data/mockProject';
 import { dict } from './i18n/translations';
@@ -681,7 +682,7 @@ describe('App Component', () => {
 
     // Mock open dialog and readTextFile failure for readProjectBundle
     mockOpen.mockResolvedValueOnce('/mock/error/dir');
-    mockReadTextFile.mockRejectedValueOnce(new Error('EACCES: Permission denied'));
+    vi.mocked(invoke).mockRejectedValueOnce(new Error('EACCES: Permission denied'));
 
     const fileMenuBtn = screen.getByLabelText('File Menu');
     fireEvent.click(fileMenuBtn);

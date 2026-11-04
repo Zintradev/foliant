@@ -5,7 +5,7 @@ import { importManuskriptProject } from '../utils/importManuskript';
 import { ImportModalData } from '../components/common/ImportResultModal';
 import { FoliantProject } from '../types/project';
 
-interface UseAppPersistenceHandlersOptions {
+export interface UseAppPersistenceHandlersOptions {
   currentFilePath: string | null;
   saveProject: () => Promise<boolean>;
   saveProjectAs: () => Promise<boolean>;
@@ -13,6 +13,8 @@ interface UseAppPersistenceHandlersOptions {
   newProject: (title?: string) => void;
   loadProject: (project: FoliantProject, bundlePath: string | null) => void;
   setActiveChapterId: (id: string) => void;
+  setIsDirty?: (dirty: boolean) => void;
+  onSaveSuccess?: () => void;
 }
 
 export function useAppPersistenceHandlers({
@@ -23,6 +25,8 @@ export function useAppPersistenceHandlers({
   newProject,
   loadProject,
   setActiveChapterId,
+  setIsDirty,
+  onSaveSuccess,
 }: UseAppPersistenceHandlersOptions) {
   const [editorSaveStatus, setEditorSaveStatus] = useState<SaveStatus>('saved');
   const [importModalData, setImportModalData] = useState<ImportModalData>(null);
@@ -39,24 +43,34 @@ export function useAppPersistenceHandlers({
   );
 
   const handleManualSave = useCallback(async () => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('foliant-flush-editor'));
+    }
     setEditorSaveStatus('saving');
     const success = await saveProject();
     if (success) {
       setEditorSaveStatus('saved');
+      setIsDirty?.(false);
+      onSaveSuccess?.();
     } else {
       setEditorSaveStatus('unsaved');
     }
-  }, [saveProject]);
+  }, [saveProject, setIsDirty, onSaveSuccess]);
 
   const handleManualSaveAs = useCallback(async () => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('foliant-flush-editor'));
+    }
     setEditorSaveStatus('saving');
     const success = await saveProjectAs();
     if (success) {
       setEditorSaveStatus('saved');
+      setIsDirty?.(false);
+      onSaveSuccess?.();
     } else {
       setEditorSaveStatus('unsaved');
     }
-  }, [saveProjectAs]);
+  }, [saveProjectAs, setIsDirty, onSaveSuccess]);
 
   const handleNewProject = useCallback(() => {
     setIsNewProjectConfirmOpen(true);
@@ -65,8 +79,9 @@ export function useAppPersistenceHandlers({
   const handleConfirmNewProject = useCallback(() => {
     newProject('Untitled Project');
     setActiveChapterId('');
+    setIsDirty?.(false);
     setIsNewProjectConfirmOpen(false);
-  }, [newProject, setActiveChapterId]);
+  }, [newProject, setActiveChapterId, setIsDirty]);
 
   const handleCancelNewProject = useCallback(() => {
     setIsNewProjectConfirmOpen(false);
@@ -86,6 +101,7 @@ export function useAppPersistenceHandlers({
       const result = await importManuskriptProject();
       if (!result) return;
       loadProject(result.project, result.bundlePath);
+      setIsDirty?.(false);
       if (result.project.chapters.length > 0) {
         const firstScene =
           result.project.chapters.find((c) => c.type === 'scene') ?? result.project.chapters[0];

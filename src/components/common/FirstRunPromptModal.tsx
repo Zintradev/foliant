@@ -1,17 +1,19 @@
 import React from 'react';
-import { Sparkles, BookOpen, Feather } from 'lucide-react';
+import { Sparkles, BookOpen, Feather, FolderOpen } from 'lucide-react';
 import { useTranslation } from '../../i18n/translations';
 
 interface FirstRunPromptModalProps {
   isOpen: boolean;
   onLoadDemo: () => void;
   onStartEmpty: () => void;
+  onOpenExisting?: () => void;
 }
 
 export const FirstRunPromptModal: React.FC<FirstRunPromptModalProps> = ({
   isOpen,
   onLoadDemo,
   onStartEmpty,
+  onOpenExisting,
 }) => {
   const { t } = useTranslation();
 
@@ -61,6 +63,29 @@ export const FirstRunPromptModal: React.FC<FirstRunPromptModalProps> = ({
             </div>
           </button>
 
+          {onOpenExisting && (
+            <button
+              type="button"
+              onClick={onOpenExisting}
+              className="w-full flex items-center gap-3 p-3 rounded-md bg-zinc-900/90 hover:bg-zinc-850 border border-zinc-750 hover:border-blue-500/60 transition group text-left cursor-pointer"
+            >
+              <div className="p-2 rounded-sm bg-blue-950/40 border border-blue-800/40 text-blue-400 group-hover:scale-105 transition-transform shrink-0">
+                <FolderOpen className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-semibold text-zinc-200 group-hover:text-blue-300 transition-colors">
+                  {t('openExistingProject', 'Open Existing Project...')}
+                </div>
+                <div className="text-[11px] text-zinc-400 leading-snug mt-0.5">
+                  {t(
+                    'openExistingProjectDesc',
+                    'Select an existing .foliant file from your computer.'
+                  )}
+                </div>
+              </div>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={onStartEmpty}
@@ -81,6 +106,27 @@ export const FirstRunPromptModal: React.FC<FirstRunPromptModalProps> = ({
               </div>
             </div>
           </button>
+        </div>
+
+        <div className="w-full mt-6 pt-3.5 border-t border-zinc-800/80 text-[11px] text-zinc-500 leading-relaxed text-center">
+          <p>
+            {t(
+              'firstRunManuskriptCredit',
+              'Con agradecimiento a la aplicación de código abierto '
+            )}
+            <a
+              href="https://www.theologeek.ch/manuskript/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-zinc-400 hover:text-emerald-400 underline decoration-zinc-750 transition"
+            >
+              Manuskript
+            </a>
+            {t(
+              'firstRunManuskriptCreditSuffix',
+              ' por haber sido la inspiración original para la arquitectura narrativa de Foliant.'
+            )}
+          </p>
         </div>
       </div>
     </div>

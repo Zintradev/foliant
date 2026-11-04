@@ -82,7 +82,8 @@
         "$HOME/**",
         "$DESKTOP/**",
         "$DOCUMENT/**",
-        "$DOWNLOAD/**"
+        "$DOWNLOAD/**",
+        "**"
       ]
     }
   ]
