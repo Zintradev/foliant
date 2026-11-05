@@ -113,13 +113,13 @@ export const MoodboardSectionFolder = React.memo(function MoodboardSectionFolder
           title="Click to select folder and toggle collapse"
         >
           <ChevronRight
-            className={`w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200 transition-transform duration-200 ${
+            className={`w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200 transition-transform duration-200 pointer-events-none ${
               isCollapsed ? '' : 'rotate-90'
             }`}
           />
-          <Folder className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200" />
-          <span className="text-xs font-medium text-zinc-200">{sectionLabel}</span>
-          <span className="text-[10px] font-mono text-zinc-400 bg-zinc-800/80 px-1.5 py-0.2 rounded-xs">
+          <Folder className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200 pointer-events-none" />
+          <span className="text-xs font-medium text-zinc-200 pointer-events-none">{sectionLabel}</span>
+          <span className="text-[10px] font-mono text-zinc-400 bg-zinc-800/80 px-1.5 py-0.2 rounded-xs pointer-events-none">
             {images.length}
           </span>
         </div>
@@ -158,8 +158,8 @@ export const MoodboardSectionFolder = React.memo(function MoodboardSectionFolder
             <div
               className={
                 isExpanded
-                  ? 'columns-2 sm:columns-3 md:columns-4 lg:columns-6 gap-4 space-y-4'
-                  : 'columns-2 md:columns-4 gap-4 space-y-4'
+                  ? 'columns-2 sm:columns-3 md:columns-4 lg:columns-6 gap-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 items-start'
+                  : 'columns-2 md:columns-4 gap-4 grid grid-cols-2 md:grid-cols-4 items-start'
               }
             >
               {images.map((image) => (

@@ -84,7 +84,7 @@ export const MoodboardThumbnailCard = React.memo(function MoodboardThumbnailCard
         anyDragging ? '' : 'transition-all duration-200'
       } ${
         isDragging
-          ? 'opacity-30 scale-[0.98] border-2 border-dashed border-emerald-500/80 bg-emerald-950/20 ring-2 ring-emerald-500/40 shadow-xl z-20 pointer-events-none'
+          ? 'opacity-30 border border-dashed border-emerald-500/80 bg-emerald-950/20 ring-1 ring-emerald-500/40 shadow-xl z-20'
           : 'border border-zinc-800 bg-zinc-900 hover:border-zinc-650 hover:shadow-lg shadow-xs cursor-grab active:cursor-grabbing'
       }`}
     >

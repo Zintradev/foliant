@@ -51,6 +51,7 @@ export function MoodboardBlockComponent({
     dragOverSectionId,
     setDragOverSectionId,
     dragOverImageId,
+    setDragOverImageId,
     dragOverPosition,
     previewImages,
     handleDragOver,
@@ -139,6 +140,9 @@ export function MoodboardBlockComponent({
 
   const onSectionDragLeave = useCallback((e: React.DragEvent, secId: string) => {
     e.preventDefault();
+    if (e.currentTarget.contains(e.relatedTarget as Node)) {
+      return;
+    }
     setDragOverSectionId((prev) => (prev === secId ? null : prev));
   }, [setDragOverSectionId]);
 

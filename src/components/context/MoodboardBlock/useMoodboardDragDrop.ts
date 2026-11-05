@@ -19,20 +19,23 @@ export function useMoodboardDragDrop({
   const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null);
   const [dragOverImageId, setDragOverImageId] = useState<string | null>(null);
   const [dragOverPosition, setDragOverPosition] = useState<'before' | 'after'>('after');
+  const [activeOrder, setActiveOrder] = useState<ReferenceImage[] | null>(null);
 
   const dragItemIndex = useRef<number | null>(null);
   const dragNode = useRef<HTMLElement | null>(null);
+  const startCardRectRef = useRef<DOMRect | null>(null);
   const lastDragOverTimeRef = useRef(0);
+  const lastSwapTimeRef = useRef(0);
 
   const previewImages = useMemo(() => {
-    if (!draggedImageId || !dragOverImageId) return images;
-    const sourceIdx = images.findIndex((img) => img.id === draggedImageId);
-    if (sourceIdx === -1) return images;
-
-    const targetIdx = images.findIndex((img) => img.id === dragOverImageId);
-    if (targetIdx === -1 || sourceIdx === targetIdx) return images;
+    if (!draggedImageId) return images;
 
     if (visualsDropMode === 'swap') {
+      if (!dragOverImageId) return images;
+      const sourceIdx = images.findIndex((img) => img.id === draggedImageId);
+      const targetIdx = images.findIndex((img) => img.id === dragOverImageId);
+      if (sourceIdx === -1 || targetIdx === -1 || sourceIdx === targetIdx) return images;
+
       const swapped = [...images];
       const sourceItem = {
         ...images[sourceIdx],
@@ -47,23 +50,9 @@ export function useMoodboardDragDrop({
       return swapped;
     }
 
-    const draggedItem = images[sourceIdx];
-    const listWithoutDragged = images.filter((img) => img.id !== draggedImageId);
-    const targetIdxInNext = listWithoutDragged.findIndex((img) => img.id === dragOverImageId);
-    if (targetIdxInNext === -1) return images;
-
-    const insertIdx = dragOverPosition === 'after' ? targetIdxInNext + 1 : targetIdxInNext;
-    const targetSec =
-      dragOverSectionId || listWithoutDragged[targetIdxInNext]?.sectionId || draggedItem.sectionId;
-    const updatedMoved: ReferenceImage = {
-      ...draggedItem,
-      sectionId: targetSec,
-    };
-
-    const reordered = [...listWithoutDragged];
-    reordered.splice(insertIdx, 0, updatedMoved);
-    return reordered;
-  }, [images, draggedImageId, dragOverImageId, dragOverPosition, dragOverSectionId, visualsDropMode]);
+    // Modo Shift: utiliza el activeOrder que refleja el desplazamiento paso a paso continuo en 2D
+    return activeOrder || images;
+  }, [images, draggedImageId, dragOverImageId, dragOverSectionId, visualsDropMode, activeOrder]);
 
   // Canvas External File Upload Handlers
   const handleDragOver = (e: React.DragEvent) => {
@@ -112,21 +101,24 @@ export function useMoodboardDragDrop({
   // Image Drag Reordering Handlers
   const handleImageDragStart = (e: React.DragEvent, img: ReferenceImage) => {
     e.stopPropagation();
-    dragNode.current = e.currentTarget as HTMLElement;
+    const el = e.currentTarget as HTMLElement;
+    dragNode.current = el;
+    startCardRectRef.current = el.getBoundingClientRect();
+    dragItemIndex.current = images.findIndex((i) => i.id === img.id);
+    setActiveOrder([...images]);
     setDraggedImageId(img.id);
+    setDragOverImageId(null);
+    lastSwapTimeRef.current = 0;
+    lastDragOverTimeRef.current = 0;
 
     e.dataTransfer.setData('text/plain', img.id);
     e.dataTransfer.setData('text/image-id', img.id);
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleImageDragEnter = (e: React.DragEvent, targetImg: ReferenceImage) => {
+  const handleImageDragEnter = (e: React.DragEvent, _targetImg: ReferenceImage) => {
     e.preventDefault();
     e.stopPropagation();
-    if (draggedImageId && draggedImageId !== targetImg.id) {
-      setDragOverImageId(targetImg.id);
-      setDragOverSectionId(targetImg.sectionId);
-    }
   };
 
   const handleImageDragOver = (e: React.DragEvent, targetImg: ReferenceImage) => {
@@ -134,38 +126,115 @@ export function useMoodboardDragDrop({
     e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
 
-    if (!draggedImageId || draggedImageId === targetImg.id) return;
+    if (!draggedImageId) return;
 
-    // Throttle dragover state changes to ~30fps (32ms) to let DOM and FLIP animations settle
+    // 1. Estabilidad: Si el cursor está sobre la propia tarjeta arrastrada, no hacer nada
+    if (draggedImageId === targetImg.id) return;
+
+    // 2. Throttling reactivo (~80fps) y debounce entre swaps (~35ms)
+    // para dar tiempo al DOM y animaciones FLIP a asentar la nueva posición
     const now = performance.now();
-    if (now - lastDragOverTimeRef.current < 32) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const isJsDom = rect.width === 0 && rect.height === 0;
+
+    if (!isJsDom) {
+      if (now - lastDragOverTimeRef.current < 12) {
+        return;
+      }
+      if (now - lastSwapTimeRef.current < 35) {
+        return;
+      }
+    }
+
+    // 3. Detección de retorno al slot de origen por coordenadas (arrepentimiento espacial directo)
+    const startRect = startCardRectRef.current;
+    if (
+      !isJsDom &&
+      startRect &&
+      startRect.width > 0 &&
+      e.clientX >= startRect.left &&
+      e.clientX <= startRect.right &&
+      e.clientY >= startRect.top &&
+      e.clientY <= startRect.bottom
+    ) {
+      lastDragOverTimeRef.current = now;
+      lastSwapTimeRef.current = now;
+      if (visualsDropMode === 'swap') {
+        setDragOverImageId(null);
+        setDragOverSectionId(null);
+      } else {
+        setActiveOrder([...images]);
+        setDragOverImageId(null);
+        setDragOverSectionId(null);
+      }
       return;
     }
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const offsetY = e.clientY - rect.top;
-
-    // Hysteresis deadband: prevent rapid oscillation at the 50% boundary.
-    // If we are already hovering this specific target card:
-    // - Stay 'before' until pointer moves past 65% of the card height
-    // - Stay 'after' until pointer moves above 35% of the card height
-    let newPos: 'before' | 'after' = dragOverPosition;
-    if (dragOverImageId === targetImg.id) {
-      if (dragOverPosition === 'before' && offsetY > rect.height * 0.65) {
-        newPos = 'after';
-      } else if (dragOverPosition === 'after' && offsetY < rect.height * 0.35) {
-        newPos = 'before';
+    // 4. Modo Swap:
+    if (visualsDropMode === 'swap') {
+      let swapCrossed = isJsDom;
+      if (!isJsDom) {
+        const midX = rect.left + rect.width / 2;
+        const midY = rect.top + rect.height / 2;
+        const relX = (e.clientX - rect.left) / rect.width;
+        const relY = (e.clientY - rect.top) / rect.height;
+        swapCrossed =
+          (relX > 0.35 && relX < 0.65) ||
+          (relY > 0.35 && relY < 0.65) ||
+          Math.hypot(e.clientX - midX, e.clientY - midY) < Math.max(rect.width, rect.height) * 0.45;
       }
-    } else {
-      newPos = offsetY > rect.height * 0.5 ? 'after' : 'before';
+
+      if (!swapCrossed) return;
+
+      lastDragOverTimeRef.current = now;
+      lastSwapTimeRef.current = now;
+
+      if (dragOverImageId === targetImg.id) {
+        // Arrepentimiento: si vuelve a la tarjeta ya desplazada, restaurar orden original
+        setDragOverImageId(null);
+        setDragOverSectionId(null);
+      } else {
+        setDragOverImageId(targetImg.id);
+        setDragOverSectionId(targetImg.sectionId);
+      }
+      return;
     }
 
-    if (dragOverImageId !== targetImg.id || dragOverPosition !== newPos) {
-      lastDragOverTimeRef.current = now;
-      setDragOverImageId(targetImg.id);
-      setDragOverPosition(newPos);
-      setDragOverSectionId(targetImg.sectionId);
+    // 5. Modo Shift continuo en 2D con retorno dinámico paso a paso:
+    const currentList = activeOrder ? [...activeOrder] : [...images];
+    const dIdx = currentList.findIndex((img) => img.id === draggedImageId);
+    const tIdx = currentList.findIndex((img) => img.id === targetImg.id);
+    if (dIdx === -1 || tIdx === -1 || dIdx === tIdx) return;
+
+    let shiftCrossed = isJsDom;
+    if (!isJsDom) {
+      const midX = rect.left + rect.width / 2;
+      const midY = rect.top + rect.height / 2;
+      const isTargetBefore = tIdx < dIdx;
+      const isSameRow = Math.abs(e.clientY - midY) < rect.height * 0.45;
+
+      if (isTargetBefore) {
+        // Tarjeta objetivo antes en la lista (desplazamiento a la izquierda o hacia arriba)
+        shiftCrossed = isSameRow ? e.clientX <= midX + 15 : e.clientY <= midY + 15;
+      } else {
+        // Tarjeta objetivo después en la lista (desplazamiento a la derecha o hacia abajo)
+        shiftCrossed = isSameRow ? e.clientX >= midX - 15 : e.clientY >= midY - 15;
+      }
     }
+
+    if (!shiftCrossed) return;
+
+    lastDragOverTimeRef.current = now;
+    lastSwapTimeRef.current = now;
+    setDragOverImageId(targetImg.id);
+    setDragOverPosition(tIdx > dIdx ? 'after' : 'before');
+    setDragOverSectionId(targetImg.sectionId);
+
+    // Intercambiar secuencialmente la tarjeta arrastrada con la tarjeta objetivo sobre la que pasa
+    const temp = currentList[dIdx];
+    currentList[dIdx] = { ...currentList[tIdx], sectionId: targetImg.sectionId };
+    currentList[tIdx] = { ...temp, sectionId: targetImg.sectionId };
+    setActiveOrder(currentList);
   };
 
   const handleImageDragLeave = (e: React.DragEvent, _targetImg: ReferenceImage) => {
@@ -177,7 +246,7 @@ export function useMoodboardDragDrop({
     e.stopPropagation();
 
     try {
-      if (draggedImageId && dragOverImageId) {
+      if (draggedImageId) {
         commitImages(previewImages);
       } else {
         const sourceId =
@@ -219,20 +288,24 @@ export function useMoodboardDragDrop({
     } finally {
       dragItemIndex.current = null;
       dragNode.current = null;
+      startCardRectRef.current = null;
       setDraggedImageId(null);
       setDragOverImageId(null);
       setDragOverSectionId(null);
       setDragOverPosition('after');
+      setActiveOrder(null);
     }
   };
 
   const handleImageDragEnd = () => {
     dragItemIndex.current = null;
     dragNode.current = null;
+    startCardRectRef.current = null;
     setDraggedImageId(null);
     setDragOverImageId(null);
     setDragOverSectionId(null);
     setDragOverPosition('after');
+    setActiveOrder(null);
   };
 
   const handleSectionDrop = async (e: React.DragEvent, sectionId: string) => {
@@ -256,7 +329,7 @@ export function useMoodboardDragDrop({
       if (sourceId) {
         if (
           draggedImageId &&
-          dragOverImageId &&
+          (dragOverImageId || activeOrder) &&
           dragOverSectionId === sectionId &&
           previewImages.some((img) => img.id === sourceId && img.sectionId === sectionId)
         ) {
@@ -273,10 +346,12 @@ export function useMoodboardDragDrop({
     } finally {
       dragItemIndex.current = null;
       dragNode.current = null;
+      startCardRectRef.current = null;
       setDraggedImageId(null);
       setDragOverImageId(null);
       setDragOverSectionId(null);
       setDragOverPosition('after');
+      setActiveOrder(null);
     }
   };
 

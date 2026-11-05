@@ -205,6 +205,43 @@ describe('MoodboardBlock Component', () => {
     ]);
   });
 
+  it('restores original positions when dragging back in shift mode without dropping (arrepentimiento)', async () => {
+    const onUpdate = vi.fn();
+    render(<MoodboardBlock title="Moodboard" visualsDropMode="shift" onUpdateVisuals={onUpdate} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('landscape.jpg')).toBeInTheDocument();
+      expect(screen.getByText('forest.png')).toBeInTheDocument();
+    });
+
+    const landscapeCard = screen.getByText('landscape.jpg').closest('div[draggable="true"]')!;
+    const forestCard = screen.getByText('forest.png').closest('div[draggable="true"]')!;
+
+    const dataTransfer = {
+      setData: vi.fn(),
+      getData: vi.fn((key: string) => (key === 'text/plain' ? '1' : '')),
+      types: ['text/plain', 'text/image-id'],
+      effectAllowed: 'move',
+    };
+
+    // 1. Iniciar arrastre de landscape (id: 1)
+    fireEvent.dragStart(landscapeCard, { dataTransfer });
+
+    // 2. Mover sobre forest (id: 2) -> se desplaza
+    fireEvent.dragOver(forestCard, { dataTransfer, clientX: 100, clientY: 100 });
+
+    // 3. Mover de vuelta sobre forest (que ahora está en la posición anterior) -> se desplaza de vuelta
+    fireEvent.dragOver(forestCard, { dataTransfer, clientX: 50, clientY: 50 });
+
+    // 4. Soltar -> debe preservar el orden original restablecido
+    fireEvent.drop(landscapeCard, { dataTransfer });
+
+    expect(onUpdate).toHaveBeenCalledWith([
+      expect.objectContaining({ id: '1', name: 'landscape.jpg' }),
+      expect.objectContaining({ id: '2', name: 'forest.png' }),
+    ]);
+  });
+
   it('does not display rogue files from disk when cache is empty for an unsaved project', async () => {
     localStorage.clear();
     (invoke as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([
