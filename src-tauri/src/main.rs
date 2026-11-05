@@ -34,38 +34,37 @@ fn images_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 
 /// Resolves the visuals directory for a project.
 ///
-/// If `project_path` is provided, resolves `<project_directory>/visuals/`
-/// (or `<project_file_dir>/visuals/` if `project_path` points to a `.foliant` file).
-/// If not provided or empty, falls back to the system temp directory `temp_visuals_dir()`.
+/// For `.foliant` bundle files, assets belong directly inside the bundle archive and
+/// are extracted into the project-scoped system temp directory during the active session.
+/// We strictly avoid creating a loose `visuals/` directory outside the `.foliant` file.
 fn resolve_project_visuals_dir(
     app: &tauri::AppHandle,
     project_path: Option<&str>,
     project_id: Option<&str>,
 ) -> Result<PathBuf, String> {
-    if let Some(path_str) = project_path {
-        let trimmed = path_str.trim();
-        if !trimmed.is_empty() {
-            let p = Path::new(trimmed);
-            let base_dir = if p.is_file() || trimmed.to_lowercase().ends_with(".foliant") {
-                p.parent().unwrap_or(p)
-            } else {
-                p
-            };
-            let dir = base_dir.join("visuals");
-            fs::create_dir_all(&dir).map_err(|e| {
-                format!(
-                    "Failed to create project visuals directory '{}': {e}",
-                    dir.display()
-                )
-            })?;
-            return Ok(dir);
-        }
-    }
-
     let safe_proj_id = project_id
         .map(bundle::sanitize_file_name)
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| "default".to_string());
+
+    // If an explicit directory path is provided (not a .foliant bundle file),
+    // we can resolve `<dir>/visuals`.
+    if let Some(path_str) = project_path {
+        let trimmed = path_str.trim();
+        if !trimmed.is_empty() && !trimmed.to_lowercase().ends_with(".foliant") {
+            let p = Path::new(trimmed);
+            if p.is_dir() {
+                let dir = p.join("visuals");
+                fs::create_dir_all(&dir).map_err(|e| {
+                    format!(
+                        "Failed to create project visuals directory '{}': {e}",
+                        dir.display()
+                    )
+                })?;
+                return Ok(dir);
+            }
+        }
+    }
 
     let temp_visuals = std::env::temp_dir()
         .join("foliant_visuals")

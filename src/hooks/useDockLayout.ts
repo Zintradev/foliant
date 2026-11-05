@@ -46,7 +46,7 @@ export function useDockLayout(options: UseDockLayoutOptions = {}): UseDockLayout
 
   const handleSelectLeftTab = useCallback(
     (tabId: TabId) => {
-      if (isDirty && tabId !== activeLeftTab) {
+      if (isDirty && tabId !== activeLeftTab && activeLeftTab !== 'moodboard') {
         onPendingNavigation?.(() => {
           if (!persistViewFilters) {
             onResetFilters?.();
@@ -65,7 +65,7 @@ export function useDockLayout(options: UseDockLayoutOptions = {}): UseDockLayout
 
   const handleSelectRightTab = useCallback(
     (tabId: TabId) => {
-      if (isDirty && tabId !== activeRightTab) {
+      if (isDirty && tabId !== activeRightTab && activeRightTab !== 'moodboard') {
         onPendingNavigation?.(() => {
           if (!persistViewFilters) {
             onResetFilters?.();

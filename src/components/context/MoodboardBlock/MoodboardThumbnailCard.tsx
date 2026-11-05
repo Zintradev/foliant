@@ -49,8 +49,6 @@ export const MoodboardThumbnailCard = React.memo(function MoodboardThumbnailCard
     return isTauriApp() && normalized ? convertFileSrc(normalized) : normalized;
   }, [image.path, image.src]);
 
-  console.log(`[MoodboardThumbnailCard:RENDER] "${image.name}", id="${image.id}", path="${image.path}", displaySrc="${displaySrc?.slice(0, 70)}"`);
-
   const setCardElement = React.useCallback(
     (el: HTMLElement | null) => {
       if (cardRef) cardRef(el);
@@ -109,9 +107,6 @@ export const MoodboardThumbnailCard = React.memo(function MoodboardThumbnailCard
           loading="lazy"
           decoding="async"
           className="w-full h-auto object-cover transition-transform duration-200 group-hover:scale-[1.02] block pointer-events-none select-none"
-          onLoad={() => {
-            console.log(`[MoodboardThumbnailCard] Image rendered successfully: "${image.name}" (src: ${displaySrc?.slice(0, 40)}...)`);
-          }}
           onError={(e) => {
             console.error(`[MoodboardThumbnailCard] Failed to load image: "${image.name}". displaySrc: "${displaySrc?.slice(0, 80)}", path: "${image.path}"`, e);
             if (!loadError && image.base64) {

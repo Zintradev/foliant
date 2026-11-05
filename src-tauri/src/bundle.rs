@@ -48,7 +48,14 @@ fn process_visual_paths_for_save(
         }
         serde_json::Value::String(s) => {
             let str_val = s.trim();
-            if str_val.is_empty() {
+            if str_val.is_empty()
+                || str_val.len() > 512
+                || str_val.starts_with("data:")
+                || str_val.starts_with("http://")
+                || str_val.starts_with("https://")
+                || str_val.contains('\n')
+                || str_val.contains('\r')
+            {
                 return;
             }
 
@@ -78,11 +85,11 @@ fn process_visual_paths_for_save(
 
             // Case B: Path is a file on disk
             let p = Path::new(str_val);
-            if p.is_file()
-                && let Some(ext) = p
-                    .extension()
-                    .and_then(|e| e.to_str())
-                    .filter(|e| is_image_extension(e))
+            if let Some(ext) = p
+                .extension()
+                .and_then(|e| e.to_str())
+                .filter(|e| is_image_extension(e))
+                && p.is_file()
             {
                 if let Some(already_mapped) = seen_paths.get(str_val) {
                     *s = already_mapped.clone();
@@ -199,6 +206,25 @@ fn resolve_visual_paths_to_temp(val: &mut serde_json::Value, temp_dir: &Path) {
     }
 }
 
+/// Strips in-memory base64 string properties recursively from visuals metadata
+/// to avoid ballooning project.json inside the bundle archive.
+fn strip_base64_from_visuals(val: &mut serde_json::Value) {
+    match val {
+        serde_json::Value::Object(map) => {
+            map.remove("base64");
+            for v in map.values_mut() {
+                strip_base64_from_visuals(v);
+            }
+        }
+        serde_json::Value::Array(arr) => {
+            for v in arr {
+                strip_base64_from_visuals(v);
+            }
+        }
+        _ => {}
+    }
+}
+
 /// Saves a Foliant project bundle into a single `.foliant` compressed ZIP archive.
 ///
 /// Inside the ZIP archive:
@@ -215,7 +241,11 @@ pub async fn save_project_bundle(
     scenes: Option<HashMap<String, String>>,
     images: Option<HashMap<String, String>>,
 ) -> Result<(), String> {
-    save_project_bundle_sync(&file_path, project, scenes, images)
+    tauri::async_runtime::spawn_blocking(move || {
+        save_project_bundle_sync(&file_path, project, scenes, images)
+    })
+    .await
+    .map_err(|e| format!("Save task failed: {e}"))?
 }
 
 /// Synchronous internal implementation for saving the project bundle.
@@ -260,6 +290,11 @@ pub fn save_project_bundle_sync(
         }
     }
 
+    // 2b. Strip redundant in-memory base64 payloads from visuals metadata
+    if let Some(visuals) = metadata_project.get_mut("visuals") {
+        strip_base64_from_visuals(visuals);
+    }
+
     // 3. Scan metadata for visual image paths, collect files, and convert to relative "visuals/..."
     let mut images_to_pack: HashMap<String, PathBuf> = HashMap::new();
     let mut seen_paths: HashMap<String, String> = HashMap::new();
@@ -278,14 +313,16 @@ pub fn save_project_bundle_sync(
     let mut buffer = Cursor::new(Vec::new());
     {
         let mut zip = ZipWriter::new(&mut buffer);
-        let options =
+        let doc_options =
             SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        let image_options =
+            SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
 
         // 4a. Write project.json
         let serialized_metadata = serde_json::to_string_pretty(&metadata_project)
             .map_err(|e| format!("Failed to serialize project metadata: {e}"))?;
 
-        zip.start_file("project.json", options)
+        zip.start_file("project.json", doc_options)
             .map_err(|e| format!("Failed to create 'project.json' in archive: {e}"))?;
         zip.write_all(serialized_metadata.as_bytes())
             .map_err(|e| format!("Failed to write 'project.json': {e}"))?;
@@ -294,18 +331,18 @@ pub fn save_project_bundle_sync(
         for (scene_id, content) in &scene_map {
             let safe_id = sanitize_file_name(scene_id);
             let entry_name = format!("scenes/{safe_id}.md");
-            zip.start_file(&entry_name, options)
+            zip.start_file(&entry_name, doc_options)
                 .map_err(|e| format!("Failed to create '{entry_name}' in archive: {e}"))?;
             zip.write_all(content.as_bytes())
                 .map_err(|e| format!("Failed to write '{entry_name}': {e}"))?;
         }
 
-        // 4c. Write collected visual images into visuals/{filename}
+        // 4c. Write collected visual images into visuals/{filename} (stored uncompressed for speed)
         for (img_name, src_path) in &images_to_pack {
             let safe_name = sanitize_file_name(img_name);
             let entry_name = format!("visuals/{safe_name}");
             if let Ok(bytes) = fs::read(src_path) {
-                zip.start_file(&entry_name, options)
+                zip.start_file(&entry_name, image_options)
                     .map_err(|e| format!("Failed to create '{entry_name}' in archive: {e}"))?;
                 zip.write_all(&bytes)
                     .map_err(|e| format!("Failed to write '{entry_name}': {e}"))?;
@@ -317,7 +354,7 @@ pub fn save_project_bundle_sync(
             for (img_name, img_data) in imgs {
                 let safe_name = sanitize_file_name(&img_name);
                 let entry_name = format!("visuals/{safe_name}");
-                zip.start_file(&entry_name, options)
+                zip.start_file(&entry_name, image_options)
                     .map_err(|e| format!("Failed to create '{entry_name}' in archive: {e}"))?;
 
                 let bytes = if let Some(comma_pos) = img_data.find(',') {
@@ -361,6 +398,17 @@ pub fn save_project_bundle_sync(
             dest_path.display()
         )
     })?;
+
+    // 6. Clean up empty "visuals" directory beside .foliant if it was created previously
+    if let Some(parent) = dest_path.parent() {
+        let loose_visuals = parent.join("visuals");
+        if loose_visuals.is_dir()
+            && let Ok(mut entries) = fs::read_dir(&loose_visuals)
+            && entries.next().is_none()
+        {
+            let _ = fs::remove_dir(&loose_visuals);
+        }
+    }
 
     Ok(())
 }

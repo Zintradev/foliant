@@ -378,7 +378,6 @@ export function useProjectPersistence({
 
   const loadProject = useCallback(
     (loaded: FoliantProject, filePath: string | null = null) => {
-      console.log(`[useProjectPersistence:loadProject] Loading project "${loaded.title}" (id="${loaded.id}"), filePath="${filePath}"`);
       setCurrentFilePath(filePath);
       setLastSavedAt(filePath ? loaded.lastModified : null);
       setError(null);
@@ -393,7 +392,6 @@ export function useProjectPersistence({
       try {
         const rawVisuals = Array.isArray(loaded.visuals) ? loaded.visuals : [];
         let visuals = rawVisuals.filter((v) => !isCastleOrLegacyArtifact(v));
-        console.log(`[useProjectPersistence:loadProject] rawVisuals in project object: ${rawVisuals.length}`);
 
         // If loaded.visuals in the project was empty, check if this project has cached visuals in localStorage
         if (visuals.length === 0) {
@@ -406,7 +404,6 @@ export function useProjectPersistence({
               if (Array.isArray(parsed) && parsed.length > 0) {
                 const cleanCached = parsed.filter((v) => !isCastleOrLegacyArtifact(v));
                 if (cleanCached.length > 0) {
-                  console.log(`[useProjectPersistence:loadProject] Recovered ${cleanCached.length} visuals from localStorage for id "${loaded.id}"`);
                   visuals = cleanCached;
                 }
               }
@@ -425,14 +422,11 @@ export function useProjectPersistence({
             name,
             sectionId,
           }));
-          console.log(`[useProjectPersistence:loadProject] Saving ${lightweight.length} visual(s) to cacheKey and dispatching foliant-visuals-loaded`);
           localStorage.setItem(getMoodboardCacheKey(loaded.id), JSON.stringify(lightweight));
           localStorage.setItem('foliant_moodboard_cache_v1', JSON.stringify(lightweight));
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('foliant-visuals-loaded', { detail: visuals }));
           }
-        } else {
-          console.log(`[useProjectPersistence:loadProject] No visuals found for project "${loaded.id}". Not dispatching event to avoid wiping.`);
         }
       } catch {
         // ignore storage errors

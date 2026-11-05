@@ -79,11 +79,10 @@ export const DockViewContent = memo(function DockViewContent({
     (visuals: FoliantProject['visuals']) => {
       setProject((prev) => {
         if (prev.visuals === visuals) return prev;
-        return { ...prev, visuals };
+        return { ...prev, visuals, lastModified: Date.now() };
       });
-      setIsDirty(true);
     },
-    [setProject, setIsDirty]
+    [setProject]
   );
 
   switch (tabId) {

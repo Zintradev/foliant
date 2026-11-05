@@ -66,10 +66,6 @@ export function MoodboardBlockComponent({
     handleSectionDrop,
   } = useMoodboardDragDrop({ images, commitImages, uploadFile, visualsDropMode });
 
-  console.log(
-    `[MoodboardBlock:RENDER] images=${images.length}, previewImages=${previewImages.length}, loading=${loading}, projectId="${projectId}", projectFilePath="${projectFilePath}"`
-  );
-
   const registerCard = useFlipAnimation(Boolean(draggedImageId), draggedImageId);
 
   const getSectionLabel = useCallback(
@@ -91,9 +87,7 @@ export function MoodboardBlockComponent({
   const handleFilesSelected = useCallback(
     async (files: File[]) => {
       const targetSec = activeSectionId || 'general';
-      console.log(`[MoodboardBlock] handleFilesSelected: ${files.length} file(s) into section "${targetSec}"`);
       for (const file of files) {
-        console.log(`[MoodboardBlock] Uploading file: "${file.name}" to section "${targetSec}"`);
         await uploadFile(file, targetSec);
       }
     },

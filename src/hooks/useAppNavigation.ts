@@ -39,7 +39,7 @@ export function useAppNavigation({
         handleOpenSearchTab();
         return;
       }
-      if (isDirty && view !== activeMainView) {
+      if (isDirty && view !== activeMainView && activeMainView !== 'moodboard') {
         setPendingNavigationAction(() => () => {
           if (!persistViewFilters) {
             setTimelineFilters({ storyline: 'all', character: 'all' });

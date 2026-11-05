@@ -57,12 +57,9 @@ export function useMoodboardStorage(
   }, []);
 
   const loadInitialImages = useCallback((): ReferenceImage[] => {
-    console.log(`[useMoodboardStorage:loadInitialImages] START for projectId="${projectId}", cacheKey="${cacheKey}"`);
-
     // 1. If parent passes initialVisuals, prioritize them
     if (Array.isArray(initialVisuals) && initialVisuals.length > 0) {
       const cleanInit = initialVisuals.filter((c) => !isCastleOrLegacyArtifact(c));
-      console.log(`[useMoodboardStorage:loadInitialImages] Found ${cleanInit.length} initialVisuals from props`);
       if (cleanInit.length > 0) {
         return cleanInit.map((c) => {
           const normalized = normalizeAssetPath(c.path);
@@ -85,7 +82,6 @@ export function useMoodboardStorage(
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const cleanList = parsed.filter((c: CachedReferenceImage) => !isCastleOrLegacyArtifact(c));
-          console.log(`[useMoodboardStorage:loadInitialImages] Found ${cleanList.length} image(s) in localStorage (${cacheKey})`);
           if (cleanList.length !== parsed.length) {
             localStorage.setItem(cacheKey, JSON.stringify(cleanList));
           }
@@ -113,7 +109,6 @@ export function useMoodboardStorage(
         const parsed = JSON.parse(storedGlobal);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const cleanList = parsed.filter((c: CachedReferenceImage) => !isCastleOrLegacyArtifact(c));
-          console.log(`[useMoodboardStorage:loadInitialImages] Found ${cleanList.length} image(s) in fallback global cache (foliant_moodboard_cache_v1)`);
           return cleanList.map((c: CachedReferenceImage) => {
             const normalized = normalizeAssetPath(c.path);
             const id = c.id || generateStableImageId(c.path);
@@ -131,7 +126,6 @@ export function useMoodboardStorage(
       console.warn(`[useMoodboardStorage:loadInitialImages] Error reading fallback global cache:`, e);
     }
 
-    console.log(`[useMoodboardStorage:loadInitialImages] No images found, returning empty array.`);
     return [];
   }, [cacheKey, initialVisuals, projectId]);
 
@@ -158,20 +152,14 @@ export function useMoodboardStorage(
   const prevProjectIdRef = useRef(projectId);
   useEffect(() => {
     if (prevProjectIdRef.current !== projectId) {
-      console.log(`[useMoodboardStorage:PROJECT_ID_CHANGED] Project ID switched from "${prevProjectIdRef.current}" to "${projectId}"`);
       prevProjectIdRef.current = projectId;
       const initial = loadInitialImages();
-      console.log(`[useMoodboardStorage:PROJECT_ID_CHANGED] loadInitialImages for "${projectId}" returned ${initial.length} image(s)`);
 
       if (initial.length > 0) {
-        console.log(`[useMoodboardStorage:PROJECT_ID_CHANGED] Applying ${initial.length} images from initial load`);
         setImages(initial);
       } else {
         setImages((prev) => {
           if (prev.length > 0) {
-            console.log(
-              `[useMoodboardStorage:PROJECT_ID_CHANGED] New project had 0 images in cache/props, but PRESERVING ${prev.length} image(s) from current view and migrating to cacheKey "${cacheKey}"`
-            );
             try {
               const serializable = prev.map(({ id, path, name, sectionId }) => ({
                 id,
@@ -185,7 +173,6 @@ export function useMoodboardStorage(
             }
             return prev;
           }
-          console.log(`[useMoodboardStorage:PROJECT_ID_CHANGED] No images in current state either, state is empty []`);
           return [];
         });
       }
@@ -198,11 +185,9 @@ export function useMoodboardStorage(
   useEffect(() => {
     if (Array.isArray(initialVisuals) && initialVisuals.length > 0) {
       const cleanInit = initialVisuals.filter((c) => !isCastleOrLegacyArtifact(c));
-      console.log(`[useMoodboardStorage:initialVisuals] Received ${cleanInit.length} initialVisuals prop(s)`);
       if (cleanInit.length > 0) {
         setImages((prev) => {
           if (prev.length === 0) {
-            console.log(`[useMoodboardStorage:initialVisuals] State was empty, populating ${cleanInit.length} image(s) from initialVisuals`);
             return cleanInit.map((c) => {
               const normalized = normalizeAssetPath(c.path);
               const id = c.id || generateStableImageId(c.path);
@@ -215,7 +200,6 @@ export function useMoodboardStorage(
               };
             });
           }
-          console.log(`[useMoodboardStorage:initialVisuals] State already has ${prev.length} image(s), retaining current state`);
           return prev;
         });
       }
@@ -240,7 +224,6 @@ export function useMoodboardStorage(
         name,
         sectionId,
       }));
-      console.log(`[useMoodboardStorage:SYNC_CACHE] Syncing ${serializable.length} image(s) to localStorage key "${cacheKey}"`);
       localStorage.setItem(cacheKey, JSON.stringify(serializable));
     } catch (err) {
       console.error('[useMoodboardStorage] Failed to sync images to localStorage:', err);
@@ -248,7 +231,6 @@ export function useMoodboardStorage(
   }, [images, cacheKey]);
 
   const commitImages = useCallback((updated: ReferenceImage[]) => {
-    console.log(`[useMoodboardStorage:commitImages] Committing ${updated.length} image(s)`);
     setImages(updated);
     try {
       const serializable = updated.map(({ id, path, name, sectionId }) => ({
@@ -266,7 +248,6 @@ export function useMoodboardStorage(
 
   const fetchImages = useCallback(async () => {
     const currentGen = ++fetchGenRef.current;
-    console.log(`[useMoodboardStorage:fetchImages:START] gen=${currentGen}, projectId="${projectId}", projectFilePath="${projectFilePath}"`);
     setLoading(true);
     setErrorMessage(null);
     try {
@@ -297,8 +278,6 @@ export function useMoodboardStorage(
         localStorage.setItem(cacheKey, JSON.stringify(cleanCached));
         cached = cleanCached;
       }
-      console.log(`[useMoodboardStorage:fetchImages] Cached images found: ${cached.length}`);
-
       // If running in a web browser without Tauri native IPC, use cache exclusively
       if (!isTauriApp()) {
         const reconciled: ReferenceImage[] = cached.map((c) => {
@@ -324,13 +303,11 @@ export function useMoodboardStorage(
           ) {
             return prev;
           }
-          console.log(`[useMoodboardStorage:fetchImages:WEB] Updated images: ${reconciled.length}`);
           return reconciled;
         });
         return;
       }
 
-      console.log(`[useMoodboardStorage:fetchImages] Invoking list_reference_images with projectPath="${projectFilePath}", projectId="${projectId}"`);
       const paths = await invoke<string[]>('list_reference_images', {
         projectPath: projectFilePath || null,
         projectId: projectId || null,
@@ -338,10 +315,8 @@ export function useMoodboardStorage(
       const safePaths = (Array.isArray(paths) ? paths : []).filter(
         (p) => !isCastleOrLegacyArtifact({ path: p })
       );
-      console.log(`[useMoodboardStorage:fetchImages] Disk returned ${safePaths.length} image path(s)`);
 
       if (fetchGenRef.current !== currentGen) {
-        console.warn(`[useMoodboardStorage:fetchImages] Stale fetch response discarded (gen ${currentGen} !== ${fetchGenRef.current})`);
         return;
       }
 
@@ -376,12 +351,10 @@ export function useMoodboardStorage(
           ) {
             return prev;
           }
-          console.log(`[useMoodboardStorage:fetchImages] Reconciled and updated ${reconciled.length} images in state`);
           return reconciled;
         });
       } else if (safePaths.length > 0) {
         // Disk has images for this project but cache was empty: adopt disk images
-        console.log(`[useMoodboardStorage:fetchImages] Cache was empty, adopting ${safePaths.length} images from disk`);
         const fromDisk: ReferenceImage[] = safePaths.map((p) => {
           const normalized = normalizeAssetPath(p);
           const id = generateStableImageId(p);
@@ -397,7 +370,6 @@ export function useMoodboardStorage(
       } else {
         // Neither cache nor disk found images.
         // DO NOT wipe out images if state already has images loaded (prevents race condition disappearing images!)
-        console.log(`[useMoodboardStorage:fetchImages] Cache and disk both returned 0 images. Preserving current state.`);
         setImages((prev) => (prev.length > 0 ? prev : []));
       }
     } catch (err) {
@@ -429,7 +401,6 @@ export function useMoodboardStorage(
       }
       setErrorMessage(String(err));
     } finally {
-      console.log(`[useMoodboardStorage:fetchImages:FINALLY] gen=${currentGen}, setting loading=false`);
       setLoading(false);
     }
   }, [cacheKey, projectFilePath, projectId]);
@@ -483,20 +454,16 @@ export function useMoodboardStorage(
 
   const uploadFile = useCallback(
     async (file: File, targetSectionId: string = 'general') => {
-      console.log(`[useMoodboardStorage.uploadFile] START upload for "${file.name}" (${file.type}, ${file.size} bytes), target section: "${targetSectionId}"`);
       setUploading(true);
       setErrorMessage(null);
 
       try {
-        console.log(`[useMoodboardStorage.uploadFile] Reading file via FileReader...`);
         const base64Data = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => {
-            console.log(`[useMoodboardStorage.uploadFile] FileReader loaded successfully, length: ${(reader.result as string)?.length || 0}`);
             resolve(reader.result as string);
           };
-          reader.onerror = (err) => {
-            console.error(`[useMoodboardStorage.uploadFile] FileReader error:`, err);
+          reader.onerror = () => {
             reject(reader.error);
           };
           reader.readAsDataURL(file);
@@ -505,37 +472,24 @@ export function useMoodboardStorage(
         let savedPath: string = file.name;
         if (isTauriApp()) {
           try {
-            console.log(`[useMoodboardStorage.uploadFile] Invoking Tauri save_reference_image_base64...`);
             savedPath = await invoke<string>('save_reference_image_base64', {
               fileName: file.name,
               dataBase64: base64Data,
               projectPath: projectFilePath || null,
               projectId: projectId || null,
             });
-            console.log(`[useMoodboardStorage.uploadFile] Native image saved successfully to path: "${savedPath}"`);
-          } catch (invokeErr) {
-            console.warn(`[useMoodboardStorage.uploadFile] Tauri invoke save_reference_image_base64 failed:`, invokeErr);
+          } catch {
             savedPath = file.name;
           }
-        } else {
-          console.log(`[useMoodboardStorage.uploadFile] Web environment (non-Tauri), using filename: "${file.name}"`);
         }
 
         const newImg = toReferenceImage(savedPath, targetSectionId, base64Data);
-        console.log(`[useMoodboardStorage.uploadFile] Created ReferenceImage:`, {
-          id: newImg.id,
-          name: newImg.name,
-          path: newImg.path,
-          sectionId: newImg.sectionId,
-        });
 
         setImages((prev) => {
           if (prev.some((img) => (img.path === savedPath || img.id === newImg.id) && img.name === file.name)) {
-            console.warn(`[useMoodboardStorage.uploadFile] Image "${file.name}" already exists in state, skipping duplicate.`);
             return prev;
           }
           const updated = [...prev, newImg];
-          console.log(`[useMoodboardStorage.uploadFile] State updated: images count is now ${updated.length}`);
           try {
             const serializable = updated.map(({ id, path, name, sectionId }) => ({
               id,
@@ -545,13 +499,11 @@ export function useMoodboardStorage(
             }));
             localStorage.setItem(cacheKey, JSON.stringify(serializable));
             onUpdateVisualsRef.current?.(serializable);
-            console.log(`[useMoodboardStorage.uploadFile] Saved ${serializable.length} lightweight item(s) to localStorage (${cacheKey})`);
           } catch (storageErr) {
             console.error(`[useMoodboardStorage.uploadFile] Failed to write cache to localStorage:`, storageErr);
           }
           return updated;
         });
-        console.log(`[useMoodboardStorage.uploadFile] SUCCESS upload for "${file.name}"`);
       } catch (err) {
         console.error(`[useMoodboardStorage.uploadFile] ERROR uploading image "${file.name}":`, err);
         setErrorMessage(String(err));

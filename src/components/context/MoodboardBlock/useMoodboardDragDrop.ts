@@ -80,18 +80,13 @@ export function useMoodboardDragDrop({
 
     try {
       const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
-      console.log(`[MoodboardDragDrop] Dropped ${files.length} file(s) onto canvas`);
       const imageFiles = files.filter((f) => f.type.startsWith('image/'));
 
       if (imageFiles.length > 0) {
         const targetSec = dragOverSectionId || 'general';
-        console.log(`[MoodboardDragDrop] Processing ${imageFiles.length} image file(s) into section "${targetSec}"`);
         for (const file of imageFiles) {
-          console.log(`[MoodboardDragDrop] Uploading dropped image: "${file.name}"`);
           await uploadFile(file, targetSec);
         }
-      } else {
-        console.warn('[MoodboardDragDrop] Dropped files contained no image MIME types:', files.map(f => `${f.name} (${f.type})`));
       }
     } catch (error) {
       console.error('[D&D - MoodboardBlock - Canvas Drop Error]', error);

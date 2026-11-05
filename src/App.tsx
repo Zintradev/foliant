@@ -182,18 +182,14 @@ export default function App() {
 
     async function autoLoadLastProject() {
       try {
-        console.log(`[App:autoLoadLastProject] Checking if project file exists at "${validPath}"...`);
         const fileExists = await checkFileExists(validPath);
         if (!fileExists) {
           throw new Error('Project file no longer exists');
         }
-        console.log(`[App:autoLoadLastProject] File exists. Calling executeReadBundle...`);
         const loaded = await executeReadBundle(validPath);
         if (isCancelled) {
-          console.warn(`[App:autoLoadLastProject] Cancelled before loadProject`);
           return;
         }
-        console.log(`[App:autoLoadLastProject] executeReadBundle finished. Title="${loaded.title}", id="${loaded.id}", visuals=${loaded.visuals?.length ?? 0}`);
         loadProjectRef.current(loaded, validPath);
         if (loaded.chapters.length > 0) {
           const firstScene = loaded.chapters.find((c) => c.type === 'scene') ?? loaded.chapters[0];

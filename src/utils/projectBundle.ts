@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { FoliantProject } from '../types/project';
+import { FoliantProject, ProjectVisualItem } from '../types/project';
 import { isTauriApp } from './platform';
 import { getMoodboardCacheKey, isCastleOrLegacyArtifact } from '../components/context/MoodboardBlock/constants';
 
@@ -84,7 +84,18 @@ export async function writeProjectBundle(
     }
 
     if (Array.isArray(payload.visuals)) {
-      payload.visuals = payload.visuals.filter((v) => !isCastleOrLegacyArtifact(v));
+      payload.visuals = payload.visuals
+        .filter((v) => !isCastleOrLegacyArtifact(v))
+        .map((v): ProjectVisualItem => {
+          if (v.path) {
+            const { base64: _, src: _src, ...rest } = v;
+            return {
+              ...rest,
+              src: typeof _src === 'string' && _src.startsWith('data:') ? '' : _src,
+            };
+          }
+          return v;
+        });
     }
 
     await invoke('save_project_bundle', {
