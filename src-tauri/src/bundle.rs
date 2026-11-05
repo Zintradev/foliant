@@ -147,9 +147,7 @@ fn resolve_visual_paths_to_temp(val: &mut serde_json::Value, temp_dir: &Path) {
                         .get("base64")
                         .and_then(|b| b.as_str())
                         .is_none_or(str::is_empty);
-                    if need_base64
-                        && let Ok(bytes) = fs::read(&file_path)
-                    {
+                    if need_base64 && let Ok(bytes) = fs::read(&file_path) {
                         let ext = file_path
                             .extension()
                             .and_then(|e| e.to_str())
