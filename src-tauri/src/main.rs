@@ -382,10 +382,10 @@ async fn delete_reference_image(
 /// Kept from the original implementation.
 #[tauri::command]
 async fn save_chapter_file(path: String, content: String) -> Result<(), String> {
-    if let Some(parent) = Path::new(&path).parent() {
-        if !parent.as_os_str().is_empty() {
-            let _ = fs::create_dir_all(parent);
-        }
+    if let Some(parent) = Path::new(&path).parent()
+        && !parent.as_os_str().is_empty()
+    {
+        let _ = fs::create_dir_all(parent);
     }
     fs::write(&path, content).map_err(|e| format!("Failed to write file to '{path}': {e}"))
 }
