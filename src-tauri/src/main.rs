@@ -201,9 +201,9 @@ async fn save_reference_image_base64(
             &base64::engine::general_purpose::STANDARD,
         );
         let mut buf = Vec::new();
-        decoder.read_to_end(&mut buf).map_err(|e| {
-            format!("Failed to decode base64 image data: {e}")
-        })?;
+        decoder
+            .read_to_end(&mut buf)
+            .map_err(|e| format!("Failed to decode base64 image data: {e}"))?;
         buf
     };
 
@@ -217,9 +217,8 @@ async fn save_reference_image_base64(
         resolve_project_visuals_dir(&app, project_path.as_deref(), project_id.as_deref())?;
     let dest = target_dir.join(&safe_name);
 
-    fs::write(&dest, &bytes).map_err(|e| {
-        format!("Failed to write image '{}': {e}", dest.display())
-    })?;
+    fs::write(&dest, &bytes)
+        .map_err(|e| format!("Failed to write image '{}': {e}", dest.display()))?;
 
     // Also write to project-scoped temp visuals directory
     let safe_proj_id = project_id
