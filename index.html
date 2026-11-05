@@ -55,6 +55,28 @@
       window.location.replace('./app/');
     }
 
+    function updateAppLinks(lang) {
+      document.querySelectorAll('a').forEach(function(a) {
+        var href = a.getAttribute('href');
+        if (href && (href.startsWith('./app') || href.startsWith('/app') || href === './app/' || href === './app')) {
+          a.setAttribute('href', './app/?lang=' + lang);
+          a.href = './app/?lang=' + lang;
+        }
+      });
+    }
+
+    document.addEventListener('click', function(e) {
+      var a = e.target && e.target.closest ? e.target.closest('a') : null;
+      if (a) {
+        var href = a.getAttribute('href') || a.href || '';
+        if (href.indexOf('/app') !== -1 || href.indexOf('./app') !== -1) {
+          var currentLang = document.documentElement.getAttribute('data-lang') || localStorage.getItem('foliant-lang') || 'es';
+          a.setAttribute('href', './app/?lang=' + currentLang);
+          a.href = './app/?lang=' + currentLang;
+        }
+      }
+    }, true);
+
     function setLanguage(lang) {
       document.documentElement.setAttribute('data-lang', lang);
       document.documentElement.setAttribute('lang', lang);
@@ -62,6 +84,7 @@
         localStorage.setItem('foliant-lang', lang);
       } catch (_) { }
       updateLangButtons(lang);
+      updateAppLinks(lang);
     }
 
     function updateLangButtons(lang) {
@@ -98,6 +121,7 @@
     document.addEventListener('DOMContentLoaded', function () {
       const current = document.documentElement.getAttribute('data-lang') || 'es';
       updateLangButtons(current);
+      updateAppLinks(current);
     });
 
     // Dynamically sync version with latest GitHub release without hardcoding

@@ -114,6 +114,7 @@ export const StorylineCard = React.memo(function StorylineCard({
             value={editTitle}
             onChange={(e) => onEditTitleChange(e.target.value)}
             placeholder={t('storylineTitlePlaceholder')}
+            spellCheck={false}
             className="w-full bg-zinc-950 border border-zinc-800 rounded-sm px-2 py-1 text-xs text-zinc-100 focus:outline-none focus:border-zinc-600"
             autoFocus
           />
@@ -171,6 +172,7 @@ export const StorylineCard = React.memo(function StorylineCard({
             onChange={(e) => onEditDescriptionChange(e.target.value)}
             placeholder={t('storylineGoalPlaceholder')}
             rows={2}
+            spellCheck={false}
             className="w-full bg-zinc-950 border border-zinc-800 rounded-sm px-2 py-1 text-xs text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 resize-none font-sans"
           />
         </div>

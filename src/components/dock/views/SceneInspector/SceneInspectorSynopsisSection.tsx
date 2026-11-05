@@ -60,6 +60,7 @@ function SceneInspectorSynopsisSection({
             value={synopsis}
             onChange={onSynopsisChange}
             placeholder={t('synopsisPlaceholder')}
+            spellCheck={false}
             className="w-full bg-zinc-900/80 border border-zinc-800 rounded-sm p-2.5 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 focus:bg-zinc-900 transition leading-relaxed resize-y font-sans min-h-[120px] max-h-[420px] overflow-y-auto"
           />
         </div>

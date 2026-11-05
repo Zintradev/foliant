@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html>
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
@@ -14,6 +14,21 @@
       href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
+
+    <script>
+      /* Immediate language detection on-the-fly matching the website language */
+      (function() {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var qLang = params.get('lang');
+          var pageLang = localStorage.getItem('foliant-lang');
+          var detected = qLang || pageLang || (navigator.language || navigator.userLanguage || '');
+          var effectiveLang = (detected && detected.toLowerCase().startsWith('es')) ? 'es' : 'en';
+          document.documentElement.lang = effectiveLang;
+          document.documentElement.setAttribute('data-lang', effectiveLang);
+        } catch (_) {}
+      })();
+    </script>
 
     <script>
       /* Immediate theme check before rendering to prevent flash in light mode or custom palettes */
@@ -307,13 +322,23 @@
     <script>
       (function() {
         try {
+          var isDesktop = Boolean(
+            window.__TAURI_INTERNALS__ || window.__TAURI__ || window.__TAURI_IPC__
+          );
           var raw = localStorage.getItem('foliant_app_settings_v1') || localStorage.getItem('foliant_color_settings_v1');
-          var lang = 'en';
-          if (raw) {
+          var lang;
+          if (isDesktop && raw) {
             var parsed = JSON.parse(raw);
             if (parsed && parsed.preferences && parsed.preferences.language) {
               lang = parsed.preferences.language;
             }
+          }
+          if (!lang) {
+            var params = new URLSearchParams(window.location.search);
+            var qLang = params.get('lang');
+            var pageLang = localStorage.getItem('foliant-lang');
+            var detected = qLang || pageLang || document.documentElement.lang || (navigator.language || '');
+            lang = (detected && detected.toLowerCase().startsWith('es')) ? 'es' : 'en';
           }
           var statusEl = document.getElementById('foliant-splash-status');
           var splashEl = document.getElementById('foliant-splash');

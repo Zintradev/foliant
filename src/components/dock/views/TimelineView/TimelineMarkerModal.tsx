@@ -82,6 +82,7 @@ function TimelineMarkerModalComponent({
             value={marker.description || ''}
             onChange={(e) => onUpdate({ description: e.target.value })}
             placeholder={t('markerDescriptionPlaceholder')}
+            spellCheck={false}
             className="w-full bg-zinc-900 border border-zinc-800 rounded-xs p-1.5 text-xs text-zinc-200 focus:outline-none focus:border-zinc-600 resize-none"
           />
         </div>

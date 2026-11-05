@@ -150,6 +150,8 @@ export type EditorFontFamily =
   | 'mono'
   | 'bookman';
 
+import { detectDynamicLanguage } from '../i18n/translations';
+
 export type Language = 'en' | 'es';
 export type ThemeMode = 'dark' | 'light' | 'custom';
 
@@ -250,11 +252,38 @@ const STORAGE_KEY = 'foliant_app_settings_v1';
 const LEGACY_COLOR_STORAGE_KEY = 'foliant_color_settings_v1';
 
 export function loadSettings(): AppSettings {
-  if (typeof window === 'undefined') return DEFAULT_APP_SETTINGS;
+  const dynamicLang = detectDynamicLanguage();
+  if (typeof window === 'undefined') {
+    return {
+      ...DEFAULT_APP_SETTINGS,
+      preferences: {
+        ...DEFAULT_PREFERENCES,
+        language: dynamicLang,
+      },
+    };
+  }
   try {
+    const isDesktop = Boolean(
+      (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ ||
+      (window as unknown as { __TAURI__?: unknown }).__TAURI__ ||
+      (window as unknown as { __TAURI_IPC__?: unknown }).__TAURI_IPC__
+    );
     const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_COLOR_STORAGE_KEY);
-    if (!raw) return DEFAULT_APP_SETTINGS;
+    if (!raw) {
+      return {
+        ...DEFAULT_APP_SETTINGS,
+        preferences: {
+          ...DEFAULT_PREFERENCES,
+          language: dynamicLang,
+        },
+      };
+    }
     const parsed = JSON.parse(raw);
+    // Dynamic on-the-fly detection for web mode; persistent preference for native desktop
+    const resolvedLang: Language = !isDesktop
+      ? dynamicLang
+      : (parsed.preferences?.language || dynamicLang);
+
     return {
       roles: { ...DEFAULT_COLOR_SETTINGS.roles, ...(parsed.roles || {}) },
       storylines: { ...DEFAULT_COLOR_SETTINGS.storylines, ...(parsed.storylines || {}) },
@@ -262,6 +291,7 @@ export function loadSettings(): AppSettings {
       preferences: {
         ...DEFAULT_PREFERENCES,
         ...(parsed.preferences || {}),
+        language: resolvedLang,
         customTheme: {
           ...DEFAULT_CUSTOM_THEME,
           ...(parsed.preferences?.customTheme || {}),
@@ -273,7 +303,13 @@ export function loadSettings(): AppSettings {
       },
     };
   } catch {
-    return DEFAULT_APP_SETTINGS;
+    return {
+      ...DEFAULT_APP_SETTINGS,
+      preferences: {
+        ...DEFAULT_PREFERENCES,
+        language: dynamicLang,
+      },
+    };
   }
 }
 

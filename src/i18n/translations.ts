@@ -1756,13 +1756,63 @@ export const dict = {
 
 export type TranslationKey = keyof (typeof dict)['en'];
 
+/**
+ * Dynamic on-the-fly language detection for the web version and initial startup.
+ * 1. Checks URL query param (e.g. ?lang=es / ?lang=en) if present.
+ * 2. Reads document language (document.documentElement.lang or data-lang).
+ * 3. Falls back to navigator.language.
+ * If the detected language starts with 'es' (case-insensitive), returns 'es'; otherwise 'en'.
+ * Strictly does NOT write to localStorage to avoid polluting user cache on web.
+ */
+export function detectDynamicLanguage(): Language {
+  if (typeof window === 'undefined') return 'en';
+  try {
+    // 1. URL search params (e.g. ?lang=es or ?lang=en from web landing links)
+    if (window.location && window.location.search) {
+      const params = new URLSearchParams(window.location.search);
+      const urlLang = params.get('lang');
+      if (urlLang) {
+        return urlLang.toLowerCase().startsWith('es') ? 'es' : 'en';
+      }
+    }
+
+    // 2. Landing page / Website language (stored by the web landing in 'foliant-lang')
+    const pageLang = localStorage.getItem('foliant-lang');
+    if (pageLang && pageLang.trim()) {
+      return pageLang.toLowerCase().startsWith('es') ? 'es' : 'en';
+    }
+
+    // 3. Document language (document.documentElement.lang or attributes)
+    const docLang =
+      document.documentElement?.lang ||
+      document.documentElement?.getAttribute('lang') ||
+      document.documentElement?.getAttribute('data-lang');
+    if (docLang && docLang.trim()) {
+      return docLang.toLowerCase().startsWith('es') ? 'es' : 'en';
+    }
+
+    // 4. Fallback: navigator.language
+    const navLang =
+      typeof navigator !== 'undefined'
+        ? (navigator.language || (navigator as unknown as { userLanguage?: string }).userLanguage || '')
+        : '';
+    if (navLang && navLang.trim()) {
+      return navLang.toLowerCase().startsWith('es') ? 'es' : 'en';
+    }
+  } catch {
+    // Fallback if access fails
+  }
+  return 'en';
+}
+
 export const LanguageContext = createContext<Language>('en');
 
 export const LanguageProvider: React.FC<{
   language?: Language;
   children: React.ReactNode;
-}> = ({ language = 'en', children }) => {
-  return React.createElement(LanguageContext.Provider, { value: language }, children);
+}> = ({ language, children }) => {
+  const effectiveLanguage = language || detectDynamicLanguage();
+  return React.createElement(LanguageContext.Provider, { value: effectiveLanguage }, children);
 };
 
 /**
@@ -1772,7 +1822,7 @@ export const LanguageProvider: React.FC<{
  */
 export function useTranslation(overrideLang?: Language) {
   const contextLang = useContext(LanguageContext);
-  const effectiveLang: Language = overrideLang || contextLang || 'en';
+  const effectiveLang: Language = overrideLang || contextLang || detectDynamicLanguage();
   const currentLang: Language = dict[effectiveLang] ? effectiveLang : 'en';
 
   const t = useCallback(

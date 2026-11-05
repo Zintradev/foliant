@@ -85,6 +85,7 @@ function QuickCharacterModalComponent({
               placeholder={t('briefRolePlaceholder')}
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
+              spellCheck={false}
               className="w-full bg-zinc-900 border border-zinc-800 rounded-xs p-1.5 text-xs text-zinc-200 focus:outline-none focus:border-zinc-600 resize-none"
             />
           </div>

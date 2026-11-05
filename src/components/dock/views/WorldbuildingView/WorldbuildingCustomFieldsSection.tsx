@@ -87,6 +87,7 @@ function WorldbuildingCustomFieldsSectionComponent({
                 }
                 placeholder={`Enter ${field.label.toLowerCase()} details...`}
                 rows={2}
+                spellCheck={false}
                 className="w-full bg-zinc-950/60 border border-zinc-800/80 rounded-xs px-2.5 py-1.5 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 resize-y font-sans leading-relaxed"
               />
             </div>

@@ -51,6 +51,7 @@ export const StorylineAddDrawer = React.memo(function StorylineAddDrawer({
         placeholder={t('storylineTitlePlaceholder')}
         value={newTitle}
         onChange={(e) => onNewTitleChange(e.target.value)}
+        spellCheck={false}
         className="w-full bg-zinc-950 border border-zinc-800 rounded-sm px-2.5 py-1.5 text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
         autoFocus
       />
@@ -146,6 +147,7 @@ export const StorylineAddDrawer = React.memo(function StorylineAddDrawer({
         value={newDescription}
         onChange={(e) => onNewDescriptionChange(e.target.value)}
         rows={2}
+        spellCheck={false}
         className="w-full bg-zinc-950 border border-zinc-800 rounded-sm px-2.5 py-1.5 text-xs text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 resize-none font-sans"
       />
 

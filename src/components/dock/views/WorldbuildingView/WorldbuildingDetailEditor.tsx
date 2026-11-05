@@ -75,6 +75,7 @@ function WorldbuildingDetailEditorComponent({
             else onUpdateActive({ title: e.target.value });
           }}
           placeholder={t('itemNamePlaceholder')}
+          spellCheck={false}
           className="w-full bg-zinc-900/80 border border-zinc-800 rounded-sm px-3 py-2 text-base font-semibold text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 transition"
         />
       </div>
@@ -119,6 +120,7 @@ function WorldbuildingDetailEditorComponent({
                   else onUpdateActive({ category: e.target.value });
                 }}
                 placeholder={t('customCategoryPlaceholder')}
+                spellCheck={false}
                 className="w-full bg-zinc-900 border border-zinc-800 rounded-sm px-3 py-1.5 text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
                 autoFocus
               />
@@ -139,6 +141,7 @@ function WorldbuildingDetailEditorComponent({
           }}
           rows={2}
           placeholder={t('itemSummaryPlaceholder')}
+          spellCheck={false}
           className="w-full bg-zinc-900/80 border border-zinc-800 rounded-sm p-2.5 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 transition leading-relaxed resize-y"
         />
       </div>
@@ -155,6 +158,7 @@ function WorldbuildingDetailEditorComponent({
           }}
           rows={10}
           placeholder={t('itemDescriptionPlaceholder')}
+          spellCheck={false}
           className="w-full bg-zinc-900/80 border border-zinc-800 rounded-sm p-3 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 transition leading-relaxed resize-y font-sans min-h-[180px]"
         />
       </div>

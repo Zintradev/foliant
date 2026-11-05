@@ -136,6 +136,7 @@ export const NovelDetailsSection = memo(function NovelDetailsSection({
                 onChange={handleTitleChange}
                 onBlur={() => setTitleTouched(true)}
                 placeholder={t('novelTitlePlaceholder')}
+                spellCheck={false}
                 className={`w-full px-3 py-2 text-sm rounded-md bg-zinc-900 border text-zinc-100 placeholder-zinc-500 focus:outline-hidden transition ${
                   isTitleInvalid
                     ? 'border-rose-500 ring-1 ring-rose-500/40 focus:border-rose-500'
@@ -176,6 +177,7 @@ export const NovelDetailsSection = memo(function NovelDetailsSection({
                 value={author}
                 onChange={handleAuthorChange}
                 placeholder={t('novelAuthorPlaceholder')}
+                spellCheck={false}
                 className="w-full px-3 py-2 text-sm rounded-md bg-zinc-900 border border-zinc-750 text-zinc-100 placeholder-zinc-500 focus:border-emerald-500 focus:outline-hidden focus:ring-1 focus:ring-emerald-500/40 transition"
               />
               <p className="text-[11px] text-zinc-500">
@@ -204,6 +206,7 @@ export const NovelDetailsSection = memo(function NovelDetailsSection({
                 value={synopsis}
                 onChange={handleSynopsisChange}
                 placeholder={t('novelSynopsisPlaceholder')}
+                spellCheck={false}
                 className="w-full px-3 py-2 text-sm rounded-md bg-zinc-900 border border-zinc-750 text-zinc-100 placeholder-zinc-500 focus:border-emerald-500 focus:outline-hidden focus:ring-1 focus:ring-emerald-500/40 transition resize-y"
               />
               <p className="text-[11px] text-zinc-500">

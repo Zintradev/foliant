@@ -142,6 +142,7 @@ export const StorylineModularFieldsSection = React.memo(
                   }
                   placeholder={`Enter ${field.label.toLowerCase()} details...`}
                   rows={2}
+                  spellCheck={false}
                   className="w-full bg-zinc-900/50 border border-zinc-800/80 rounded-xs px-2 py-1 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 resize-none font-sans leading-relaxed"
                 />
               </div>

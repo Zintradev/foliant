@@ -66,6 +66,7 @@ function FoliantEditorComponent({
       attributes: {
         class:
           'w-full min-h-[450px] bg-transparent leading-relaxed text-base focus:outline-none outline-none',
+        spellcheck: 'false',
       },
     },
     onUpdate: ({ editor: ed }) => {
@@ -129,11 +130,12 @@ function FoliantEditorComponent({
           onChange={(e) => onTitleChange?.(e.target.value)}
           placeholder={t("sceneTitlePlaceholder", "Scene title...")}
           aria-label="Scene Title"
+          spellCheck={false}
           className="w-full text-3xl font-serif font-bold bg-transparent border-b border-current/20 pb-2 text-inherit focus:outline-none placeholder:opacity-40 transition"
         />
       </div>
 
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} spellCheck={false} />
 
       {/* Microsoft Word-like Comprehensive Symbols Modal */}
       <Suspense fallback={null}>

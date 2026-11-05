@@ -329,6 +329,7 @@ function ContextBlockItemComponent({
             ref={titleInputRef}
             defaultValue={block.title}
             autoFocus
+            spellCheck={false}
             onBlur={(e) => commitTitle(e.currentTarget.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') commitTitle(e.currentTarget.value);
@@ -771,6 +772,7 @@ function ContextBlockItemComponent({
                   }}
                   placeholder={t('contextNotesPlaceholder')}
                   rows={10}
+                  spellCheck={false}
                   className="w-full bg-zinc-900 border border-zinc-700 focus:border-emerald-500 rounded-sm p-3 text-xs text-zinc-100 min-h-[260px] sm:min-h-[300px] max-h-[650px] resize-y focus:outline-none transition font-sans leading-relaxed placeholder:text-zinc-600 shadow-inner"
                 />
                 <div className="flex items-center justify-between pt-0.5">
@@ -823,6 +825,7 @@ function ContextBlockItemComponent({
                   }}
                   placeholder={t('oneItemPerLine')}
                   rows={10}
+                  spellCheck={false}
                   className="w-full bg-zinc-900 border border-zinc-700 focus:border-emerald-500 rounded-sm p-3 text-xs text-zinc-100 min-h-[260px] sm:min-h-[300px] max-h-[650px] resize-y focus:outline-none transition font-sans leading-relaxed placeholder:text-zinc-600 shadow-inner"
                 />
                 <div className="flex items-center justify-between pt-0.5">

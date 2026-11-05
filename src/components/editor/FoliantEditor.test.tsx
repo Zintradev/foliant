@@ -78,6 +78,26 @@ describe('FoliantEditor Component', () => {
     expect(screen.getByText('The crown did not fall with a clang.')).toBeInTheDocument();
   });
 
+  it('disables native browser spellCheck on scene title and editor', () => {
+    render(
+      <FoliantEditor
+        chapterId="scene-1"
+        title="Chapter One"
+        content="<p>Sample content</p>"
+        onChange={mockOnChange}
+        onStatusChange={mockOnStatusChange}
+      />
+    );
+
+    const titleInput = screen.getByRole('textbox', { name: 'Scene Title' });
+    expect(titleInput).toHaveAttribute('spellcheck', 'false');
+
+    const proseMirror = document.querySelector('.ProseMirror');
+    if (proseMirror) {
+      expect(proseMirror).toHaveAttribute('spellcheck', 'false');
+    }
+  });
+
   it('switches font family and font size', () => {
     render(
       <FoliantEditor

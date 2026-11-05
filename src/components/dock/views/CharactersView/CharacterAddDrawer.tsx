@@ -33,6 +33,7 @@ export const CharacterAddDrawer = memo(function CharacterAddDrawer({
           placeholder={t('characterNamePlaceholder')}
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
+          spellCheck={false}
           className="bg-zinc-950 border border-zinc-800 rounded-sm px-2.5 py-1.5 text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
           autoFocus
         />
@@ -64,6 +65,7 @@ export const CharacterAddDrawer = memo(function CharacterAddDrawer({
               value={role}
               onChange={(e) => onRoleChange(e.target.value)}
               placeholder={t('customRolePlaceholder')}
+              spellCheck={false}
               className="flex-1 bg-zinc-950 border border-zinc-800 rounded-sm px-2 py-1 text-xs text-zinc-100 focus:outline-none focus:border-zinc-600"
             />
           )}
@@ -74,6 +76,7 @@ export const CharacterAddDrawer = memo(function CharacterAddDrawer({
         value={summary}
         onChange={(e) => onSummaryChange(e.target.value)}
         rows={3}
+        spellCheck={false}
         className="w-full min-h-[72px] bg-zinc-950 border border-zinc-800 rounded-sm px-2.5 py-1.5 text-xs text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 resize-none font-sans leading-relaxed transition-colors"
       />
       <div className="flex items-center justify-end gap-2 pt-1">

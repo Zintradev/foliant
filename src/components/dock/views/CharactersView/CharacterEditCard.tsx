@@ -152,6 +152,7 @@ export const CharacterEditCard = memo(function CharacterEditCard({
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
             placeholder={t('characterNamePlaceholder')}
+            spellCheck={false}
             className="bg-zinc-950 border border-zinc-800 rounded-sm px-2 py-1 text-xs text-zinc-100 focus:outline-none focus:border-zinc-600"
             autoFocus
           />
@@ -180,6 +181,7 @@ export const CharacterEditCard = memo(function CharacterEditCard({
                 value={role}
                 onChange={(e) => onRoleChange(e.target.value)}
                 placeholder={t('customRolePlaceholder')}
+                spellCheck={false}
                 className="flex-1 bg-zinc-950 border border-zinc-800 rounded-sm px-2 py-1 text-xs text-zinc-100 focus:outline-none focus:border-zinc-600"
               />
             )}
@@ -262,6 +264,7 @@ export const CharacterEditCard = memo(function CharacterEditCard({
         onChange={(e) => onSummaryChange(e.target.value)}
         placeholder={t('characterSummaryPlaceholder')}
         rows={2}
+        spellCheck={false}
         className="w-full bg-zinc-950 border border-zinc-800 rounded-sm px-2 py-1 text-xs text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 resize-none font-sans leading-relaxed transition-all duration-200 focus:min-h-[150px]"
       />
 
