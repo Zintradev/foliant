@@ -51,7 +51,6 @@ export function MoodboardBlockComponent({
     dragOverSectionId,
     setDragOverSectionId,
     dragOverImageId,
-    setDragOverImageId,
     dragOverPosition,
     previewImages,
     handleDragOver,

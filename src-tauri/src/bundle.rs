@@ -78,36 +78,37 @@ fn process_visual_paths_for_save(
 
             // Case B: Path is a file on disk
             let p = Path::new(str_val);
-            if p.is_file() {
-                if let Some(ext) = p.extension().and_then(|e| e.to_str()) {
-                    if is_image_extension(ext) {
-                        if let Some(already_mapped) = seen_paths.get(str_val) {
-                            *s = already_mapped.clone();
-                            return;
-                        }
-
-                        let raw_name = p
-                            .file_name()
-                            .and_then(|n| n.to_str())
-                            .unwrap_or("image.png");
-                        let mut safe_name = sanitize_file_name(raw_name);
-                        if safe_name.is_empty() {
-                            safe_name = format!("img_{}.{}", images_to_pack.len(), ext);
-                        }
-
-                        // Avoid name collisions for different source files
-                        if images_to_pack.contains_key(&safe_name)
-                            && images_to_pack.get(&safe_name) != Some(&p.to_path_buf())
-                        {
-                            safe_name = format!("{}_{}", images_to_pack.len(), safe_name);
-                        }
-
-                        let rel_path = format!("visuals/{}", safe_name);
-                        seen_paths.insert(str_val.to_string(), rel_path.clone());
-                        images_to_pack.insert(safe_name, p.to_path_buf());
-                        *s = rel_path;
-                    }
+            if p.is_file()
+                && let Some(ext) = p
+                    .extension()
+                    .and_then(|e| e.to_str())
+                    .filter(|e| is_image_extension(e))
+            {
+                if let Some(already_mapped) = seen_paths.get(str_val) {
+                    *s = already_mapped.clone();
+                    return;
                 }
+
+                let raw_name = p
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("image.png");
+                let mut safe_name = sanitize_file_name(raw_name);
+                if safe_name.is_empty() {
+                    safe_name = format!("img_{}.{}", images_to_pack.len(), ext);
+                }
+
+                // Avoid name collisions for different source files
+                if images_to_pack.contains_key(&safe_name)
+                    && images_to_pack.get(&safe_name) != Some(&p.to_path_buf())
+                {
+                    safe_name = format!("{}_{}", images_to_pack.len(), safe_name);
+                }
+
+                let rel_path = format!("visuals/{}", safe_name);
+                seen_paths.insert(str_val.to_string(), rel_path.clone());
+                images_to_pack.insert(safe_name, p.to_path_buf());
+                *s = rel_path;
             }
         }
         _ => {}
@@ -145,34 +146,34 @@ fn resolve_visual_paths_to_temp(val: &mut serde_json::Value, temp_dir: &Path) {
                     let need_base64 = map
                         .get("base64")
                         .and_then(|b| b.as_str())
-                        .map_or(true, |s| s.is_empty());
-                    if need_base64 {
-                        if let Ok(bytes) = fs::read(&file_path) {
-                            let ext = file_path
-                                .extension()
-                                .and_then(|e| e.to_str())
-                                .map(|e| e.to_lowercase())
-                                .unwrap_or_else(|| "png".to_string());
-                            let mime = match ext.as_str() {
-                                "jpg" | "jpeg" => "image/jpeg",
-                                "png" => "image/png",
-                                "gif" => "image/gif",
-                                "webp" => "image/webp",
-                                "svg" => "image/svg+xml",
-                                "avif" => "image/avif",
-                                "bmp" => "image/bmp",
-                                "ico" => "image/x-icon",
-                                _ => "image/png",
-                            };
-                            use base64::Engine;
-                            let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
-                            let data_url = format!("data:{mime};base64,{b64}");
-                            map.insert(
-                                "base64".to_string(),
-                                serde_json::Value::String(data_url.clone()),
-                            );
-                            map.insert("src".to_string(), serde_json::Value::String(data_url));
-                        }
+                        .is_none_or(str::is_empty);
+                    if need_base64
+                        && let Ok(bytes) = fs::read(&file_path)
+                    {
+                        let ext = file_path
+                            .extension()
+                            .and_then(|e| e.to_str())
+                            .map(|e| e.to_lowercase())
+                            .unwrap_or_else(|| "png".to_string());
+                        let mime = match ext.as_str() {
+                            "jpg" | "jpeg" => "image/jpeg",
+                            "png" => "image/png",
+                            "gif" => "image/gif",
+                            "webp" => "image/webp",
+                            "svg" => "image/svg+xml",
+                            "avif" => "image/avif",
+                            "bmp" => "image/bmp",
+                            "ico" => "image/x-icon",
+                            _ => "image/png",
+                        };
+                        use base64::Engine;
+                        let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+                        let data_url = format!("data:{mime};base64,{b64}");
+                        map.insert(
+                            "base64".to_string(),
+                            serde_json::Value::String(data_url.clone()),
+                        );
+                        map.insert("src".to_string(), serde_json::Value::String(data_url));
                     }
                 }
             }
@@ -235,16 +236,15 @@ pub fn save_project_bundle_sync(
 
     if let Some(chapters) = project.get("chapters").and_then(|c| c.as_array()) {
         for chapter in chapters {
-            if chapter.get("type").and_then(|t| t.as_str()) == Some("scene") {
-                if let Some(id) = chapter.get("id").and_then(|i| i.as_str()) {
-                    if !scene_map.contains_key(id) {
-                        let content = chapter
-                            .get("content")
-                            .and_then(|c| c.as_str())
-                            .unwrap_or_default();
-                        scene_map.insert(id.to_string(), content.to_string());
-                    }
-                }
+            if chapter.get("type").and_then(|t| t.as_str()) == Some("scene")
+                && let Some(id) = chapter.get("id").and_then(|i| i.as_str())
+                && !scene_map.contains_key(id)
+            {
+                let content = chapter
+                    .get("content")
+                    .and_then(|c| c.as_str())
+                    .unwrap_or_default();
+                scene_map.insert(id.to_string(), content.to_string());
             }
         }
     }
@@ -349,11 +349,12 @@ pub fn save_project_bundle_sync(
     let zip_bytes = buffer.into_inner();
     let dest_path = Path::new(file_path);
 
-    if let Some(parent) = dest_path.parent() {
-        if !parent.as_os_str().is_empty() && !parent.exists() {
-            fs::create_dir_all(parent)
-                .map_err(|e| format!("Failed to create directory '{}': {e}", parent.display()))?;
-        }
+    if let Some(parent) = dest_path.parent()
+        && !parent.as_os_str().is_empty()
+        && !parent.exists()
+    {
+        fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create directory '{}': {e}", parent.display()))?;
     }
 
     fs::write(dest_path, &zip_bytes).map_err(|e| {
@@ -478,20 +479,20 @@ pub fn load_project_bundle_sync(file_path: &str) -> Result<serde_json::Value, St
     // 3. Reassemble scene contents into project.chapters
     if let Some(chapters) = project.get_mut("chapters").and_then(|c| c.as_array_mut()) {
         for chapter in chapters {
-            if chapter.get("type").and_then(|t| t.as_str()) == Some("scene") {
-                if let Some(id) = chapter.get("id").and_then(|i| i.as_str()) {
-                    if let Some(loaded_content) = scenes_content.get(id) {
-                        chapter["content"] = serde_json::Value::String(loaded_content.clone());
-                    } else if !chapter
-                        .get("content")
-                        .and_then(|c| c.as_str())
-                        .unwrap_or("")
-                        .is_empty()
-                    {
-                        // Keep preexisting inline content if present
-                    } else {
-                        chapter["content"] = serde_json::Value::String(String::new());
-                    }
+            if chapter.get("type").and_then(|t| t.as_str()) == Some("scene")
+                && let Some(id) = chapter.get("id").and_then(|i| i.as_str())
+            {
+                if let Some(loaded_content) = scenes_content.get(id) {
+                    chapter["content"] = serde_json::Value::String(loaded_content.clone());
+                } else if !chapter
+                    .get("content")
+                    .and_then(|c| c.as_str())
+                    .unwrap_or("")
+                    .is_empty()
+                {
+                    // Keep preexisting inline content if present
+                } else {
+                    chapter["content"] = serde_json::Value::String(String::new());
                 }
             }
         }

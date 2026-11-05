@@ -63,7 +63,7 @@ fn resolve_project_visuals_dir(
     }
 
     let safe_proj_id = project_id
-        .map(|s| bundle::sanitize_file_name(s))
+        .map(bundle::sanitize_file_name)
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| "default".to_string());
 
@@ -290,28 +290,26 @@ async fn list_reference_images(
     // 1. Scan the project's visuals directory (from project_path if any)
     if let Ok(dir) =
         resolve_project_visuals_dir(&app, project_path.as_deref(), project_id.as_deref())
+        && dir.exists()
+        && dir.is_dir()
+        && let Ok(entries) = fs::read_dir(&dir)
     {
-        if dir.exists() && dir.is_dir() {
-            if let Ok(entries) = fs::read_dir(&dir) {
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    if path.is_file() {
-                        let ext = path
-                            .extension()
-                            .and_then(|e| e.to_str())
-                            .map(|e| e.to_lowercase())
-                            .unwrap_or_default();
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() {
+                let ext = path
+                    .extension()
+                    .and_then(|e| e.to_str())
+                    .map(|e| e.to_lowercase())
+                    .unwrap_or_default();
 
-                        if allowed_extensions.contains(&ext.as_str()) {
-                            if let Some(file_name) = path.file_name().and_then(|f| f.to_str()) {
-                                if !seen_filenames.contains(file_name) {
-                                    seen_filenames.insert(file_name.to_string());
-                                    if let Some(s) = path.to_str() {
-                                        paths.push(s.to_string());
-                                    }
-                                }
-                            }
-                        }
+                if allowed_extensions.contains(&ext.as_str())
+                    && let Some(file_name) = path.file_name().and_then(|f| f.to_str())
+                    && !seen_filenames.contains(file_name)
+                {
+                    seen_filenames.insert(file_name.to_string());
+                    if let Some(s) = path.to_str() {
+                        paths.push(s.to_string());
                     }
                 }
             }
@@ -327,26 +325,26 @@ async fn list_reference_images(
     let temp_visuals = std::env::temp_dir()
         .join("foliant_visuals")
         .join(&safe_proj_id);
-    if temp_visuals.exists() && temp_visuals.is_dir() {
-        if let Ok(entries) = fs::read_dir(&temp_visuals) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.is_file() {
-                    let ext = path
-                        .extension()
-                        .and_then(|e| e.to_str())
-                        .map(|e| e.to_lowercase())
-                        .unwrap_or_default();
+    if temp_visuals.exists()
+        && temp_visuals.is_dir()
+        && let Ok(entries) = fs::read_dir(&temp_visuals)
+    {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() {
+                let ext = path
+                    .extension()
+                    .and_then(|e| e.to_str())
+                    .map(|e| e.to_lowercase())
+                    .unwrap_or_default();
 
-                    if allowed_extensions.contains(&ext.as_str()) {
-                        if let Some(file_name) = path.file_name().and_then(|f| f.to_str()) {
-                            if !seen_filenames.contains(file_name) {
-                                seen_filenames.insert(file_name.to_string());
-                                if let Some(s) = path.to_str() {
-                                    paths.push(s.to_string());
-                                }
-                            }
-                        }
+                if allowed_extensions.contains(&ext.as_str())
+                    && let Some(file_name) = path.file_name().and_then(|f| f.to_str())
+                    && !seen_filenames.contains(file_name)
+                {
+                    seen_filenames.insert(file_name.to_string());
+                    if let Some(s) = path.to_str() {
+                        paths.push(s.to_string());
                     }
                 }
             }
