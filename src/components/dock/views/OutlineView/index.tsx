@@ -4,7 +4,6 @@ import {
   Columns2,
   FilePlus,
   FolderPlus,
-  LayoutList,
   Split,
 } from 'lucide-react';
 import React, { memo, useCallback, useState } from 'react';
@@ -15,6 +14,7 @@ import ConfirmDeleteModal from '../../../common/ConfirmDeleteModal';
 import ProjectStatsView from '../ProjectStatsView';
 import { OutlineContextMenu } from './OutlineContextMenu';
 import { OutlineTreeNode } from './OutlineTreeNode';
+import { NovelDetailsSection } from './NovelDetailsSection';
 import { ContextMenuState, LayoutMode, OutlineViewProps, TreeItem } from './types';
 import { useOutlineFolders } from './useOutlineFolders';
 import { useOutlineRename } from './useOutlineRename';
@@ -60,29 +60,29 @@ const OutlineHeader = memo(function OutlineHeader({
           <div className="flex items-center p-0.5 rounded-sm bg-zinc-950 border border-zinc-800 mr-1.5">
             <button
               type="button"
-              onClick={() => onLayoutModeChange('1col')}
-              title={t('oneColumnTooltip')}
+              onClick={() => onLayoutModeChange('details')}
+              title={t('novelDetailsTooltip')}
               className={`flex items-center gap-1 px-2 py-0.5 rounded-xs text-[10px] font-mono transition cursor-pointer ${
-                layoutMode === '1col'
+                layoutMode === 'details' || layoutMode === '1col'
                   ? 'bg-zinc-800 text-zinc-100 font-medium shadow-xs'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              <LayoutList className="w-3 h-3" />
-              <span>{t('oneColumn')}</span>
+              <BookOpen className="w-3 h-3" />
+              <span>{t('novelDetails')}</span>
             </button>
             <button
               type="button"
-              onClick={() => onLayoutModeChange('2col')}
-              title={t('twoColumnsTooltip')}
+              onClick={() => onLayoutModeChange('main')}
+              title={t('mainViewTooltip')}
               className={`flex items-center gap-1 px-2 py-0.5 rounded-xs text-[10px] font-mono transition cursor-pointer ${
-                layoutMode === '2col'
+                layoutMode === 'main' || layoutMode === '2col'
                   ? 'bg-zinc-800 text-zinc-100 font-medium shadow-xs'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
               <Columns2 className="w-3 h-3" />
-              <span>{t('twoColumns')}</span>
+              <span>{t('mainView')}</span>
             </button>
             <button
               type="button"
@@ -193,9 +193,16 @@ export function OutlineViewComponent({
   isExpanded = false,
   storylines = [],
   onDirtyChange,
+  projectTitle = '',
+  projectAuthor = '',
+  projectSynopsis = '',
+  projectCover,
+  projectCoverFileName,
+  currentFilePath,
+  onUpdateProjectMetadata,
 }: OutlineViewProps) {
   const { t } = useTranslation();
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>('1col');
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>('main');
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [nodePendingDelete, setNodePendingDelete] = useState<TextNode | null>(null);
 
@@ -342,7 +349,17 @@ export function OutlineViewComponent({
       />
 
       {/* Main Content Area */}
-      {tree.length === 0 ? (
+      {isExpanded && (layoutMode === 'details' || layoutMode === '1col') ? (
+        <NovelDetailsSection
+          title={projectTitle}
+          author={projectAuthor}
+          synopsis={projectSynopsis}
+          cover={projectCover}
+          coverFileName={projectCoverFileName}
+          currentFilePath={currentFilePath}
+          onUpdateMetadata={onUpdateProjectMetadata}
+        />
+      ) : tree.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-zinc-500 gap-2">
           <BookOpen className="w-8 h-8 text-zinc-600" />
           <p className="text-xs font-medium text-zinc-400 max-w-xs leading-relaxed">
@@ -350,19 +367,13 @@ export function OutlineViewComponent({
           </p>
         </div>
       ) : isExpanded ? (
-        layoutMode === '1col' ? (
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="max-w-3xl mx-auto space-y-1">
-              {tree.map((item) => renderTreeNode(item, true))}
-            </div>
-          </div>
-        ) : layoutMode === '2col' ? (
+        layoutMode === 'main' || layoutMode === '2col' ? (
           <div className="flex-1 overflow-y-auto p-6">
             <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              <div className="space-y-1 p-3 rounded-sm border border-zinc-850/80 bg-zinc-900/20">
+              <div className="space-y-1 p-3 rounded-sm border border-zinc-855/80 bg-zinc-900/20">
                 {leftRoots.map((item) => renderTreeNode(item, true))}
               </div>
-              <div className="space-y-1 p-3 rounded-sm border border-zinc-850/80 bg-zinc-900/20">
+              <div className="space-y-1 p-3 rounded-sm border border-zinc-855/80 bg-zinc-900/20">
                 {rightRoots.map((item) => renderTreeNode(item, true))}
               </div>
             </div>
@@ -412,7 +423,8 @@ export function OutlineViewComponent({
       />
 
       {/* Quick Add Footer button */}
-      {(!isExpanded || layoutMode !== 'split') && (
+      {(!isExpanded ||
+        (layoutMode !== 'split' && layoutMode !== 'details' && layoutMode !== '1col')) && (
         <div className="p-2 border-t border-zinc-800 bg-zinc-950/80 flex items-center gap-1.5 shrink-0">
           <button
             type="button"

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Search, X, Feather, CornerDownLeft, FileText, Layers } from 'lucide-react';
 import { FoliantProject } from '../../types/project';
 import { useGlobalSearch, SearchScope, SearchResult } from '../../hooks/useGlobalSearch';
+import { useTranslation } from '../../i18n/translations';
 
 import { renderHighlightedSnippet } from '../../utils/searchHighlight';
 
@@ -21,6 +22,7 @@ export default function GlobalSearchModal({
   activeSceneId,
   onSelectResult,
 }: GlobalSearchModalProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [scope, setScope] = useState<SearchScope>('global');
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
@@ -100,7 +102,7 @@ export default function GlobalSearchModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Global Omnisearch"
+      aria-label={t('omnisearchTitle')}
       className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-start justify-center pt-16 sm:pt-20 p-4 animate-in fade-in duration-150"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -119,7 +121,7 @@ export default function GlobalSearchModal({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search across project (Ctrl+Shift+F)..."
+            placeholder={t('searchPlaceholderOmni')}
             className="flex-1 bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
           />
 
@@ -129,19 +131,19 @@ export default function GlobalSearchModal({
             <select
               value={scope}
               onChange={(e) => setScope(e.target.value as SearchScope)}
-              aria-label="Search Scope"
+              aria-label={t('searchScope')}
               className="bg-zinc-800 border border-zinc-700/80 rounded-md text-xs text-zinc-200 px-2 py-1 focus:outline-none focus:border-emerald-500 cursor-pointer"
             >
-              <option value="global">Global</option>
-              <option value="current_folder">Current Folder</option>
-              <option value="current_scene">Current Scene</option>
+              <option value="global">{t('scopeGlobal')}</option>
+              <option value="current_folder">{t('scopeFolder')}</option>
+              <option value="current_scene">{t('scopeScene')}</option>
             </select>
           </div>
 
           {/* Close Button */}
           <button
             onClick={onClose}
-            title="Close (Esc)"
+            title={t('escDismiss')}
             className="p-1 hover:bg-zinc-800 rounded-md text-zinc-400 hover:text-zinc-200 transition"
           >
             <X className="w-4 h-4" />
@@ -154,18 +156,18 @@ export default function GlobalSearchModal({
             {query.trim() ? (
               <>
                 <strong className="text-zinc-200">{results.length}</strong>{' '}
-                {results.length === 1 ? 'match' : 'matches'} found
+                {results.length === 1 ? t('matchSingle') : t('matchMultiple')}
               </>
             ) : (
-              'Type to search project...'
+              t('typeToSearch')
             )}
           </span>
           <div className="flex items-center gap-3 text-[10px] text-zinc-500">
-            <span>↑↓ Navigate</span>
+            <span>↑↓ {t('navArrows')}</span>
             <span className="flex items-center gap-1">
-              <CornerDownLeft className="w-2.5 h-2.5" /> Select
+              <CornerDownLeft className="w-2.5 h-2.5" /> {t('selectItem')}
             </span>
-            <span>Esc Dismiss</span>
+            <span>{t('escDismiss')}</span>
           </div>
         </div>
 
@@ -177,9 +179,9 @@ export default function GlobalSearchModal({
           {query.trim() && results.length === 0 && (
             <div className="py-12 flex flex-col items-center justify-center text-center text-zinc-500">
               <FileText className="w-8 h-8 mb-2 text-zinc-600 opacity-60" />
-              <p className="text-sm font-medium text-zinc-400">No matching text found</p>
+              <p className="text-sm font-medium text-zinc-400">{t('noMatchingText')}</p>
               <p className="text-xs text-zinc-500 mt-1">
-                Try searching with another word or adjust the scope to Global.
+                {t('searchNoMatchesHint')}
               </p>
             </div>
           )}
@@ -187,9 +189,9 @@ export default function GlobalSearchModal({
           {!query.trim() && (
             <div className="py-12 flex flex-col items-center justify-center text-center text-zinc-500">
               <Search className="w-8 h-8 mb-2 text-zinc-600 opacity-60" />
-              <p className="text-sm font-medium text-zinc-400">Omnisearch across your novel</p>
+              <p className="text-sm font-medium text-zinc-400">{t('omnisearchTitle')}</p>
               <p className="text-xs text-zinc-500 mt-1">
-                Searches scenes, dialogue, and prose instantly with contextual preview.
+                {t('omnisearchDesc')}
               </p>
             </div>
           )}
@@ -217,7 +219,7 @@ export default function GlobalSearchModal({
                   </div>
                   {isSelected && (
                     <span className="text-[10px] text-zinc-400 font-mono flex items-center gap-1 shrink-0">
-                      Jump <CornerDownLeft className="w-2.5 h-2.5 text-emerald-400" />
+                      {t('jumpToScene')} <CornerDownLeft className="w-2.5 h-2.5 text-emerald-400" />
                     </span>
                   )}
                 </div>

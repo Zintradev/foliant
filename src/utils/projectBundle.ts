@@ -47,6 +47,10 @@ export function normalizeLoadedProject(data: unknown): FoliantProject {
         }))
       : [],
     visuals: Array.isArray(raw.visuals) ? raw.visuals : [],
+    author: typeof raw.author === 'string' ? raw.author : '',
+    synopsis: typeof raw.synopsis === 'string' ? raw.synopsis : '',
+    cover: typeof raw.cover === 'string' ? raw.cover : undefined,
+    coverFileName: typeof raw.coverFileName === 'string' ? raw.coverFileName : undefined,
   };
 }
 

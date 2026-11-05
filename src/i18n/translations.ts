@@ -570,6 +570,8 @@ export const dict = {
     projectOutline: 'Project Outline',
     oneColumn: '1 Column',
     twoColumns: '2 Columns',
+    mainView: 'Main View',
+    novelDetails: 'Details',
     splitView: 'Split View',
     addNewScene: 'Add New Scene',
     addNewFolder: 'Add New Folder',
@@ -712,7 +714,145 @@ export const dict = {
     // Outline layout tooltips
     oneColumnTooltip: '1 Column View (Centered Tree)',
     twoColumnsTooltip: '2 Columns View (Widescreen Tree)',
+    mainViewTooltip: 'Main View (2 Columns Tree)',
+    novelDetailsTooltip: 'Novel Details (Title, Author, Synopsis, Cover)',
     splitViewTooltip: 'Split View (Outline + Stats)',
+    novelTitle: 'Novel Title',
+    novelTitleRequired: 'Novel title is required (matches project file name)',
+    author: 'Author',
+    synopsis: 'Synopsis',
+    coverImage: 'Cover Image',
+    coverReady: 'Cover Ready',
+    changeCover: 'Change image',
+    removeCover: 'Remove cover',
+    dropCoverHere: 'Click or drag and drop your book cover here',
+    dropCoverHint: 'Supports JPEG, PNG, WEBP',
+    hidePanel: 'Hide Panel',
+    closeSideDock: 'Close Sidebar',
+
+    // Novel Details
+    novelDetailsDescription: 'Configure the primary metadata for your manuscript. The novel title is required and matches the project and .foliant file name.',
+    novelTitlePlaceholder: 'Novel Title (e.g. The Name of the Wind)',
+    novelTitleHint: 'This title defines the file name and the project header.',
+    novelAuthorPlaceholder: 'Author name or pen name',
+    novelAuthorHint: 'Included in export credits and digital cover metadata.',
+    novelSynopsisPlaceholder: 'Synopsis, premise, or central plot of the novel...',
+    novelSynopsisHint: 'Describe the premise of the novel for quick reference during writing.',
+    novelCoverAlt: 'Book cover preview',
+    invalidImageAlert: 'Please select an image file (JPEG, PNG, WEBP, etc.)',
+
+    // EPUB Export Modal & Result
+    exportSuccessful: 'Export Successful!',
+    exportSuccessfulDesc: 'Your digital manuscript has been packaged into standard EPUB format.',
+    byAuthor: 'by {0}',
+    exportScenesCount: '{0} scenes',
+    withCover: 'With Cover',
+    formatSubFoldersLabel: 'Acts & Chapters',
+    formatTopFoldersLabel: 'Main Chapters',
+    formatFlattenLabel: 'Continuous Text',
+    savedLocation: 'Saved File Location',
+    copyPath: 'Copy path to clipboard',
+    showInFolder: 'Show in Folder',
+    exportError: 'Export Error',
+    exportErrorDesc: 'Could not complete EPUB file generation.',
+    bookTitle: 'Book Title',
+    authorName: 'Author Name',
+    publisherYear: 'Publisher / Year',
+    bookLanguage: 'Book Language',
+    hyphenationNote: 'Enables native dictionary hyphenation on Kindle and e-readers.',
+    readingTarget: 'Reading Target / Profile',
+    profileStandard: 'Standard EPUB (Apple Books, Kobo, Thorium)',
+    profileAmazon: 'Amazon Ecosystem (Kindle, Calibre to AZW3)',
+    profileStandardDesc: 'Maintains standard EPUB vertical rhythm and spacing (line-height 1.4, margin-bottom 0.5em).',
+    profileAmazonDesc: 'Purges line-height and vertical margins on paragraphs to prevent large gaps on Kindle.',
+    includeVisualToc: 'Include visual Table of Contents page',
+    visualTocDesc: 'Generates a visual TOC page (toc.xhtml) at the start of the book. If unchecked, system navigation files (toc.ncx & nav.xhtml) remain fully intact for native e-reader menus.',
+    chapterFormatting: 'Chapter Formatting',
+    structuralNesting: 'Structural Nesting',
+    formattingTopFolders: 'Treat top Folders as Chapters (Bundle child scenes)',
+    formattingSubFolders: 'Treat sub-folders as Chapters (Root folders act as Parts)',
+    formattingFlatten: 'Flatten all (Sequential scenes separated by dividers)',
+    formattingTopFoldersDesc: 'Each top-level folder becomes an individual book chapter with its own page-break and TOC entry.',
+    formattingSubFoldersDesc: 'Root folders generate major Part/Act dividers. Child subfolders generate individual Chapters with nested TOC.',
+    formattingFlattenDesc: 'Exports only the selected scenes in chronological order into a unified narrative flow, separated by asterisks.',
+    projectContentTree: 'Project Content Tree',
+    selectAll: 'Select All',
+    deselectAll: 'Deselect All',
+    expandAll: 'Expand All',
+    collapseAll: 'Collapse All',
+    noChaptersFound: 'No chapters or scenes found in this project.',
+    metadataAndCover: 'Metadata & Cover',
+    contentSelection: 'Content Selection',
+    coverManifestNote: 'Will be generated as the first page (cover.xhtml) and declared in the OPF manifest.',
+    coverDropHintDetailed: 'Supports JPEG, PNG, WEBP (Recommended: 1600 × 2560 px)',
+    exportToEpubTitle: 'Export to EPUB',
+    exportToEpubDesc: 'Configure book metadata, selective contents, and chapter nesting',
+    scenesSelectedCount: '{0} of {1} scenes selected ({2} words)',
+    selectAtLeastOneScene: 'Please select at least one scene to export',
+    exportingEpub: 'Exporting EPUB...',
+    exportEpubBtn: 'Export EPUB',
+
+    // Search & Navigation
+    searchScope: 'Search Scope',
+    scopeGlobal: 'Global',
+    scopeFolder: 'Current Folder',
+    scopeScene: 'Current Scene',
+    typeToSearch: 'Type to search...',
+    noMatchingText: 'No matching text found',
+    searchPlaceholderOmni: 'Search across project (Ctrl+Shift+F)...',
+    searchPlaceholderDock: 'Search project (Ctrl+Shift+F)...',
+    omnisearchTitle: 'Omnisearch across your novel',
+    omnisearchDesc: 'Searches scenes, dialogue, and prose instantly with contextual preview.',
+    escDismiss: 'Esc to dismiss',
+    jumpToScene: 'Jump',
+    clickToJump: 'Click to jump',
+    matchSingle: 'match',
+    matchMultiple: 'matches',
+    searchNoMatchesHint: 'Try searching with another word or change the scope to Global.',
+    searchYourProject: 'Search your project',
+    searchProjectHint: 'Find occurrences across scenes with instant preview and jump.',
+    clearSearch: 'Clear search',
+    navArrows: 'Navigate',
+    selectItem: 'Select',
+
+    // Empty Dock Strips
+    emptyTopStrip: 'Empty Top Strip',
+    emptyBottomStrip: 'Empty Bottom Strip',
+    emptyPanel: 'Empty Panel',
+    emptyTopStripHint: 'Click + above or drag tabs here.',
+    emptyBottomStripHint: 'Click + above or drag tabs here to view side by side.',
+    emptyPanelHint: 'Click + above or drag any tab header here to dock it in this panel.',
+
+    // Relationship Graph & Modals
+    createConnection: 'Create Connection',
+    connectionFrom: 'From',
+    connectionTo: 'To',
+    connectionLabel: 'Label',
+    connectionLabelPlaceholder: 'e.g. Sworn Brothers, Nemesis...',
+    connectionStyle: 'Style',
+    flowDirection: 'Flow Direction',
+    nodeName: 'Node Name',
+    defineCharacterConnection: 'Define Character Connection',
+    unionNode: 'Union Node',
+    unionNodeInspector: 'Union Node Inspector',
+    nodeNamePlaceholder: 'e.g. Stark-Tully Union, Northern Alliance',
+    linkedStoryline: 'Linked Storyline / Plot Thread',
+    noStoryline: 'No Storyline (Independent)',
+
+    // Editor Toolbar & Symbols
+    underline: 'Underline (Ctrl+U)',
+    highlight: 'Highlight',
+    highlightColor: 'Highlight Color',
+    underlineColor: 'Underline Color',
+    highlightColorPalette: 'Highlight Color Palette',
+    underlineColorPalette: 'Underline Color Palette',
+    pickExactCustomColor: 'Pick exact custom color',
+    recentlyUsedSymbols: 'Recently Used Symbols',
+    clickToInsertDirectly: 'Click to insert directly',
+    insert: 'Insert',
+    insertSymbol: 'Insert Symbol (Word Palette)',
+    noSymbolsMatching: 'No symbols matching "{0}"',
+    searchSymbolPlaceholder: 'Search symbol by name, character or unicode...',
 
     // Timeline Attach Dropdown
     attachCharacter: 'Character',
@@ -1304,6 +1444,8 @@ export const dict = {
     projectOutline: 'Esquema del Proyecto',
     oneColumn: '1 Columna',
     twoColumns: '2 Columnas',
+    mainView: 'Vista principal',
+    novelDetails: 'Detalles',
     splitView: 'Vista Dividida',
     addNewScene: 'Añadir Nueva Escena',
     addNewFolder: 'Añadir Nueva Carpeta',
@@ -1446,7 +1588,145 @@ export const dict = {
     // Outline layout tooltips
     oneColumnTooltip: 'Vista de 1 columna (árbol centrado)',
     twoColumnsTooltip: 'Vista de 2 columnas (árbol panorámico)',
+    mainViewTooltip: 'Vista principal (árbol en 2 columnas)',
+    novelDetailsTooltip: 'Detalles y ficha de la novela (título, autor, sinopsis, portada)',
     splitViewTooltip: 'Vista dividida (Esquema + Métricas)',
+    novelTitle: 'Nombre de la novela',
+    novelTitleRequired: 'El nombre de la novela es obligatorio (coincide con el archivo .foliant)',
+    author: 'Autor',
+    synopsis: 'Sinopsis',
+    coverImage: 'Portada',
+    coverReady: 'Portada lista',
+    changeCover: 'Cambiar imagen',
+    removeCover: 'Eliminar portada',
+    dropCoverHere: 'Haz clic o arrastra aquí la portada de la novela',
+    dropCoverHint: 'Formatos admitidos: JPEG, PNG, WEBP',
+    hidePanel: 'Ocultar panel',
+    closeSideDock: 'Cerrar panel lateral',
+
+    // Novel Details
+    novelDetailsDescription: 'Configura los metadatos principales de tu obra. El nombre de la novela es obligatorio y coincide con el título del proyecto y del archivo .foliant.',
+    novelTitlePlaceholder: 'Título de la novela (ej. El Nombre del Viento)',
+    novelTitleHint: 'Este título define la denominación del archivo y la cabecera del proyecto.',
+    novelAuthorPlaceholder: 'Nombre del autor, autora o seudónimo',
+    novelAuthorHint: 'Se incluirá en los créditos de exportación y la portada digital.',
+    novelSynopsisPlaceholder: 'Resumen o sinopsis argumental de la obra...',
+    novelSynopsisHint: 'Describe la premisa de la novela para consultar rápidamente durante la escritura.',
+    novelCoverAlt: 'Portada de la novela',
+    invalidImageAlert: 'Por favor, selecciona un archivo de imagen válido (JPEG, PNG o WebP).',
+
+    // EPUB Export Modal & Result
+    exportSuccessful: '¡Exportación Exitosa!',
+    exportSuccessfulDesc: 'Tu manuscrito digital ha sido empaquetado en formato EPUB estándar.',
+    byAuthor: 'por {0}',
+    exportScenesCount: '{0} escenas',
+    withCover: 'Con Portada',
+    formatSubFoldersLabel: 'Actos y Capítulos',
+    formatTopFoldersLabel: 'Capítulos Principales',
+    formatFlattenLabel: 'Texto Continuo',
+    savedLocation: 'Archivo Guardado En',
+    copyPath: 'Copiar ruta al portapapeles',
+    showInFolder: 'Mostrar en carpeta',
+    exportError: 'Error de Exportación',
+    exportErrorDesc: 'No se pudo completar la generación del archivo EPUB.',
+    bookTitle: 'Título del libro',
+    authorName: 'Nombre del autor/a',
+    publisherYear: 'Editorial o Año (Publisher / Year)',
+    bookLanguage: 'Idioma del libro',
+    hyphenationNote: 'Habilita la separación silábica por diccionario en Kindle y lectores electrónicos.',
+    readingTarget: 'Destino de Lectura',
+    profileStandard: 'EPUB Estándar (Apple Books, Kobo, Thorium)',
+    profileAmazon: 'Ecosistema Amazon (Kindle, Calibre a AZW3)',
+    profileStandardDesc: 'Mantiene el espaciado y ritmo vertical estándar de EPUB (line-height 1.4, margin-bottom 0.5em).',
+    profileAmazonDesc: 'Purga line-height y márgenes verticales en párrafos para evitar huecos en Kindle.',
+    includeVisualToc: 'Incluir página de Índice visual',
+    visualTocDesc: 'Genera una página visual de tabla de contenidos (toc.xhtml) al inicio del libro. Si se desmarca, se omite esta página en la lectura, manteniendo intactos los archivos de navegación del sistema (toc.ncx y nav.xhtml) para los menús de navegación nativos del e-reader.',
+    chapterFormatting: 'Estructura de Capítulos',
+    structuralNesting: 'Jerarquía estructural',
+    formattingTopFolders: 'Carpetas principales como Capítulos (agrupar escenas hijas)',
+    formattingSubFolders: 'Subcarpetas como Capítulos (carpetas raíz como Partes)',
+    formattingFlatten: 'Aplanar todo (escenas secuenciales con separadores)',
+    formattingTopFoldersDesc: 'Cada carpeta superior se convierte en un capítulo individual con salto de página y entrada en el índice.',
+    formattingSubFoldersDesc: 'Las carpetas raíz generan divisiones de Parte/Acto. Las subcarpetas generan capítulos con índice anidado.',
+    formattingFlattenDesc: 'Exporta solo las escenas seleccionadas en orden cronológico en un flujo narrativo unificado, separadas por asteriscos.',
+    projectContentTree: 'Árbol de contenido del proyecto',
+    selectAll: 'Seleccionar todo',
+    deselectAll: 'Deseleccionar todo',
+    expandAll: 'Expandir todo',
+    collapseAll: 'Contraer todo',
+    noChaptersFound: 'No se encontraron capítulos ni escenas en este proyecto.',
+    metadataAndCover: 'Metadatos y Portada',
+    contentSelection: 'Selección de Contenido',
+    coverManifestNote: 'Se generará como primera página (cover.xhtml) y se declarará en el manifiesto OPF.',
+    coverDropHintDetailed: 'Formatos admitidos: JPEG, PNG, WEBP (Recomendado: 1600 × 2560 px)',
+    exportToEpubTitle: 'Exportar a EPUB',
+    exportToEpubDesc: 'Configura los metadatos de la obra, el contenido selectivo y la jerarquía de capítulos',
+    scenesSelectedCount: '{0} de {1} escenas seleccionadas ({2} palabras)',
+    selectAtLeastOneScene: 'Por favor, selecciona al menos una escena para exportar',
+    exportingEpub: 'Exportando EPUB...',
+    exportEpubBtn: 'Exportar EPUB',
+
+    // Search & Navigation
+    searchScope: 'Ámbito de búsqueda',
+    scopeGlobal: 'Global',
+    scopeFolder: 'Carpeta actual',
+    scopeScene: 'Escena actual',
+    typeToSearch: 'Escribe para buscar...',
+    noMatchingText: 'No se encontraron coincidencias',
+    searchPlaceholderOmni: 'Buscar en todo el proyecto (Ctrl+Shift+F)...',
+    searchPlaceholderDock: 'Buscar en el proyecto (Ctrl+Shift+F)...',
+    omnisearchTitle: 'Búsqueda global en tu novela',
+    omnisearchDesc: 'Busca escenas, diálogos y texto al instante con vista previa contextual.',
+    escDismiss: 'Esc para cerrar',
+    jumpToScene: 'Ir',
+    clickToJump: 'Clic para ir',
+    matchSingle: 'coincidencia',
+    matchMultiple: 'coincidencias',
+    searchNoMatchesHint: 'Prueba buscando con otra palabra o cambia el ámbito a Global.',
+    searchYourProject: 'Busca en tu proyecto',
+    searchProjectHint: 'Encuentra apariciones en todas las escenas con vista previa y salto inmediato.',
+    clearSearch: 'Borrar búsqueda',
+    navArrows: 'Navegar',
+    selectItem: 'Seleccionar',
+
+    // Empty Dock Strips
+    emptyTopStrip: 'Panel superior vacío',
+    emptyBottomStrip: 'Panel inferior vacío',
+    emptyPanel: 'Panel vacío',
+    emptyTopStripHint: 'Haz clic en + arriba o arrastra pestañas aquí.',
+    emptyBottomStripHint: 'Haz clic en + arriba o arrastra pestañas aquí para verlas en paralelo.',
+    emptyPanelHint: 'Haz clic en + arriba o arrastra cualquier pestaña para fijarla en este panel.',
+
+    // Relationship Graph & Modals
+    createConnection: 'Crear conexión',
+    connectionFrom: 'Desde',
+    connectionTo: 'Hacia',
+    connectionLabel: 'Etiqueta',
+    connectionLabelPlaceholder: 'ej. Hermanos de armas, Némesis...',
+    connectionStyle: 'Estilo',
+    flowDirection: 'Dirección del flujo',
+    nodeName: 'Nombre del nodo',
+    defineCharacterConnection: 'Definir Conexión de Personajes',
+    unionNode: 'Nodo de Unión',
+    unionNodeInspector: 'Inspector de Nodo de Unión',
+    nodeNamePlaceholder: 'ej. Unión Stark-Tully, Alianza del Norte',
+    linkedStoryline: 'Trama o Hilo Argumental Vinculado',
+    noStoryline: 'Sin Trama (Independiente)',
+
+    // Editor Toolbar & Symbols
+    underline: 'Subrayado (Ctrl+U)',
+    highlight: 'Resaltado',
+    highlightColor: 'Color de resaltado',
+    underlineColor: 'Color de subrayado',
+    highlightColorPalette: 'Paleta de colores de resaltado',
+    underlineColorPalette: 'Paleta de colores de subrayado',
+    pickExactCustomColor: 'Seleccionar color personalizado exacto',
+    recentlyUsedSymbols: 'Símbolos usados recientemente',
+    clickToInsertDirectly: 'Haz clic para insertar directamente',
+    insert: 'Insertar',
+    insertSymbol: 'Insertar símbolo (Paleta de caracteres)',
+    noSymbolsMatching: 'No hay símbolos que coincidan con "{0}"',
+    searchSymbolPlaceholder: 'Buscar símbolo por nombre, carácter o unicode...',
 
     // Timeline Attach Dropdown
     attachCharacter: 'Personaje',
@@ -1494,13 +1774,34 @@ export function useTranslation(overrideLang?: Language) {
   const currentLang: Language = dict[effectiveLang] ? effectiveLang : 'en';
 
   const t = useCallback(
-    (key: TranslationKey | string, fallback?: string): string => {
-      return (
+    (
+      key: TranslationKey | string,
+      fallbackOrParams?: string | (string | number)[],
+      params?: (string | number)[]
+    ): string => {
+      let fallback: string | undefined;
+      let interpolationArgs: (string | number)[] | undefined;
+
+      if (Array.isArray(fallbackOrParams)) {
+        interpolationArgs = fallbackOrParams;
+      } else {
+        fallback = fallbackOrParams;
+        interpolationArgs = params;
+      }
+
+      let template =
         (dict[currentLang] as Record<string, string>)?.[key] ||
         (dict.en as Record<string, string>)?.[key] ||
         fallback ||
-        key
-      );
+        key;
+
+      if (interpolationArgs && interpolationArgs.length > 0) {
+        interpolationArgs.forEach((val, idx) => {
+          template = template.replace(new RegExp(`\\{${idx}\\}`, 'g'), String(val));
+        });
+      }
+
+      return template;
     },
     [currentLang]
   );

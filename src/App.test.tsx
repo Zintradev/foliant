@@ -132,6 +132,8 @@ describe('App Component', () => {
   const mockOpen = vi.mocked(open);
 
   beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
     sessionStorage.setItem('foliant_welcome_answered', 'true');
     localStorage.setItem('foliant_first_run_completed', 'true');
     localStorage.setItem('foliant_welcome_completed', 'true');

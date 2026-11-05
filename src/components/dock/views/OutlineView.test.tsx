@@ -79,7 +79,7 @@ describe('OutlineView', () => {
     expect(handleUpdate).toHaveBeenCalledWith('scene-1', { title: 'New Scene Title' });
   });
 
-  it('renders layout selector with 1 Column, 2 Columns, and Split View when expanded', () => {
+  it('renders layout selector with Details, Main View, and Split View when expanded', () => {
     render(
       <OutlineView
         chapters={mockChapters}
@@ -90,8 +90,60 @@ describe('OutlineView', () => {
       />
     );
 
-    expect(screen.getByText('1 Column')).toBeInTheDocument();
-    expect(screen.getByText('2 Columns')).toBeInTheDocument();
+    expect(screen.getByText('Details')).toBeInTheDocument();
+    expect(screen.getByText('Main View')).toBeInTheDocument();
     expect(screen.getByText('Split View')).toBeInTheDocument();
+  });
+
+  it('renders novel details section with title, author, synopsis, and cover when in details mode', () => {
+    const handleUpdateMeta = vi.fn();
+    render(
+      <OutlineView
+        chapters={mockChapters}
+        activeChapterId="scene-1"
+        onSelectChapter={vi.fn()}
+        onAddChapter={vi.fn()}
+        isExpanded={true}
+        projectTitle="Chronicles of Elidyr"
+        projectAuthor="Arthur Pendelton"
+        projectSynopsis="An epic fantasy novel."
+        onUpdateProjectMetadata={handleUpdateMeta}
+      />
+    );
+
+    // Switch to Details section
+    const detailsTabBtn = screen.getByText('Details');
+    fireEvent.click(detailsTabBtn);
+
+    // Novel Title is required and has current value
+    const titleInput = screen.getByLabelText(/Novel Title/i);
+    expect(titleInput).toBeInTheDocument();
+    expect(titleInput).toHaveValue('Chronicles of Elidyr');
+    expect(titleInput).toBeRequired();
+
+    // Author field
+    const authorInput = screen.getByLabelText(/Author/i);
+    expect(authorInput).toBeInTheDocument();
+    expect(authorInput).toHaveValue('Arthur Pendelton');
+
+    // Synopsis field
+    const synopsisInput = screen.getByLabelText(/Synopsis/i);
+    expect(synopsisInput).toBeInTheDocument();
+    expect(synopsisInput).toHaveValue('An epic fantasy novel.');
+
+    // Cover upload area
+    expect(screen.getByText('Click or drag and drop your book cover here')).toBeInTheDocument();
+
+    // Editing title invokes onUpdateProjectMetadata
+    fireEvent.change(titleInput, { target: { value: 'Chronicles of Elidyr II' } });
+    expect(handleUpdateMeta).toHaveBeenCalledWith({ title: 'Chronicles of Elidyr II' });
+
+    // Editing author invokes onUpdateProjectMetadata
+    fireEvent.change(authorInput, { target: { value: 'Arthur Pendelton Jr.' } });
+    expect(handleUpdateMeta).toHaveBeenCalledWith({ author: 'Arthur Pendelton Jr.' });
+
+    // Editing synopsis invokes onUpdateProjectMetadata
+    fireEvent.change(synopsisInput, { target: { value: 'Updated synopsis premise.' } });
+    expect(handleUpdateMeta).toHaveBeenCalledWith({ synopsis: 'Updated synopsis premise.' });
   });
 });

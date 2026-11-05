@@ -18,10 +18,10 @@ function ExportModalHeader({ onClose, isExporting }: ExportModalHeaderProps) {
         </div>
         <div>
           <h2 className="text-sm font-semibold text-zinc-100 tracking-tight">
-            Export to EPUB
+            {t('exportToEpubTitle')}
           </h2>
           <p className="text-xs text-zinc-400">
-            Configure book metadata, selective contents, and chapter nesting
+            {t('exportToEpubDesc')}
           </p>
         </div>
       </div>

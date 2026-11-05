@@ -24,9 +24,11 @@ function ExportModalFooter({
       <div className="flex items-center gap-2 text-xs text-zinc-400">
         <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
         <span>
-          <strong>{selectedScenesCount}</strong> of{' '}
-          <strong>{totalScenesCount}</strong> scenes selected (
-          {selectedWords.toLocaleString()} words)
+          {t('scenesSelectedCount', [
+            selectedScenesCount.toString(),
+            totalScenesCount.toString(),
+            selectedWords.toLocaleString(),
+          ])}
         </span>
       </div>
 
@@ -37,7 +39,7 @@ function ExportModalFooter({
           disabled={isExporting}
           className="px-4 py-2 text-xs font-medium text-zinc-400 hover:text-zinc-200 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 rounded-lg transition cursor-pointer disabled:opacity-50"
         >
-          {t('cancel') || 'Cancel'}
+          {t('cancel')}
         </button>
 
         <button
@@ -46,19 +48,19 @@ function ExportModalFooter({
           className="flex items-center gap-2 px-5 py-2 text-xs font-semibold text-zinc-950 bg-emerald-400 hover:bg-emerald-300 active:bg-emerald-500 rounded-lg shadow-md transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           title={
             selectedScenesCount === 0
-              ? 'Please select at least one scene to export'
+              ? t('selectAtLeastOneScene')
               : undefined
           }
         >
           {isExporting ? (
             <>
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              <span>Exporting EPUB...</span>
+              <span>{t('exportingEpub')}</span>
             </>
           ) : (
             <>
               <BookOpen className="w-3.5 h-3.5" />
-              <span>Export EPUB</span>
+              <span>{t('exportEpubBtn')}</span>
             </>
           )}
         </button>

@@ -14,6 +14,7 @@ import {
   executeSaveBundle,
   executeReadBundle,
   checkFileExists,
+  extractProjectTitleFromPath,
   LAST_FOLIANT_PROJECT_KEY,
 } from './projectPersistenceUtils';
 import { getMoodboardCacheKey, isCastleOrLegacyArtifact } from '../components/context/MoodboardBlock/constants';
@@ -148,10 +149,21 @@ export function useProjectPersistence({
         return true;
       }
 
-      const defaultFileName = project.title
-        ? `${project.title.replace(/[/\\?%*:|"<>]/g, '-')}.foliant`
-        : 'novel.foliant';
-      const defaultPath = currentFilePath || defaultFileName;
+      const sanitizedTitle = (project.title || 'novel')
+        .trim()
+        .replace(/[/\\?%*:|"<>]/g, '-')
+        .trim() || 'novel';
+      const defaultFileName = `${sanitizedTitle}.foliant`;
+
+      let defaultPath = defaultFileName;
+      if (currentFilePath) {
+        const lastSlash = Math.max(currentFilePath.lastIndexOf('/'), currentFilePath.lastIndexOf('\\'));
+        if (lastSlash !== -1) {
+          const dir = currentFilePath.substring(0, lastSlash);
+          const sep = currentFilePath.includes('\\') ? '\\' : '/';
+          defaultPath = `${dir}${sep}${defaultFileName}`;
+        }
+      }
 
       const targetPath = await promptSaveProjectFile(
         'Save Foliant Project As',
@@ -220,6 +232,14 @@ export function useProjectPersistence({
       return saveProjectAs();
     }
 
+    // If the project title was changed and differs from the current file's name,
+    // prompt via saveProjectAs with the new title pre-filled.
+    const currentFileTitle = extractProjectTitleFromPath(trimmedPath);
+    const currentProjectTitle = (project.title || '').trim();
+    if (currentProjectTitle && currentFileTitle && currentProjectTitle !== currentFileTitle) {
+      return saveProjectAs();
+    }
+
     // Edge case 1: Validate if the file still exists on the filesystem.
     // If the file was deleted or moved externally, redirect to Save As.
     const fileExists = await checkFileExists(trimmedPath);
@@ -271,6 +291,10 @@ export function useProjectPersistence({
               const text = await file.text();
               const parsed = JSON.parse(text);
               const loaded = normalizeLoadedProject(parsed);
+              const fileTitle = extractProjectTitleFromPath(file.name);
+              if (fileTitle) {
+                loaded.title = fileTitle;
+              }
               onProjectLoadedRef.current(loaded);
               setCurrentFilePath(file.name);
               setLastSavedAt(loaded.lastModified);
@@ -378,6 +402,12 @@ export function useProjectPersistence({
 
   const loadProject = useCallback(
     (loaded: FoliantProject, filePath: string | null = null) => {
+      if (filePath) {
+        const fileTitle = extractProjectTitleFromPath(filePath);
+        if (fileTitle) {
+          loaded.title = fileTitle;
+        }
+      }
       setCurrentFilePath(filePath);
       setLastSavedAt(filePath ? loaded.lastModified : null);
       setError(null);

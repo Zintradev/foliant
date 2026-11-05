@@ -1,5 +1,6 @@
-import React, { memo } from 'react';
-import { Clock, ChevronDown, Maximize2 } from 'lucide-react';
+import React, { memo, useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { Clock, ChevronDown, Maximize2, EyeOff } from 'lucide-react';
 import { TabId } from '../../types/dock';
 import { TAB_META, TAB_TRANSLATION_KEYS } from '../dock/DockContainer';
 
@@ -28,6 +29,27 @@ export const BottomDockPanel = memo(function BottomDockPanel({
   children,
   t,
 }: BottomDockPanelProps) {
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setContextMenu(null);
+    };
+    document.addEventListener('pointerdown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('pointerdown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [contextMenu]);
+
   if (!isBottomOpen) return null;
 
   return (
@@ -61,6 +83,11 @@ export const BottomDockPanel = memo(function BottomDockPanel({
                 <button
                   key={tab}
                   onClick={() => onSelectBottomTab(tab)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setContextMenu({ x: e.clientX, y: e.clientY });
+                  }}
                   className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-xs transition ${
                     isActive
                       ? 'bg-zinc-800 text-zinc-100 border border-zinc-700/60 shadow-xs'
@@ -97,6 +124,42 @@ export const BottomDockPanel = memo(function BottomDockPanel({
           {children}
         </div>
       </div>
+
+      {contextMenu &&
+        createPortal(
+          <div
+            ref={menuRef}
+            style={{
+              top: `${Math.min(contextMenu.y, window.innerHeight - 100)}px`,
+              left: `${Math.min(contextMenu.x, window.innerWidth - 190)}px`,
+            }}
+            className="fixed z-[99999] min-w-[180px] bg-zinc-950 border border-zinc-800 rounded-sm shadow-2xl py-1 text-xs text-zinc-300 font-sans animate-in fade-in zoom-in-95 duration-75 select-none"
+          >
+            <button
+              type="button"
+              onClick={() => {
+                onCloseBottom();
+                setContextMenu(null);
+              }}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-zinc-800/80 text-zinc-300 hover:text-white transition cursor-pointer text-left"
+            >
+              <EyeOff className="w-3.5 h-3.5 text-zinc-400" />
+              <span>{t('hidePanel', 'Ocultar panel')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onMaximizeBottom();
+                setContextMenu(null);
+              }}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-zinc-800/80 text-zinc-400 hover:text-white transition cursor-pointer text-left border-t border-zinc-900"
+            >
+              <Maximize2 className="w-3.5 h-3.5 text-zinc-500" />
+              <span>{t('openFullscreen', 'Maximizar panel')}</span>
+            </button>
+          </div>,
+          document.body
+        )}
     </>
   );
 });

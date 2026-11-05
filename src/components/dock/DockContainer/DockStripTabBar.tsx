@@ -25,6 +25,11 @@ interface DockStripTabBarProps {
   ) => void;
   onToggleSplit: () => void;
   onOpenModuleMenu: (strip: 'top' | 'bottom') => void;
+  onContextMenuTab?: (
+    e: React.MouseEvent,
+    tabId: TabId,
+    strip: 'top' | 'bottom'
+  ) => void;
   onToggleOpen?: () => void;
 }
 
@@ -38,6 +43,7 @@ function DockStripTabBar({
   onPointerDownTab,
   onToggleSplit,
   onOpenModuleMenu,
+  onContextMenuTab,
 }: DockStripTabBarProps) {
   const { t } = useTranslation();
 
@@ -67,6 +73,7 @@ function DockStripTabBar({
               data-dock-tab-id={tabId}
               data-dock-strip={strip}
               onPointerDown={(e) => onPointerDownTab(e, tabId, strip)}
+              onContextMenu={(e) => onContextMenuTab?.(e, tabId, strip)}
               title={`${tabLabel} — ${t('dragToDockOrReorder', 'Drag to dock or reorder')}`}
               className={`group relative flex items-center gap-1.5 px-2 py-1 rounded-t-sm text-xs transition cursor-grab active:cursor-grabbing border-b-2 select-none touch-none ${
                 isActive

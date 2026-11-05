@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { Omega, X, Search, Clock, Check } from 'lucide-react';
+import { useTranslation } from '../../../i18n/translations';
 import {
   SymbolItem,
   SymbolCategory,
@@ -21,12 +22,14 @@ const SymbolModalHeader = memo(function SymbolModalHeader({
 }: {
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800 bg-zinc-950 shrink-0">
       <div className="flex items-center gap-2">
         <Omega className="w-4 h-4 text-emerald-400" />
         <span className="text-sm font-semibold text-zinc-100 font-mono tracking-tight">
-          Insert Symbol (Word Palette)
+          {t('insertSymbol')}
         </span>
       </div>
 
@@ -34,7 +37,7 @@ const SymbolModalHeader = memo(function SymbolModalHeader({
         type="button"
         onClick={onClose}
         className="p-1 rounded-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition cursor-pointer"
-        title="Close (Esc)"
+        title={`${t('close')} (Esc)`}
       >
         <X className="w-4 h-4" />
       </button>
@@ -53,6 +56,8 @@ const SymbolCategoryTabs = memo(function SymbolCategoryTabs({
   activeTab: SymbolCategory;
   onSelectTab: (tab: SymbolCategory) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="px-5 pt-3 border-b border-zinc-800 bg-zinc-950/70 space-y-3 shrink-0">
       <div className="relative">
@@ -61,7 +66,7 @@ const SymbolCategoryTabs = memo(function SymbolCategoryTabs({
           type="text"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search symbol by name, character or unicode (e.g., dash, quote, alpha)..."
+          placeholder={t('searchSymbolPlaceholder')}
           className="w-full bg-zinc-900 border border-zinc-750 rounded-sm pl-8 pr-3 py-1.5 text-xs text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-500 transition"
           autoFocus
         />
@@ -115,11 +120,13 @@ const SymbolGridBody = memo(function SymbolGridBody({
   onSelect: (item: SymbolItem) => void;
   onInsert: (char: string) => void;
 }) {
+  const { t } = useTranslation();
+
   if (displayedSymbols.length === 0) {
     return (
       <div className="p-4 overflow-y-auto flex-1 min-h-[220px] bg-zinc-950/40">
         <div className="h-40 flex flex-col items-center justify-center text-zinc-500 text-xs">
-          No symbols matching &quot;{searchQuery}&quot;
+          {t('noSymbolsMatching', [searchQuery])}
         </div>
       </div>
     );
@@ -161,14 +168,16 @@ const RecentlyUsedSymbols = memo(function RecentlyUsedSymbols({
   recentSymbols: string[];
   onInsert: (char: string) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="px-5 py-2.5 border-t border-zinc-800 bg-zinc-900/80 shrink-0">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
           <Clock className="w-3 h-3 text-zinc-400" />
-          <span>Recently Used Symbols</span>
+          <span>{t('recentlyUsedSymbols')}</span>
         </span>
-        <span className="text-[10px] text-zinc-400">Click to insert directly</span>
+        <span className="text-[10px] text-zinc-400">{t('clickToInsertDirectly')}</span>
       </div>
 
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
@@ -197,6 +206,8 @@ const SymbolActionBar = memo(function SymbolActionBar({
   onClose: () => void;
   onInsert: (char: string) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="px-5 py-3 border-t border-zinc-800 bg-zinc-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
       <div className="flex items-center gap-3">
@@ -208,7 +219,7 @@ const SymbolActionBar = memo(function SymbolActionBar({
             {selectedSymbol?.name || 'Em Dash'}
           </span>
           <span className="text-[10px] text-zinc-400 font-mono">
-            Unicode: {selectedSymbol?.code || 'U+2014'} (Double-click symbol or press Insert)
+            Unicode: {selectedSymbol?.code || 'U+2014'}
           </span>
         </div>
       </div>
@@ -219,7 +230,7 @@ const SymbolActionBar = memo(function SymbolActionBar({
           onClick={onClose}
           className="px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850 rounded-sm transition cursor-pointer"
         >
-          Close
+          {t('close')}
         </button>
         <button
           type="button"
@@ -231,7 +242,7 @@ const SymbolActionBar = memo(function SymbolActionBar({
           className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs rounded-sm transition shadow-xs cursor-pointer active:scale-95"
         >
           <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-          <span>Insert</span>
+          <span>{t('insert')}</span>
         </button>
       </div>
     </div>

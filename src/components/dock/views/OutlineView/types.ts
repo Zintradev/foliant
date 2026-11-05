@@ -1,7 +1,7 @@
 import { TextNode } from '../../../../types/project';
 import { StorylineItem } from '../../../../types/dock';
 
-export type LayoutMode = '1col' | '2col' | 'split';
+export type LayoutMode = 'details' | 'main' | 'split' | '1col' | '2col';
 
 export interface OutlineViewProps {
   chapters: TextNode[];
@@ -14,6 +14,19 @@ export interface OutlineViewProps {
   isExpanded?: boolean;
   storylines?: StorylineItem[];
   onDirtyChange?: (isDirty: boolean) => void;
+  projectTitle?: string;
+  projectAuthor?: string;
+  projectSynopsis?: string;
+  projectCover?: string;
+  projectCoverFileName?: string;
+  currentFilePath?: string | null;
+  onUpdateProjectMetadata?: (updates: {
+    title?: string;
+    author?: string;
+    synopsis?: string;
+    cover?: string;
+    coverFileName?: string;
+  }) => void;
 }
 
 export interface TreeItem {

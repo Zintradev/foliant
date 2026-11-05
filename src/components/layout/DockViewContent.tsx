@@ -85,6 +85,24 @@ export const DockViewContent = memo(function DockViewContent({
     [setProject]
   );
 
+  const handleUpdateProjectMetadata = React.useCallback(
+    (updates: {
+      title?: string;
+      author?: string;
+      synopsis?: string;
+      cover?: string;
+      coverFileName?: string;
+    }) => {
+      setProject((prev) => ({
+        ...prev,
+        ...updates,
+        lastModified: Date.now(),
+      }));
+      setIsDirty(true);
+    },
+    [setProject, setIsDirty]
+  );
+
   switch (tabId) {
     case 'outline':
       return (
@@ -98,6 +116,13 @@ export const DockViewContent = memo(function DockViewContent({
           isExpanded={isExpanded}
           storylines={project.storylines}
           onDirtyChange={setIsDirty}
+          projectTitle={project.title}
+          projectAuthor={project.author}
+          projectSynopsis={project.synopsis}
+          projectCover={project.cover}
+          projectCoverFileName={project.coverFileName}
+          currentFilePath={currentFilePath}
+          onUpdateProjectMetadata={handleUpdateProjectMetadata}
         />
       );
     case 'storyline':

@@ -70,7 +70,7 @@ function RelationshipInspectorPanelComponent({
 
         {/* Label Input */}
         <div className="space-y-0.5">
-          <label className="text-[9px] font-mono text-zinc-500 uppercase">Label</label>
+          <label className="text-[9px] font-mono text-zinc-500 uppercase">{t('connectionLabel')}</label>
           <input
             type="text"
             value={selectedRel.label || ''}
@@ -155,7 +155,7 @@ function RelationshipInspectorPanelComponent({
               <span>
                 {selectedRel.customColor
                   ? selectedRel.customColor.toUpperCase()
-                  : 'Custom Color...'}
+                  : t('customColor')}
               </span>
             </button>
             {selectedRel.customColor && (
@@ -163,9 +163,9 @@ function RelationshipInspectorPanelComponent({
                 type="button"
                 onClick={() => onUpdateRel({ ...selectedRel, customColor: undefined })}
                 className="text-[9px] font-mono text-zinc-500 hover:text-rose-400 transition cursor-pointer"
-                title="Clear custom color"
+                title={t('reset')}
               >
-                Reset
+                {t('reset')}
               </button>
             )}
           </div>
@@ -188,7 +188,7 @@ function RelationshipInspectorPanelComponent({
 
         {/* Notes */}
         <div className="space-y-0.5">
-          <label className="text-[9px] font-mono text-zinc-500 uppercase">Notes</label>
+          <label className="text-[9px] font-mono text-zinc-500 uppercase">{t('notes')}</label>
           <textarea
             rows={2}
             value={selectedRel.notes || ''}
@@ -209,7 +209,7 @@ function RelationshipInspectorPanelComponent({
               onClick={() => onResetCurve(selectedRel.id)}
               className="px-1.5 py-0.5 rounded-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition cursor-pointer text-[8px]"
             >
-              Reset
+              {t('reset')}
             </button>
           </div>
         )}

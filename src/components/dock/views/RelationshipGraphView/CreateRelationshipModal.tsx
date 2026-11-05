@@ -10,6 +10,7 @@ import {
   RelationshipDirection,
 } from '../../../../types/dock';
 import { COLOR_PALETTE } from './constants';
+import { useTranslation } from '../../../../i18n/translations';
 
 interface CreateRelationshipModalProps {
   characters: CharacterItem[];
@@ -28,6 +29,7 @@ function CreateRelationshipModalComponent({
   onClose,
   onSubmit,
 }: CreateRelationshipModalProps) {
+  const { t } = useTranslation();
   const [sourceId, setSourceId] = useState<string>(
     initialSourceId || characters[0]?.id || ''
   );
@@ -50,7 +52,7 @@ function CreateRelationshipModalComponent({
       sourceId,
       targetId,
       type: newType,
-      label: label.trim() || 'Connected',
+      label: label.trim() || t('connectedDefaultLabel', 'Connected'),
       style,
       color,
       direction: newDirection,
@@ -71,7 +73,7 @@ function CreateRelationshipModalComponent({
       >
         <div className="flex items-center justify-between pb-2 border-b border-zinc-850 mb-3">
           <span className="font-semibold text-zinc-100 text-xs font-mono">
-            Define Character Connection
+            {t('defineCharacterConnection')}
           </span>
           <button
             type="button"
@@ -85,7 +87,7 @@ function CreateRelationshipModalComponent({
         <form onSubmit={handleSubmit} className="space-y-2.5">
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-0.5">
-              <label className="text-[9px] font-mono text-zinc-400 uppercase">From</label>
+              <label className="text-[9px] font-mono text-zinc-400 uppercase">{t('connectionFrom')}</label>
               <select
                 value={sourceId}
                 onChange={(e) => setSourceId(e.target.value)}
@@ -98,14 +100,14 @@ function CreateRelationshipModalComponent({
                 ))}
                 {junctions.map((j) => (
                   <option key={j.id} value={j.id}>
-                    {j.label || 'Union Node'}
+                    {j.label || t('unionNode')}
                   </option>
                 ))}
               </select>
             </div>
 
             <div className="space-y-0.5">
-              <label className="text-[9px] font-mono text-zinc-400 uppercase">To</label>
+              <label className="text-[9px] font-mono text-zinc-400 uppercase">{t('connectionTo')}</label>
               <select
                 value={targetId}
                 onChange={(e) => setTargetId(e.target.value)}
@@ -118,7 +120,7 @@ function CreateRelationshipModalComponent({
                 ))}
                 {junctions.map((j) => (
                   <option key={j.id} value={j.id}>
-                    {j.label || 'Union Node'}
+                    {j.label || t('unionNode')}
                   </option>
                 ))}
               </select>
@@ -126,10 +128,10 @@ function CreateRelationshipModalComponent({
           </div>
 
           <div className="space-y-0.5">
-            <label className="text-[9px] font-mono text-zinc-400 uppercase">Label</label>
+            <label className="text-[9px] font-mono text-zinc-400 uppercase">{t('connectionLabel')}</label>
             <input
               type="text"
-              placeholder="e.g. Sworn Brothers, Nemesis..."
+              placeholder={t('connectionLabelPlaceholder')}
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               className="w-full bg-zinc-900 border border-zinc-800 rounded-xs px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-600"
@@ -138,20 +140,20 @@ function CreateRelationshipModalComponent({
 
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-0.5">
-              <label className="text-[9px] font-mono text-zinc-400 uppercase">Style</label>
+              <label className="text-[9px] font-mono text-zinc-400 uppercase">{t('connectionStyle')}</label>
               <select
                 value={style}
                 onChange={(e) => setStyle(e.target.value as LineStrokeStyle)}
                 className="w-full bg-zinc-900 border border-zinc-800 rounded-xs px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-600 cursor-pointer"
               >
-                <option value="solid">Solid</option>
-                <option value="dashed">Dashed</option>
-                <option value="dotted">Dotted</option>
+                <option value="solid">{t('strokeSolid')}</option>
+                <option value="dashed">{t('strokeDashed')}</option>
+                <option value="dotted">{t('strokeDotted')}</option>
               </select>
             </div>
 
             <div className="space-y-0.5">
-              <label className="text-[9px] font-mono text-zinc-400 uppercase">Color</label>
+              <label className="text-[9px] font-mono text-zinc-400 uppercase">{t('color')}</label>
               <select
                 value={color}
                 onChange={(e) => setColor(e.target.value as RelationshipColor)}
@@ -172,13 +174,13 @@ function CreateRelationshipModalComponent({
               onClick={onClose}
               className="px-2.5 py-1 text-[10px] font-mono text-zinc-400 hover:text-white rounded-xs transition cursor-pointer"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-xs text-[10px] font-mono transition cursor-pointer"
             >
-              Create Connection
+              {t('createConnection')}
             </button>
           </div>
         </form>

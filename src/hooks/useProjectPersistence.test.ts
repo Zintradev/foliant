@@ -98,10 +98,11 @@ describe('useProjectPersistence (Single .foliant Bundle Architecture)', () => {
     });
 
     // Verify backend Tauri save_project_bundle invoked with file path and project
+    // Note: Project title is synchronized with the chosen filename ('cipher.foliant' -> 'cipher')
     expect(invoke).toHaveBeenCalledWith('save_project_bundle', {
       filePath: 'C:\\Novels\\cipher.foliant',
       project: expect.objectContaining({
-        title: 'The Cipher Mystery',
+        title: 'cipher',
       }),
     });
 
@@ -111,7 +112,7 @@ describe('useProjectPersistence (Single .foliant Bundle Architecture)', () => {
     expect(result.current.syncStatus).toBe('saved');
     expect(onProjectLoaded).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'The Cipher Mystery',
+        title: 'cipher',
         chapters: expect.arrayContaining([
           expect.objectContaining({
             id: 'scene-1',
@@ -148,16 +149,24 @@ describe('useProjectPersistence (Single .foliant Bundle Architecture)', () => {
     vi.mocked(save).mockResolvedValue('C:\\Novels\\cipher.foliant');
     vi.mocked(invoke).mockResolvedValue(undefined);
 
-    const { result } = renderHook(() =>
-      useProjectPersistence({
-        project: mockProject,
-        onProjectLoaded,
-      })
+    let activeProject = { ...mockProject };
+    const { result, rerender } = renderHook(
+      (props: { project: FoliantProject }) =>
+        useProjectPersistence({
+          project: props.project,
+          onProjectLoaded: (loaded) => {
+            activeProject = loaded;
+          },
+        }),
+      { initialProps: { project: mockProject } }
     );
 
     await act(async () => {
       await result.current.saveProjectAs();
     });
+
+    // Update active project with loaded state (title is synchronized to 'cipher')
+    rerender({ project: activeProject });
 
     vi.clearAllMocks();
 
@@ -172,27 +181,76 @@ describe('useProjectPersistence (Single .foliant Bundle Architecture)', () => {
     expect(invoke).toHaveBeenCalledWith('save_project_bundle', {
       filePath: 'C:\\Novels\\cipher.foliant',
       project: expect.objectContaining({
-        title: 'The Cipher Mystery',
+        title: 'cipher',
       }),
     });
     expect(localStorage.getItem(LAST_FOLIANT_PROJECT_KEY)).toBe('C:\\Novels\\cipher.foliant');
+  });
+
+  it('prompts saveProjectAs with updated title when project.title changes after initial save', async () => {
+    vi.mocked(save).mockResolvedValue('C:\\Novels\\cipher.foliant');
+    vi.mocked(invoke).mockResolvedValue(undefined);
+
+    let activeProject = { ...mockProject, title: 'cipher' };
+    const { result, rerender } = renderHook(
+      (props: { project: FoliantProject }) =>
+        useProjectPersistence({
+          project: props.project,
+          onProjectLoaded: (loaded) => {
+            activeProject = loaded;
+          },
+        }),
+      { initialProps: { project: activeProject } }
+    );
+
+    await act(async () => {
+      await result.current.saveProjectAs();
+    });
+
+    vi.clearAllMocks();
+
+    // User modifies title in novel details section
+    activeProject = { ...activeProject, title: 'cipher_revised' };
+    rerender({ project: activeProject });
+    vi.mocked(save).mockResolvedValue('C:\\Novels\\cipher_revised.foliant');
+
+    let saveSuccess = false;
+    await act(async () => {
+      saveSuccess = await result.current.saveProject();
+    });
+
+    expect(saveSuccess).toBe(true);
+    // save dialog is invoked proposing the new title as defaultPath
+    expect(save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Save Foliant Project As',
+        defaultPath: 'C:\\Novels\\cipher_revised.foliant',
+      })
+    );
+    expect(result.current.currentFilePath).toBe('C:\\Novels\\cipher_revised.foliant');
   });
 
   it('redirects saveProject to saveProjectAs when file was deleted externally from disk', async () => {
     vi.mocked(save).mockResolvedValue('C:\\Novels\\cipher.foliant');
     vi.mocked(invoke).mockResolvedValue(undefined);
 
-    const { result } = renderHook(() =>
-      useProjectPersistence({
-        project: mockProject,
-        onProjectLoaded,
-      })
+    let activeProject = { ...mockProject };
+    const { result, rerender } = renderHook(
+      (props: { project: FoliantProject }) =>
+        useProjectPersistence({
+          project: props.project,
+          onProjectLoaded: (loaded) => {
+            activeProject = loaded;
+          },
+        }),
+      { initialProps: { project: mockProject } }
     );
 
     // Initial save to establish currentFilePath
     await act(async () => {
       await result.current.saveProjectAs();
     });
+    rerender({ project: activeProject });
 
     vi.clearAllMocks();
 
@@ -310,7 +368,7 @@ describe('useProjectPersistence (Single .foliant Bundle Architecture)', () => {
     expect(onProjectLoaded).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'opened-1',
-        title: 'Echoes of the Void',
+        title: 'echoes',
         chapters: [
           expect.objectContaining({
             id: 'scene-101',

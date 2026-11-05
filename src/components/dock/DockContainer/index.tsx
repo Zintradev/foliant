@@ -8,6 +8,8 @@ import DockStripTabBar from './DockStripTabBar';
 import DockEmptyStrip from './DockEmptyStrip';
 import DockModulePickerModal from './DockModulePickerModal';
 import DockDragPreview from './DockDragPreview';
+import DockTabContextMenu, { DockTabContextMenuState } from './DockTabContextMenu';
+import { TabId } from '../../../types/dock';
 
 export function DockContainerComponent({
   side,
@@ -48,6 +50,37 @@ export function DockContainerComponent({
   // Module Picker State
   const [isModuleMenuOpen, setIsModuleMenuOpen] = useState(false);
   const [moduleMenuStrip, setModuleMenuStrip] = useState<'top' | 'bottom'>('top');
+
+  // Tab Right-Click Context Menu State
+  const [tabContextMenu, setTabContextMenu] = useState<DockTabContextMenuState | null>(null);
+
+  const handleContextMenuTab = (e: React.MouseEvent, tabId: TabId, strip: 'top' | 'bottom') => {
+    e.preventDefault();
+    e.stopPropagation();
+    setTabContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      tabId,
+      strip,
+    });
+  };
+
+  const handleHideTab = (tabId: TabId, strip: 'top' | 'bottom') => {
+    if (isSplit) {
+      if (strip === 'bottom') {
+        setSplitTabIds((prev) => {
+          const next = new Set(prev);
+          next.delete(tabId);
+          return next;
+        });
+        onRemoveTab(tabId);
+      } else {
+        onRemoveTab(tabId);
+      }
+    } else {
+      onRemoveTab(tabId);
+    }
+  };
 
   // Pointer-Driven Tab Drag & Drop System
   const { dragState, handlePointerDown } = useDockDragAndDrop({
@@ -95,6 +128,7 @@ export function DockContainerComponent({
               onPointerDownTab={handlePointerDown}
               onToggleSplit={toggleSplit}
               onOpenModuleMenu={handleOpenModuleMenu}
+              onContextMenuTab={handleContextMenuTab}
               onToggleOpen={onToggleOpen}
             />
             <div className="flex-1 overflow-y-auto min-h-0 bg-zinc-950">
@@ -121,6 +155,7 @@ export function DockContainerComponent({
                 onPointerDownTab={handlePointerDown}
                 onToggleSplit={toggleSplit}
                 onOpenModuleMenu={handleOpenModuleMenu}
+                onContextMenuTab={handleContextMenuTab}
                 onToggleOpen={onToggleOpen}
               />
               <div className="flex-1 overflow-y-auto min-h-0 bg-zinc-950">
@@ -151,6 +186,7 @@ export function DockContainerComponent({
                 onPointerDownTab={handlePointerDown}
                 onToggleSplit={toggleSplit}
                 onOpenModuleMenu={handleOpenModuleMenu}
+                onContextMenuTab={handleContextMenuTab}
                 onToggleOpen={onToggleOpen}
               />
               <div className="flex-1 overflow-y-auto min-h-0 bg-zinc-950">
@@ -178,6 +214,15 @@ export function DockContainerComponent({
           setSplitTabIds={setSplitTabIds}
           setActiveTopTab={setActiveTopTab}
           setActiveBottomTab={setActiveBottomTab}
+        />
+
+        {/* Tab Right-Click Context Menu to Hide Panel */}
+        <DockTabContextMenu
+          contextMenu={tabContextMenu}
+          side={side}
+          onClose={() => setTabContextMenu(null)}
+          onHideTab={handleHideTab}
+          onToggleOpen={onToggleOpen}
         />
       </aside>
 

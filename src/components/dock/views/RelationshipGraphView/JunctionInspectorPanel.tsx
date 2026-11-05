@@ -35,7 +35,7 @@ function JunctionInspectorPanelComponent({
         <div className="flex items-center gap-1.5">
           <GitCommit className="w-3.5 h-3.5 text-emerald-400" />
           <span className="font-semibold text-zinc-100 text-xs font-mono">
-            Union Node Inspector
+            {t('unionNodeInspector')}
           </span>
         </div>
         <button
@@ -50,11 +50,11 @@ function JunctionInspectorPanelComponent({
       <div className="space-y-2.5">
         {/* Node Name */}
         <div className="space-y-0.5">
-          <label className="text-[9px] font-mono text-zinc-500 uppercase">Node Name</label>
+          <label className="text-[9px] font-mono text-zinc-500 uppercase">{t('nodeName')}</label>
           <input
             type="text"
             value={junction.label || ''}
-            placeholder="e.g. Stark-Tully Union, Northern Alliance"
+            placeholder={t('nodeNamePlaceholder')}
             onChange={(e) => onUpdateJunction({ ...junction, label: e.target.value })}
             className="w-full bg-zinc-900 border border-zinc-800 rounded-xs px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-600"
           />
@@ -64,7 +64,7 @@ function JunctionInspectorPanelComponent({
         <div className="space-y-0.5">
           <div className="flex items-center justify-between">
             <label className="text-[9px] font-mono text-zinc-500 uppercase">
-              Linked Storyline / Plot Thread
+              {t('linkedStoryline')}
             </label>
             <GitMerge className="w-3 h-3 text-zinc-500" />
           </div>
@@ -78,7 +78,7 @@ function JunctionInspectorPanelComponent({
             }
             className="w-full bg-zinc-900 border border-zinc-800 rounded-xs px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-600 cursor-pointer"
           >
-            <option value="">No Storyline (Independent)</option>
+            <option value="">{t('noStoryline')}</option>
             {storylines.map((st) => (
               <option key={st.id} value={st.id}>
                 {st.title}

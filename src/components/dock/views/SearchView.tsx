@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { Search, X, Feather, Layers, FileText } from 'lucide-react';
 import { FoliantProject } from '../../../types/project';
 import { useGlobalSearch, SearchScope, SearchResult } from '../../../hooks/useGlobalSearch';
+import { useTranslation } from '../../../i18n/translations';
 
 export interface SearchViewProps {
   project: FoliantProject;
@@ -18,6 +19,7 @@ function SearchViewComponent({
   onSelectResult,
   isExpanded = false,
 }: SearchViewProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [scope, setScope] = useState<SearchScope>('global');
   const [selectedResultIndex, setSelectedResultIndex] = useState<number>(0);
@@ -51,7 +53,7 @@ function SearchViewComponent({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search project (Ctrl+Shift+F)..."
+            placeholder={t('searchPlaceholderDock')}
             className="w-full pl-8 pr-7 py-1.5 bg-zinc-900 border border-zinc-750 rounded-md text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 transition"
           />
           {query && (
@@ -60,7 +62,7 @@ function SearchViewComponent({
                 setQuery('');
                 inputRef.current?.focus();
               }}
-              title="Clear search"
+              title={t('clearSearch')}
               className="absolute right-2 p-0.5 text-zinc-400 hover:text-zinc-200 rounded-sm hover:bg-zinc-800 transition"
             >
               <X className="w-3 h-3" />
@@ -72,18 +74,18 @@ function SearchViewComponent({
         <div className="flex items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-1.5 text-zinc-400 text-[11px]">
             <Layers className="w-3 h-3 text-zinc-500 shrink-0" />
-            <span>Scope:</span>
+            <span>{t('searchScope')}:</span>
           </div>
 
           <select
             value={scope}
             onChange={(e) => setScope(e.target.value as SearchScope)}
-            aria-label="Search Scope"
+            aria-label={t('searchScope')}
             className="bg-zinc-900 border border-zinc-800 rounded-md text-[11px] text-zinc-300 px-2 py-1 focus:outline-none focus:border-emerald-500 cursor-pointer"
           >
-            <option value="global">Global</option>
-            <option value="current_folder">Current Folder</option>
-            <option value="current_scene">Current Scene</option>
+            <option value="global">{t('scopeGlobal')}</option>
+            <option value="current_folder">{t('scopeFolder')}</option>
+            <option value="current_scene">{t('scopeScene')}</option>
           </select>
         </div>
       </div>
@@ -94,15 +96,15 @@ function SearchViewComponent({
           {query.trim() ? (
             <>
               <strong className="text-zinc-200">{results.length}</strong>{' '}
-              {results.length === 1 ? 'match' : 'matches'}
+              {results.length === 1 ? t('matchSingle') : t('matchMultiple')}
             </>
           ) : (
-            'Type to search...'
+            t('typeToSearch')
           )}
         </span>
         {results.length > 0 && (
           <span className="text-[10px] text-zinc-500">
-            Click to jump
+            {t('clickToJump')}
           </span>
         )}
       </div>
@@ -112,9 +114,9 @@ function SearchViewComponent({
         {query.trim() && results.length === 0 && (
           <div className="py-12 flex flex-col items-center justify-center text-center text-zinc-500 px-4">
             <FileText className="w-7 h-7 mb-2 text-zinc-600 opacity-60" />
-            <p className="text-xs font-medium text-zinc-400">No matching text found</p>
+            <p className="text-xs font-medium text-zinc-400">{t('noMatchingText')}</p>
             <p className="text-[11px] text-zinc-500 mt-1">
-              Try searching with another word or change the scope to Global.
+              {t('searchNoMatchesHint')}
             </p>
           </div>
         )}
@@ -122,9 +124,9 @@ function SearchViewComponent({
         {!query.trim() && (
           <div className="py-12 flex flex-col items-center justify-center text-center text-zinc-500 px-4">
             <Search className="w-7 h-7 mb-2 text-zinc-600 opacity-60" />
-            <p className="text-xs font-medium text-zinc-400">Search your project</p>
+            <p className="text-xs font-medium text-zinc-400">{t('searchYourProject')}</p>
             <p className="text-[11px] text-zinc-500 mt-1">
-              Find occurrences across scenes with instant preview and jump.
+              {t('searchProjectHint')}
             </p>
           </div>
         )}
@@ -153,7 +155,7 @@ function SearchViewComponent({
                 </div>
                 {isCurrentActive && (
                   <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-xs bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 shrink-0">
-                    Active
+                    {t('active')}
                   </span>
                 )}
               </div>

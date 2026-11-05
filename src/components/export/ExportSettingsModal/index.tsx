@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { BookOpen, ListTree } from 'lucide-react';
 import { resolveProjectAuthor, ExportProfile } from '../../../utils/exportEpub';
+import { useTranslation } from '../../../i18n/translations';
 import { ExportSettingsModalProps, TreeItem } from './types';
 import { useExportContentTree } from './useExportContentTree';
 import ExportModalHeader from './ExportModalHeader';
@@ -16,6 +17,7 @@ function ExportSettingsModalComponent({
   onExport,
   isExporting = false,
 }: ExportSettingsModalProps) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'metadata' | 'content'>('metadata');
 
   // Metadata State
@@ -75,7 +77,7 @@ function ExportSettingsModalComponent({
 
   const handleProcessFile = useCallback((file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file (JPEG, PNG, WEBP, etc.)');
+      alert(t('invalidImageAlert'));
       return;
     }
     const reader = new FileReader();
@@ -167,7 +169,7 @@ function ExportSettingsModalComponent({
             }`}
           >
             <BookOpen className="w-4 h-4" />
-            <span>Metadata & Cover</span>
+            <span>{t('metadataAndCover')}</span>
           </button>
 
           <button
@@ -180,7 +182,7 @@ function ExportSettingsModalComponent({
             }`}
           >
             <ListTree className="w-4 h-4" />
-            <span>Content Selection</span>
+            <span>{t('contentSelection')}</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-zinc-800 text-zinc-300">
               {selectedScenes.length} / {totalScenes.length}
             </span>

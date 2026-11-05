@@ -1,8 +1,12 @@
 import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-import { useDockLayout } from './useDockLayout';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { useDockLayout, DOCK_LAYOUT_STORAGE_KEY } from './useDockLayout';
 
 describe('useDockLayout hook', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   it('initializes with default panel widths and open states', () => {
     const { result } = renderHook(() => useDockLayout());
 
@@ -59,5 +63,33 @@ describe('useDockLayout hook', () => {
     expect(result.current.activeLeftTab).toBe('search');
     expect(result.current.leftOpen).toBe(true);
     expect(onOpenWriteView).toHaveBeenCalled();
+  });
+
+  it('persists and restores open and closed panel states from localStorage', () => {
+    localStorage.setItem(
+      DOCK_LAYOUT_STORAGE_KEY,
+      JSON.stringify({
+        leftOpen: false,
+        rightOpen: true,
+        isBottomOpen: true,
+      })
+    );
+
+    const { result } = renderHook(() => useDockLayout());
+
+    expect(result.current.leftOpen).toBe(false);
+    expect(result.current.rightOpen).toBe(true);
+    expect(result.current.isBottomOpen).toBe(true);
+
+    act(() => {
+      result.current.setLeftOpen(true);
+      result.current.setRightOpen(false);
+      result.current.setIsBottomOpen(false);
+    });
+
+    const stored = JSON.parse(localStorage.getItem(DOCK_LAYOUT_STORAGE_KEY)!);
+    expect(stored.leftOpen).toBe(true);
+    expect(stored.rightOpen).toBe(false);
+    expect(stored.isBottomOpen).toBe(false);
   });
 });

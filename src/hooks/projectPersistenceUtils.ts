@@ -97,15 +97,30 @@ export async function promptSaveProjectFile(
 }
 
 /**
+ * Extracts a clean project title from a file path by taking the base name
+ * and stripping any known extension (.foliant, .json).
+ */
+export function extractProjectTitleFromPath(filePath: string): string {
+  if (!filePath || typeof filePath !== 'string') return '';
+  const normalized = filePath.replace(/\\/g, '/');
+  const fileName = normalized.split('/').pop() || '';
+  const baseName = fileName.replace(/\.(foliant|json)$/i, '').trim();
+  return baseName;
+}
+
+/**
  * Writes the project bundle to the given .foliant file with updated timestamp.
+ * Synchronizes the internal project title with the saved file's base name.
  */
 export async function executeSaveBundle(
   filePath: string,
   project: FoliantProject
 ): Promise<{ updatedProject: FoliantProject; timestamp: number }> {
   const now = Date.now();
+  const fileTitle = extractProjectTitleFromPath(filePath);
   const projectToSave: FoliantProject = {
     ...project,
+    title: fileTitle || project.title,
     lastModified: now,
   };
 
@@ -115,9 +130,15 @@ export async function executeSaveBundle(
 
 /**
  * Reads the project bundle from the specified .foliant file.
+ * Synchronizes the internal project title with the opened file's base name.
  */
 export async function executeReadBundle(
   filePath: string
 ): Promise<FoliantProject> {
-  return readProjectBundle(filePath);
+  const loaded = await readProjectBundle(filePath);
+  const fileTitle = extractProjectTitleFromPath(filePath);
+  if (fileTitle) {
+    loaded.title = fileTitle;
+  }
+  return loaded;
 }

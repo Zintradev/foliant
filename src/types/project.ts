@@ -82,6 +82,10 @@ export interface FoliantProject {
   worldItems: WorldItem[];
   contextBlocks: ContextBlock[];
   visuals?: ProjectVisualItem[];
+  author?: string;
+  synopsis?: string;
+  cover?: string;
+  coverFileName?: string;
 }
 
 export interface ProjectVisualItem {
@@ -114,5 +118,9 @@ export function createEmptyProject(
     worldItems: [],
     contextBlocks: [],
     visuals: [],
+    author: '',
+    synopsis: '',
+    cover: undefined,
+    coverFileName: undefined,
   };
 }

@@ -94,6 +94,11 @@ export function generateUuidV4(): string {
  * characters, or context blocks.
  */
 export function resolveProjectAuthor(project: FoliantProject): string {
+  // 0. Check explicit project.author
+  if (project.author && project.author.trim()) {
+    return project.author.trim();
+  }
+
   // 1. Check if any context block explicitly defines an author
   const authorBlock = project.contextBlocks?.find(
     (b) =>

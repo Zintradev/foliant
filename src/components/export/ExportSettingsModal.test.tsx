@@ -82,13 +82,13 @@ describe('ExportSettingsModal Component', () => {
     expect(languageSelect).toHaveValue('en');
 
     // Edit Destination Profile
-    const profileSelect = screen.getByDisplayValue(/Ecosistema Amazon/i);
+    const profileSelect = screen.getByDisplayValue(/Amazon Ecosystem|Ecosistema Amazon/i);
     fireEvent.change(profileSelect, { target: { value: 'standard' } });
     expect(profileSelect).toHaveValue('standard');
 
     // Toggle Visual TOC checkbox
     const visualTocCheckbox = screen.getByRole('checkbox', {
-      name: /Incluir página de Índice visual/i,
+      name: /visual Table of Contents|página de Índice visual/i,
     });
     expect(visualTocCheckbox).toBeChecked();
     fireEvent.click(visualTocCheckbox);

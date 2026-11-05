@@ -141,4 +141,33 @@ describe('DockContainer Dual-Strip Subdivision', () => {
     expect(screen.getByTestId('content-inspector')).toBeDefined();
     expect(screen.queryByTestId('content-context')).toBeNull();
   });
+
+  it('opens context menu on right-click on tab header and allows hiding the panel', () => {
+    const onRemoveTab = vi.fn();
+    render(
+      <DockContainer
+        side="left"
+        isOpen={true}
+        onToggleOpen={vi.fn()}
+        tabs={['outline', 'search']}
+        activeTab={'outline'}
+        onSelectTab={vi.fn()}
+        onDockTab={vi.fn()}
+        onRemoveTab={onRemoveTab}
+        renderView={() => <div>Content</div>}
+      />
+    );
+
+    const outlineTab = screen.getByText('Outline');
+    // Right click on tab label
+    fireEvent.contextMenu(outlineTab, { clientX: 50, clientY: 50 });
+
+    // Context menu should appear with Hide Panel option
+    const hideOption = screen.getByRole('button', { name: /Hide Panel/i });
+    expect(hideOption).toBeInTheDocument();
+
+    // Clicking Hide Panel invokes onRemoveTab with 'outline'
+    fireEvent.click(hideOption);
+    expect(onRemoveTab).toHaveBeenCalledWith('outline');
+  });
 });

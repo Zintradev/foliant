@@ -3,6 +3,7 @@ import { Editor } from '@tiptap/react';
 import { Underline as UnderlineIcon, ChevronDown, Pipette } from 'lucide-react';
 import { UNDERLINE_COLORS } from './extensions';
 import { DarkColorPicker } from '../../common/DarkColorPicker';
+import { useTranslation } from '../../../i18n/translations';
 
 interface UnderlineColorPickerProps {
   editor: Editor | null;
@@ -17,6 +18,7 @@ function UnderlineColorPicker({
   underlineColor,
   onUnderlineColorChange,
 }: UnderlineColorPickerProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [isCustomOpen, setIsCustomOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -55,7 +57,7 @@ function UnderlineColorPicker({
       <button
         type="button"
         disabled={!isEditorReady}
-        title={`Underline (Ctrl+U) - Current Color: ${underlineColor}`}
+        title={`${t('underline')} - Current Color: ${underlineColor}`}
         onClick={() => {
           if (!isEditorReady || !editor) return;
           if (editor.isActive('underline')) {
@@ -81,7 +83,7 @@ function UnderlineColorPicker({
       <button
         type="button"
         disabled={!isEditorReady}
-        title="Underline Color Palette"
+        title={t('underlineColorPalette')}
         onClick={() => setIsOpen((prev) => !prev)}
         className={`h-7 px-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/80 rounded-r-xs border-r border-t border-b border-zinc-800/80 cursor-pointer flex items-center justify-center transition ${
           isOpen ? 'bg-zinc-800 text-zinc-100 border-zinc-700' : ''
@@ -93,7 +95,7 @@ function UnderlineColorPicker({
       {isOpen && (
         <div className="absolute left-0 top-full mt-1.5 p-2.5 bg-zinc-950 border border-zinc-800 rounded-sm shadow-2xl z-50 w-52 space-y-2.5 select-none ring-1 ring-black/80 backdrop-blur-md">
           <div className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Underline Color</span>
+            <span>{t('underlineColor')}</span>
             <span
               className="w-2.5 h-2.5 rounded-full border border-zinc-700"
               style={{ backgroundColor: underlineColor }}
@@ -118,7 +120,7 @@ function UnderlineColorPicker({
           <div className="flex items-center justify-between pt-2 border-t border-zinc-800 text-[10px]">
             <div className="flex items-center gap-1.5 text-zinc-400">
               <Pipette className="w-3 h-3 text-zinc-400" />
-              <span className="font-mono text-[10px] uppercase tracking-wider">Custom</span>
+              <span className="font-mono text-[10px] uppercase tracking-wider">{t('customColor')}</span>
             </div>
             <button
               type="button"
@@ -128,7 +130,7 @@ function UnderlineColorPicker({
                   ? 'border-zinc-500 bg-zinc-900'
                   : 'border-zinc-800 hover:border-zinc-700'
               }`}
-              title="Pick exact custom color"
+              title={t('pickExactCustomColor')}
             >
               <span
                 className="w-2.5 h-2.5 rounded-full border border-zinc-700/80 shadow-xs shrink-0"
@@ -143,7 +145,7 @@ function UnderlineColorPicker({
           {isCustomOpen && (
             <DarkColorPicker
               color={underlineColor}
-              title="Exact Underline Color"
+              title={t('customColor')}
               onChange={(hex) => {
                 onUnderlineColorChange(hex);
                 editor?.chain().focus().setMark('underline', { color: hex }).run();

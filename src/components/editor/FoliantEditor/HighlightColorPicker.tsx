@@ -3,6 +3,7 @@ import { Editor } from '@tiptap/react';
 import { Highlighter, ChevronDown, Pipette } from 'lucide-react';
 import { HIGHLIGHT_COLORS } from './extensions';
 import { DarkColorPicker } from '../../common/DarkColorPicker';
+import { useTranslation } from '../../../i18n/translations';
 
 interface HighlightColorPickerProps {
   editor: Editor | null;
@@ -17,6 +18,7 @@ function HighlightColorPicker({
   highlightColor,
   onHighlightColorChange,
 }: HighlightColorPickerProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [isCustomOpen, setIsCustomOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -61,7 +63,7 @@ function HighlightColorPicker({
       <button
         type="button"
         disabled={!isEditorReady}
-        title={`Highlight - Current Color: ${highlightColor}`}
+        title={`${t('highlight')} - Current Color: ${highlightColor}`}
         onClick={() => {
           if (!isEditorReady || !editor) return;
           if (editor.isActive('highlight')) {
@@ -87,7 +89,7 @@ function HighlightColorPicker({
       <button
         type="button"
         disabled={!isEditorReady}
-        title="Highlight Color Palette"
+        title={t('highlightColorPalette')}
         onClick={() => {
           setIsOpen((prev) => {
             if (prev) setIsCustomOpen(false);
@@ -104,7 +106,7 @@ function HighlightColorPicker({
       {isOpen && (
         <div className="absolute left-0 top-full mt-1.5 p-2.5 bg-zinc-950 border border-zinc-800 rounded-sm shadow-2xl z-50 w-52 space-y-2.5 select-none ring-1 ring-black/80 backdrop-blur-md">
           <div className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Highlight Color</span>
+            <span>{t('highlightColor')}</span>
             <span
               className="w-2.5 h-2.5 rounded-full border border-zinc-700"
               style={{ backgroundColor: highlightColor }}
@@ -132,7 +134,7 @@ function HighlightColorPicker({
               onClick={handleClearColor}
               className="px-1.5 py-0.5 text-zinc-400 hover:text-rose-400 hover:bg-zinc-850/80 rounded-xs text-[10px] font-mono transition cursor-pointer"
             >
-              No Color
+              {t('noColor')}
             </button>
             <button
               type="button"
@@ -142,7 +144,7 @@ function HighlightColorPicker({
                   ? 'border-zinc-500 bg-zinc-900'
                   : 'border-zinc-800 hover:border-zinc-700'
               }`}
-              title="Pick exact custom color"
+              title={t('pickExactCustomColor')}
             >
               <Pipette className="w-3 h-3 text-zinc-400" />
               <span
@@ -158,7 +160,7 @@ function HighlightColorPicker({
           {isCustomOpen && (
             <DarkColorPicker
               color={highlightColor}
-              title="Exact Highlight Color"
+              title={t('customColor')}
               onChange={(hex) => {
                 onHighlightColorChange(hex);
                 editor?.chain().focus().setHighlight({ color: hex }).run();

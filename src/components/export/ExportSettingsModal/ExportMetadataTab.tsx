@@ -66,7 +66,7 @@ function ExportMetadataTab({
         <div>
           <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
             <FileText className="w-3.5 h-3.5 text-emerald-400" />
-            Book Title
+            {t('bookTitle')}
           </label>
           <input
             type="text"
@@ -82,7 +82,7 @@ function ExportMetadataTab({
         <div>
           <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
             <User className="w-3.5 h-3.5 text-emerald-400" />
-            Author Name
+            {t('authorName')}
           </label>
           <input
             type="text"
@@ -99,7 +99,7 @@ function ExportMetadataTab({
           <label className="flex items-center justify-between text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
             <span className="flex items-center gap-1.5">
               <Building2 className="w-3.5 h-3.5 text-emerald-400" />
-              Editorial o Año (Publisher / Year)
+              {t('publisherYear')}
             </span>
             <span className="text-[11px] font-normal text-zinc-500">
               {t('optional')}
@@ -118,7 +118,7 @@ function ExportMetadataTab({
         <div>
           <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
             <Languages className="w-3.5 h-3.5 text-emerald-400" />
-            Book Language (Idioma)
+            {t('bookLanguage')}
           </label>
           <select
             value={language}
@@ -137,14 +137,14 @@ function ExportMetadataTab({
             <option value="eu">Euskara (eu)</option>
           </select>
           <p className="mt-1 text-[11px] text-zinc-400">
-            Enables native dictionary hyphenation (separación silábica) on Kindle and e-readers.
+            {t('hyphenationNote')}
           </p>
         </div>
 
         <div>
           <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
             <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
-            Destino de Lectura
+            {t('readingTarget')}
           </label>
           <select
             value={profile}
@@ -152,13 +152,13 @@ function ExportMetadataTab({
             disabled={isExporting}
             className="w-full px-3.5 py-2.5 bg-zinc-900 border border-zinc-700/80 rounded-lg text-sm text-zinc-100 focus:outline-hidden focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition cursor-pointer"
           >
-            <option value="standard">EPUB Estándar (Apple Books, Kobo, Thorium)</option>
-            <option value="amazon">Ecosistema Amazon (Kindle, Calibre a AZW3)</option>
+            <option value="standard">{t('profileStandard')}</option>
+            <option value="amazon">{t('profileAmazon')}</option>
           </select>
           <p className="mt-1 text-[11px] text-zinc-400">
             {profile === 'amazon'
-              ? 'Purga line-height y márgenes verticales en <p> y aplica sanitización agresiva de saltos para evitar huecos en Kindle.'
-              : 'Mantiene el espaciado y ritmo vertical estándar de EPUB (line-height 1.4, margin-bottom 0.5em, widows/orphans 2).'}
+              ? t('profileAmazonDesc')
+              : t('profileStandardDesc')}
           </p>
         </div>
 
@@ -175,10 +175,10 @@ function ExportMetadataTab({
             <div className="space-y-1">
               <span className="flex items-center gap-1.5 text-xs font-semibold text-zinc-200">
                 <ListTree className="w-3.5 h-3.5 text-emerald-400" />
-                Incluir página de Índice visual
+                {t('includeVisualToc')}
               </span>
               <p className="text-[11px] text-zinc-400 leading-relaxed">
-                Genera una página visual de tabla de contenidos (<code className="text-zinc-300">toc.xhtml</code>) al inicio del libro. Si se desmarca, se omite esta página en la lectura, manteniendo intactos los archivos de navegación del sistema (<code className="text-zinc-300">toc.ncx</code> y <code className="text-zinc-300">nav.xhtml</code>) para los menús de navegación nativos del e-reader.
+                {t('visualTocDesc')}
               </p>
             </div>
           </label>
