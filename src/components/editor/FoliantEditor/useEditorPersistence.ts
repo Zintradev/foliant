@@ -54,7 +54,7 @@ export function useEditorPersistence({
       try {
         if (isAutoSave && isTauriApp()) {
           await invoke('save_chapter_file', {
-            path: `../${targetChapterId}.md`,
+            path: `../tests/fixtures/${targetChapterId}.md`,
             content: contentToSave,
           });
         }
@@ -173,7 +173,7 @@ export function useEditorPersistence({
       if (isDirtyRef.current && editor && !editor.isDestroyed && isTauriApp()) {
         const lastContent = editor.getHTML();
         invoke('save_chapter_file', {
-          path: `../${activeChapterIdRef.current}.md`,
+          path: `../tests/fixtures/${activeChapterIdRef.current}.md`,
           content: lastContent,
         }).catch(() => {
           // ignore unmount save error

@@ -324,7 +324,7 @@ describe('FoliantEditor Component', () => {
     expect(mockInvoke).toHaveBeenCalledWith(
       'save_chapter_file',
       expect.objectContaining({
-        path: '../scene-debounce.md',
+        path: '../tests/fixtures/scene-debounce.md',
       })
     );
     expect(mockOnChange).toHaveBeenCalled();
@@ -385,7 +385,7 @@ describe('FoliantEditor Component', () => {
     expect(mockInvoke).toHaveBeenCalledWith(
       'save_chapter_file',
       expect.objectContaining({
-        path: '../scene-old.md',
+        path: '../tests/fixtures/scene-old.md',
       })
     );
     expect(screen.getByText('New Chapter')).toBeInTheDocument();
@@ -412,7 +412,7 @@ describe('FoliantEditor Component', () => {
     expect(mockInvoke).toHaveBeenCalledWith(
       'save_chapter_file',
       expect.objectContaining({
-        path: '../scene-unmount.md',
+        path: '../tests/fixtures/scene-unmount.md',
       })
     );
   });

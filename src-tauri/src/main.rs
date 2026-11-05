@@ -382,6 +382,11 @@ async fn delete_reference_image(
 /// Kept from the original implementation.
 #[tauri::command]
 async fn save_chapter_file(path: String, content: String) -> Result<(), String> {
+    if let Some(parent) = Path::new(&path).parent() {
+        if !parent.as_os_str().is_empty() {
+            let _ = fs::create_dir_all(parent);
+        }
+    }
     fs::write(&path, content).map_err(|e| format!("Failed to write file to '{path}': {e}"))
 }
 
@@ -461,7 +466,7 @@ mod tests {
     #[test]
     fn test_save_chapter_logic() {
         let _ = save_chapter_file;
-        let sample_path = "./test-chapter.md";
+        let sample_path = "../tests/fixtures/test-chapter.md";
         assert!(
             sample_path.ends_with(".md"),
             "Chapter file path must end with .md"
@@ -469,6 +474,10 @@ mod tests {
         assert!(
             !sample_path.is_empty(),
             "Chapter file path must not be empty"
+        );
+        assert!(
+            Path::new(sample_path).exists(),
+            "Sample test chapter fixture file should exist in tests/fixtures"
         );
     }
 
