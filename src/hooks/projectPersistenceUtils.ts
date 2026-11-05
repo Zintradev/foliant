@@ -12,7 +12,7 @@ export const FOLIANT_DIALOG_FILTERS = [
   { name: 'Foliant Project', extensions: ['foliant'] },
 ];
 
-export const LAST_FOLIANT_PROJECT_KEY = 'lastFoliantProject';
+export const LAST_FOLIANT_PROJECT_KEY = 'lastOpenedProjectPath';
 
 /**
  * Checks whether a file exists on disk.

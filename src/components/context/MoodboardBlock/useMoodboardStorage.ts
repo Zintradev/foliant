@@ -1,16 +1,13 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
 import { isTauriApp } from '../../../utils/platform';
 import { ProjectVisualItem } from '../../../types/project';
 import {
   ReferenceImage,
   MoodboardSection,
-  CachedReferenceImage,
 } from './types';
 import {
   DEFAULT_SECTIONS,
-  getMoodboardCacheKey,
-  getMoodboardSectionsKey,
   normalizeAssetPath,
   extractFileName,
   toReferenceImage,
@@ -18,10 +15,27 @@ import {
   generateStableImageId,
 } from './constants';
 
+function mapVisualsToReferenceImages(visuals?: ProjectVisualItem[]): ReferenceImage[] {
+  if (!Array.isArray(visuals) || visuals.length === 0) return [];
+  const clean = visuals.filter((c) => !isCastleOrLegacyArtifact(c));
+  return clean.map((c) => {
+    const normalized = normalizeAssetPath(c.path);
+    const id = c.id || generateStableImageId(c.path);
+    return {
+      id,
+      path: c.path,
+      src: isTauriApp() && normalized ? convertFileSrc(normalized) : c.src || normalized || '',
+      name: c.name || extractFileName(c.path),
+      sectionId: c.sectionId || 'general',
+      base64: c.base64,
+    };
+  });
+}
+
 export function useMoodboardStorage(
   projectId?: string,
   projectFilePath?: string | null,
-  onUpdateVisuals?: (visuals: Array<{ id: string; path: string; name: string; sectionId: string }>) => void,
+  onUpdateVisuals?: (visuals: Array<{ id: string; path: string; name: string; sectionId: string; base64?: string }>) => void,
   initialVisuals?: ProjectVisualItem[]
 ) {
   const onUpdateVisualsRef = useRef(onUpdateVisuals);
@@ -29,121 +43,36 @@ export function useMoodboardStorage(
     onUpdateVisualsRef.current = onUpdateVisuals;
   }, [onUpdateVisuals]);
 
-  const cacheKey = useMemo(() => getMoodboardCacheKey(projectId), [projectId]);
-  const sectionsKey = useMemo(() => getMoodboardSectionsKey(projectId), [projectId]);
   const fetchGenRef = useRef(0);
 
-  // One-time automatic purge of any legacy castle.jpg references from all localStorage caches
+  // One-time automatic purge of any legacy moodboard caches from localStorage
   useEffect(() => {
     try {
       if (typeof localStorage !== 'undefined') {
+        const keysToRemove: string[] = [];
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
-          if (key && (key.startsWith('foliant_moodboard_') || key === 'foliant_moodboard_cache_v1')) {
-            const raw = localStorage.getItem(key);
-            if (raw && (raw.includes('castle.jpg') || raw.includes('web-castle.jpg'))) {
-              try {
-                const parsed = JSON.parse(raw);
-                if (Array.isArray(parsed)) {
-                  const cleaned = parsed.filter((item) => !isCastleOrLegacyArtifact(item));
-                  localStorage.setItem(key, JSON.stringify(cleaned));
-                }
-              } catch {}
-            }
+          if (
+            key &&
+            (key.startsWith('foliant_moodboard_') ||
+              key === 'foliant_moodboard_cache_v1' ||
+              key === 'foliant_moodboard_sections_v1')
+          ) {
+            keysToRemove.push(key);
           }
         }
-      }
-    } catch {}
-  }, []);
-
-  const loadInitialImages = useCallback((): ReferenceImage[] => {
-    // 1. If parent passes initialVisuals, prioritize them
-    if (Array.isArray(initialVisuals) && initialVisuals.length > 0) {
-      const cleanInit = initialVisuals.filter((c) => !isCastleOrLegacyArtifact(c));
-      if (cleanInit.length > 0) {
-        return cleanInit.map((c) => {
-          const normalized = normalizeAssetPath(c.path);
-          const id = c.id || generateStableImageId(c.path);
-          return {
-            id,
-            path: c.path,
-            src: isTauriApp() && normalized ? convertFileSrc(normalized) : normalized || '',
-            name: c.name || extractFileName(c.path),
-            sectionId: c.sectionId || 'general',
-          };
-        });
-      }
-    }
-
-    // 2. Try project-specific localStorage
-    try {
-      const stored = localStorage.getItem(cacheKey);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const cleanList = parsed.filter((c: CachedReferenceImage) => !isCastleOrLegacyArtifact(c));
-          if (cleanList.length !== parsed.length) {
-            localStorage.setItem(cacheKey, JSON.stringify(cleanList));
-          }
-          return cleanList.map((c: CachedReferenceImage) => {
-            const normalized = normalizeAssetPath(c.path);
-            const id = c.id || generateStableImageId(c.path);
-            return {
-              id,
-              path: c.path,
-              src: isTauriApp() && normalized ? convertFileSrc(normalized) : normalized || '',
-              name: c.name || extractFileName(c.path),
-              sectionId: c.sectionId || 'general',
-            };
-          });
-        }
-      }
-    } catch (e) {
-      console.warn(`[useMoodboardStorage:loadInitialImages] Error reading localStorage (${cacheKey}):`, e);
-    }
-
-    // 3. Try global cache if project cache is empty
-    try {
-      const storedGlobal = localStorage.getItem('foliant_moodboard_cache_v1');
-      if (storedGlobal) {
-        const parsed = JSON.parse(storedGlobal);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const cleanList = parsed.filter((c: CachedReferenceImage) => !isCastleOrLegacyArtifact(c));
-          return cleanList.map((c: CachedReferenceImage) => {
-            const normalized = normalizeAssetPath(c.path);
-            const id = c.id || generateStableImageId(c.path);
-            return {
-              id,
-              path: c.path,
-              src: isTauriApp() && normalized ? convertFileSrc(normalized) : normalized || '',
-              name: c.name || extractFileName(c.path),
-              sectionId: c.sectionId || 'general',
-            };
-          });
-        }
-      }
-    } catch (e) {
-      console.warn(`[useMoodboardStorage:loadInitialImages] Error reading fallback global cache:`, e);
-    }
-
-    return [];
-  }, [cacheKey, initialVisuals, projectId]);
-
-  const loadInitialSections = useCallback((): MoodboardSection[] => {
-    try {
-      const stored = localStorage.getItem(sectionsKey);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        keysToRemove.forEach((k) => localStorage.removeItem(k));
       }
     } catch {
-      // fallback
+      // ignore
     }
-    return DEFAULT_SECTIONS;
-  }, [sectionsKey]);
+  }, []);
 
-  const [images, setImages] = useState<ReferenceImage[]>(loadInitialImages);
-  const [sections, setSections] = useState<MoodboardSection[]>(loadInitialSections);
+  // Visuals live strictly in RAM and in the .foliant file
+  const [images, setImages] = useState<ReferenceImage[]>(() =>
+    mapVisualsToReferenceImages(initialVisuals)
+  );
+  const [sections, setSections] = useState<MoodboardSection[]>(DEFAULT_SECTIONS);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -153,161 +82,55 @@ export function useMoodboardStorage(
   useEffect(() => {
     if (prevProjectIdRef.current !== projectId) {
       prevProjectIdRef.current = projectId;
-      const initial = loadInitialImages();
-
-      if (initial.length > 0) {
-        setImages(initial);
-      } else {
-        setImages((prev) => {
-          if (prev.length > 0) {
-            try {
-              const serializable = prev.map(({ id, path, name, sectionId }) => ({
-                id,
-                path,
-                name,
-                sectionId,
-              }));
-              localStorage.setItem(cacheKey, JSON.stringify(serializable));
-            } catch (err) {
-              console.error('[useMoodboardStorage:PROJECT_ID_CHANGED] Error migrating images to new cacheKey:', err);
-            }
-            return prev;
-          }
-          return [];
-        });
-      }
-
-      setSections(loadInitialSections());
+      // Strict reset: empty out completely before adopting new project visuals
+      const next = mapVisualsToReferenceImages(initialVisuals);
+      setImages(next);
+      setSections(DEFAULT_SECTIONS);
+      setErrorMessage(null);
     }
-  }, [projectId, loadInitialImages, loadInitialSections, cacheKey]);
+  }, [projectId, initialVisuals]);
 
   // Sync if parent updates initialVisuals from project state
   useEffect(() => {
-    if (Array.isArray(initialVisuals) && initialVisuals.length > 0) {
-      const cleanInit = initialVisuals.filter((c) => !isCastleOrLegacyArtifact(c));
-      if (cleanInit.length > 0) {
-        setImages((prev) => {
-          if (prev.length === 0) {
-            return cleanInit.map((c) => {
-              const normalized = normalizeAssetPath(c.path);
-              const id = c.id || generateStableImageId(c.path);
-              return {
-                id,
-                path: c.path,
-                src: isTauriApp() && normalized ? convertFileSrc(normalized) : normalized || '',
-                name: c.name || extractFileName(c.path),
-                sectionId: c.sectionId || 'general',
-              };
-            });
-          }
-          return prev;
-        });
+    const nextImages = mapVisualsToReferenceImages(initialVisuals);
+    setImages((prev) => {
+      if (
+        prev.length === nextImages.length &&
+        prev.every(
+          (item, i) =>
+            item.id === nextImages[i]?.id &&
+            item.path === nextImages[i]?.path &&
+            item.sectionId === nextImages[i]?.sectionId &&
+            item.name === nextImages[i]?.name
+        )
+      ) {
+        return prev;
       }
-    }
+      return nextImages;
+    });
   }, [initialVisuals]);
-
-  // Sync sections to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(sectionsKey, JSON.stringify(sections));
-    } catch {
-      // ignore
-    }
-  }, [sections, sectionsKey]);
-
-  // Sync images to localStorage (saving only lightweight metadata: id, name, path, sectionId)
-  useEffect(() => {
-    try {
-      const serializable = images.map(({ id, path, name, sectionId }) => ({
-        id,
-        path,
-        name,
-        sectionId,
-      }));
-      localStorage.setItem(cacheKey, JSON.stringify(serializable));
-    } catch (err) {
-      console.error('[useMoodboardStorage] Failed to sync images to localStorage:', err);
-    }
-  }, [images, cacheKey]);
 
   const commitImages = useCallback((updated: ReferenceImage[]) => {
     setImages(updated);
-    try {
-      const serializable = updated.map(({ id, path, name, sectionId }) => ({
-        id,
-        path,
-        name,
-        sectionId,
-      }));
-      localStorage.setItem(cacheKey, JSON.stringify(serializable));
-      onUpdateVisualsRef.current?.(serializable);
-    } catch (err) {
-      console.error('[useMoodboardStorage.commitImages] Failed to update localStorage:', err);
-    }
-  }, [cacheKey]);
+    const serializable = updated.map(({ id, path, name, sectionId, base64 }) => ({
+      id,
+      path,
+      name,
+      sectionId,
+      base64,
+    }));
+    onUpdateVisualsRef.current?.(serializable);
+  }, []);
 
   const fetchImages = useCallback(async () => {
     const currentGen = ++fetchGenRef.current;
+    if (!isTauriApp()) {
+      return;
+    }
+
     setLoading(true);
     setErrorMessage(null);
     try {
-      let cached: Array<{ id: string; path: string; name: string; sectionId: string }> = [];
-      try {
-        const stored = localStorage.getItem(cacheKey);
-        if (stored) cached = JSON.parse(stored);
-      } catch {
-        // ignore
-      }
-
-      if (!Array.isArray(cached) || cached.length === 0) {
-        try {
-          const storedGlobal = localStorage.getItem('foliant_moodboard_cache_v1');
-          if (storedGlobal) cached = JSON.parse(storedGlobal);
-        } catch {
-          // ignore
-        }
-      }
-
-      if (!Array.isArray(cached)) {
-        cached = [];
-      }
-
-      // Purge castle.jpg or rogue legacy items from cached
-      const cleanCached = cached.filter((c) => !isCastleOrLegacyArtifact(c));
-      if (cleanCached.length !== cached.length) {
-        localStorage.setItem(cacheKey, JSON.stringify(cleanCached));
-        cached = cleanCached;
-      }
-      // If running in a web browser without Tauri native IPC, use cache exclusively
-      if (!isTauriApp()) {
-        const reconciled: ReferenceImage[] = cached.map((c) => {
-          const id = c.id || generateStableImageId(c.path);
-          return {
-            id,
-            path: c.path || c.name || `web-img-${id}`,
-            src: c.path || '',
-            name: c.name || extractFileName(c.path || 'image'),
-            sectionId: c.sectionId || 'general',
-          };
-        });
-        if (fetchGenRef.current !== currentGen) return;
-        setImages((prev) => {
-          if (
-            prev.length === reconciled.length &&
-            prev.every(
-              (item, i) =>
-                item.path === reconciled[i]?.path &&
-                item.sectionId === reconciled[i]?.sectionId &&
-                item.id === reconciled[i]?.id
-            )
-          ) {
-            return prev;
-          }
-          return reconciled;
-        });
-        return;
-      }
-
       const paths = await invoke<string[]>('list_reference_images', {
         projectPath: projectFilePath || null,
         projectId: projectId || null,
@@ -320,90 +143,50 @@ export function useMoodboardStorage(
         return;
       }
 
-      // Reconcile: ONLY display images that belong to this project's cached visuals.
-      // Reconcile disk paths when present; do not invent rogue files from disk into the project.
-      if (cached.length > 0) {
-        const reconciled: ReferenceImage[] = cached.map((c) => {
-          const normCached = normalizeAssetPath(c.path).toLowerCase();
+      // Reconcile: ONLY reconcile paths for images already in project state.
+      // Do NOT invent rogue files from disk into an empty or unsaved project!
+      setImages((prev) => {
+        if (prev.length === 0) {
+          return prev;
+        }
+        const reconciled: ReferenceImage[] = prev.map((img) => {
+          const normCached = normalizeAssetPath(img.path).toLowerCase();
           const diskMatch = safePaths.find(
-            (p) => normalizeAssetPath(p).toLowerCase() === normCached || extractFileName(p) === c.name
+            (p) =>
+              normalizeAssetPath(p).toLowerCase() === normCached ||
+              extractFileName(p) === img.name
           );
-          const effectivePath = diskMatch || c.path;
+          const effectivePath = diskMatch || img.path;
           const normalized = normalizeAssetPath(effectivePath);
-          const id = c.id || generateStableImageId(effectivePath);
           return {
-            id,
+            ...img,
             path: effectivePath,
             src: convertFileSrc(normalized),
-            name: c.name || extractFileName(effectivePath),
-            sectionId: c.sectionId || 'general',
+            name: img.name || extractFileName(effectivePath),
           };
         });
-        setImages((prev) => {
-          if (
-            prev.length === reconciled.length &&
-            prev.every(
-              (item, i) =>
-                item.path === reconciled[i]?.path &&
-                item.sectionId === reconciled[i]?.sectionId &&
-                item.id === reconciled[i]?.id
-            )
-          ) {
-            return prev;
-          }
-          return reconciled;
-        });
-      } else if (safePaths.length > 0) {
-        // Disk has images for this project but cache was empty: adopt disk images
-        const fromDisk: ReferenceImage[] = safePaths.map((p) => {
-          const normalized = normalizeAssetPath(p);
-          const id = generateStableImageId(p);
-          return {
-            id,
-            path: p,
-            src: convertFileSrc(normalized),
-            name: extractFileName(p),
-            sectionId: 'general',
-          };
-        });
-        setImages(fromDisk);
-      } else {
-        // Neither cache nor disk found images.
-        // DO NOT wipe out images if state already has images loaded (prevents race condition disappearing images!)
-        setImages((prev) => (prev.length > 0 ? prev : []));
-      }
-    } catch (err) {
-      console.error('[useMoodboardStorage:fetchImages] ERROR loading reference images:', err);
-      if (fetchGenRef.current !== currentGen) return;
-      try {
-        const stored = localStorage.getItem(cacheKey);
-        if (stored) {
-          const rawCached = JSON.parse(stored);
-          if (Array.isArray(rawCached)) {
-            const clean = rawCached.filter((c: CachedReferenceImage) => !isCastleOrLegacyArtifact(c));
-            setImages(
-              clean.map((c: CachedReferenceImage) => {
-                const normalized = normalizeAssetPath(c.path);
-                const id = c.id || generateStableImageId(c.path);
-                return {
-                  id,
-                  path: c.path,
-                  src: isTauriApp() && normalized ? convertFileSrc(normalized) : c.path || '',
-                  name: c.name || extractFileName(c.path),
-                  sectionId: c.sectionId || 'general',
-                };
-              })
-            );
-          }
+
+        if (
+          prev.length === reconciled.length &&
+          prev.every(
+            (item, i) =>
+              item.path === reconciled[i]?.path &&
+              item.sectionId === reconciled[i]?.sectionId &&
+              item.id === reconciled[i]?.id &&
+              item.src === reconciled[i]?.src
+          )
+        ) {
+          return prev;
         }
-      } catch {
-        // ignore
-      }
+        return reconciled;
+      });
+    } catch (err) {
+      if (fetchGenRef.current !== currentGen) return;
       setErrorMessage(String(err));
     } finally {
       setLoading(false);
     }
-  }, [cacheKey, projectFilePath, projectId]);
+  }, [projectFilePath, projectId]);
 
   useEffect(() => {
     void fetchImages();
@@ -414,8 +197,9 @@ export function useMoodboardStorage(
       const customEvent = event as CustomEvent<ReferenceImage[]>;
       if (Array.isArray(customEvent.detail)) {
         const cleanDetail = customEvent.detail.filter((c) => !isCastleOrLegacyArtifact(c));
-        // If empty detail is received, do not wipe out already displayed images!
         if (cleanDetail.length === 0) {
+          // Strict reset when project visuals are empty
+          setImages([]);
           return;
         }
         const mapped: ReferenceImage[] = cleanDetail.map((c) => {
@@ -424,9 +208,10 @@ export function useMoodboardStorage(
           return {
             id,
             path: c.path,
-            src: isTauriApp() && normalized ? convertFileSrc(normalized) : c.path || '',
+            src: isTauriApp() && normalized ? convertFileSrc(normalized) : c.src || normalized || '',
             name: c.name || extractFileName(c.path),
             sectionId: c.sectionId || 'general',
+            base64: c.base64,
           };
         });
         setImages((prev) => {
@@ -486,65 +271,62 @@ export function useMoodboardStorage(
         const newImg = toReferenceImage(savedPath, targetSectionId, base64Data);
 
         setImages((prev) => {
-          if (prev.some((img) => (img.path === savedPath || img.id === newImg.id) && img.name === file.name)) {
+          if (
+            prev.some(
+              (img) => (img.path === savedPath || img.id === newImg.id) && img.name === file.name
+            )
+          ) {
             return prev;
           }
           const updated = [...prev, newImg];
-          try {
-            const serializable = updated.map(({ id, path, name, sectionId }) => ({
-              id,
-              path,
-              name,
-              sectionId,
-            }));
-            localStorage.setItem(cacheKey, JSON.stringify(serializable));
-            onUpdateVisualsRef.current?.(serializable);
-          } catch (storageErr) {
-            console.error(`[useMoodboardStorage.uploadFile] Failed to write cache to localStorage:`, storageErr);
-          }
+          const serializable = updated.map(({ id, path, name, sectionId, base64 }) => ({
+            id,
+            path,
+            name,
+            sectionId,
+            base64,
+          }));
+          onUpdateVisualsRef.current?.(serializable);
           return updated;
         });
       } catch (err) {
-        console.error(`[useMoodboardStorage.uploadFile] ERROR uploading image "${file.name}":`, err);
         setErrorMessage(String(err));
       } finally {
         setUploading(false);
       }
     },
-    [cacheKey, projectFilePath, projectId]
+    [projectFilePath, projectId]
   );
 
-  const handleDeleteImage = useCallback(async (image: ReferenceImage) => {
-    setErrorMessage(null);
-    try {
-      if (isTauriApp()) {
-        await invoke('delete_reference_image', {
-          fileName: image.name,
-          projectPath: projectFilePath || null,
-          projectId: projectId || null,
-        });
-      }
-      setImages((prev) => {
-        const updated = prev.filter((item) => item.path !== image.path && item.id !== image.id);
-        try {
-          const serializable = updated.map(({ id, path, name, sectionId }) => ({
+  const handleDeleteImage = useCallback(
+    async (image: ReferenceImage) => {
+      setErrorMessage(null);
+      try {
+        if (isTauriApp()) {
+          await invoke('delete_reference_image', {
+            fileName: image.name,
+            projectPath: projectFilePath || null,
+            projectId: projectId || null,
+          });
+        }
+        setImages((prev) => {
+          const updated = prev.filter((item) => item.path !== image.path && item.id !== image.id);
+          const serializable = updated.map(({ id, path, name, sectionId, base64 }) => ({
             id,
             path,
             name,
             sectionId,
+            base64,
           }));
-          localStorage.setItem(cacheKey, JSON.stringify(serializable));
           onUpdateVisualsRef.current?.(serializable);
-        } catch {
-          // ignore
-        }
-        return updated;
-      });
-    } catch (err) {
-      console.error('Failed to delete image:', err);
-      setErrorMessage(String(err));
-    }
-  }, [cacheKey, projectFilePath, projectId]);
+          return updated;
+        });
+      } catch (err) {
+        setErrorMessage(String(err));
+      }
+    },
+    [projectFilePath, projectId]
+  );
 
   const handleAddSection = useCallback((name: string) => {
     const trimmed = name.trim();
@@ -556,44 +338,43 @@ export function useMoodboardStorage(
     setSections((prev) => [...prev, newSection]);
   }, []);
 
-  const handleDeleteSection = useCallback(async (sectionId: string) => {
-    // 1. Remove the section
-    setSections((prev) => prev.filter((s) => s.id !== sectionId));
+  const handleDeleteSection = useCallback(
+    async (sectionId: string) => {
+      // 1. Remove the section
+      setSections((prev) => prev.filter((s) => s.id !== sectionId));
 
-    // 2. Identify all images inside the section to delete physically
-    const imagesToDelete = images.filter((img) => (img.sectionId || 'general') === sectionId);
-    if (isTauriApp()) {
-      for (const img of imagesToDelete) {
-        try {
-          await invoke('delete_reference_image', {
-            fileName: img.name,
-            projectPath: projectFilePath || null,
-            projectId: projectId || null,
-          });
-        } catch (err) {
-          console.warn(`[useMoodboardStorage] Failed to physically delete ${img.name}:`, err);
+      // 2. Identify all images inside the section to delete physically
+      const imagesToDelete = images.filter((img) => (img.sectionId || 'general') === sectionId);
+      if (isTauriApp()) {
+        for (const img of imagesToDelete) {
+          try {
+            await invoke('delete_reference_image', {
+              fileName: img.name,
+              projectPath: projectFilePath || null,
+              projectId: projectId || null,
+            });
+          } catch {
+            // non-fatal physical deletion failure
+          }
         }
       }
-    }
 
-    // 3. Remove all images in the deleted folder from state immediately
-    const remaining = images.filter((img) => (img.sectionId || 'general') !== sectionId);
-    setImages(remaining);
+      // 3. Remove all images in the deleted folder from state immediately
+      const remaining = images.filter((img) => (img.sectionId || 'general') !== sectionId);
+      setImages(remaining);
 
-    // 4. Update localStorage and notify project
-    try {
-      const serializable = remaining.map(({ id, path, name, sectionId }) => ({
+      // 4. Notify project
+      const serializable = remaining.map(({ id, path, name, sectionId, base64 }) => ({
         id,
         path,
         name,
         sectionId,
+        base64,
       }));
-      localStorage.setItem(cacheKey, JSON.stringify(serializable));
       onUpdateVisualsRef.current?.(serializable);
-    } catch {
-      // ignore
-    }
-  }, [images, cacheKey, projectFilePath, projectId]);
+    },
+    [images, projectFilePath, projectId]
+  );
 
   return {
     images,

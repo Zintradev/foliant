@@ -32,9 +32,6 @@ export async function checkForAppUpdates(
   const isEs = language === 'es';
 
   if (!isTauriApp()) {
-    if (!silent) {
-      console.warn('Updates are only supported in the native Tauri desktop environment.');
-    }
     return { status: 'not-desktop' };
   }
 
@@ -56,7 +53,6 @@ export async function checkForAppUpdates(
         checkErrorMsg.toLowerCase().includes('failed to fetch');
 
       if (isFetchOrNotFoundError) {
-        console.info('Updater release manifest not yet available on GitHub:', checkErrorMsg);
         onStatusChange?.(
           'up-to-date',
           isEs
@@ -113,8 +109,8 @@ export async function checkForAppUpdates(
     try {
       const { relaunch } = await import('@tauri-apps/plugin-process');
       await relaunch();
-    } catch (relaunchErr) {
-      console.warn('Relaunch triggered error or pending restart:', relaunchErr);
+    } catch {
+      // Ignore relaunch error or pending restart
     }
 
     return { status: 'updated', version: update.version };
@@ -129,7 +125,6 @@ export async function checkForAppUpdates(
       errorMsg.toLowerCase().includes('failed to fetch');
 
     if (isFetchOrNotFoundError) {
-      console.info('Updater release manifest not yet available on GitHub:', errorMsg);
       onStatusChange?.(
         'up-to-date',
         isEs ? 'Estás en la última versión.' : 'You are on the latest version.'
@@ -137,7 +132,6 @@ export async function checkForAppUpdates(
       return { status: 'up-to-date' };
     }
 
-    console.error('Failed to check or apply Foliant update:', err);
     onStatusChange?.('error', errorMsg);
 
     if (!silent) {

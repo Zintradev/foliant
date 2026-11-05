@@ -57,17 +57,12 @@ export async function exportProject(
     });
 
     if (!filePath) {
-      console.info('[ExportManager] User cancelled export.');
       return null;
     }
 
     await writeTextFile(filePath, content);
-    console.info(`[ExportManager] Project exported successfully to: ${filePath}`);
-
     return filePath;
   } catch (error: unknown) {
-    console.error('[ExportManager] Error exporting project:', error);
-
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     await message(

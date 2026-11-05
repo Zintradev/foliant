@@ -17,7 +17,7 @@ import {
   extractProjectTitleFromPath,
   LAST_FOLIANT_PROJECT_KEY,
 } from './projectPersistenceUtils';
-import { getMoodboardCacheKey, isCastleOrLegacyArtifact } from '../components/context/MoodboardBlock/constants';
+import { isCastleOrLegacyArtifact } from '../components/context/MoodboardBlock/constants';
 
 export {
   extractFileName,
@@ -95,9 +95,8 @@ export function useProjectPersistence({
   }, [project.lastModified, lastSavedAt, currentFilePath, isSaving]);
 
   const handlePersistenceError = useCallback(
-    (prefix: string, err: unknown) => {
+    (_prefix: string, err: unknown) => {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error(`[Foliant Persistence] ${prefix}:`, err);
       setError(msg);
       onErrorRef.current?.(msg);
       setSyncStatus('unsaved');
@@ -119,13 +118,6 @@ export function useProjectPersistence({
           ...project,
           lastModified: now,
         };
-        try {
-          if (typeof sessionStorage !== 'undefined') {
-            sessionStorage.setItem('foliant_session_project', JSON.stringify(projectToSave));
-          }
-        } catch {
-          // ignore session quota
-        }
 
         const safeTitle =
           (projectToSave.title || 'project')
@@ -207,13 +199,6 @@ export function useProjectPersistence({
           ...project,
           lastModified: now,
         };
-        try {
-          if (typeof sessionStorage !== 'undefined') {
-            sessionStorage.setItem('foliant_session_project', JSON.stringify(projectToSave));
-          }
-        } catch {
-          // ignore session quota
-        }
 
         setLastSavedAt(now);
         setSyncStatus('saved');
@@ -270,6 +255,44 @@ export function useProjectPersistence({
     }
   }, [currentFilePath, project, saveProjectAs, handlePersistenceError]);
 
+  const loadProject = useCallback(
+    (loaded: FoliantProject, filePath: string | null = null) => {
+      // 1. Reset visuals before hydrating to ensure no state bleed
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('foliant-visuals-loaded', { detail: [] }));
+      }
+
+      if (filePath) {
+        const fileTitle = extractProjectTitleFromPath(filePath);
+        if (fileTitle) {
+          loaded.title = fileTitle;
+        }
+      }
+      setCurrentFilePath(filePath);
+      setLastSavedAt(filePath ? loaded.lastModified : null);
+      setError(null);
+      setSyncStatus(filePath ? 'saved' : 'unsaved');
+      if (filePath) {
+        try {
+          localStorage.setItem(LAST_FOLIANT_PROJECT_KEY, filePath);
+        } catch {
+          // ignore storage errors
+        }
+      }
+
+      const rawVisuals = Array.isArray(loaded.visuals) ? loaded.visuals : [];
+      const visuals = rawVisuals.filter((v) => !isCastleOrLegacyArtifact(v));
+      loaded.visuals = visuals;
+
+      if (typeof window !== 'undefined' && visuals.length > 0) {
+        window.dispatchEvent(new CustomEvent('foliant-visuals-loaded', { detail: visuals }));
+      }
+
+      onProjectLoadedRef.current(loaded);
+    },
+    []
+  );
+
   const openProject = useCallback(async (): Promise<boolean> => {
     try {
       setError(null);
@@ -291,24 +314,9 @@ export function useProjectPersistence({
               const text = await file.text();
               const parsed = JSON.parse(text);
               const loaded = normalizeLoadedProject(parsed);
-              const fileTitle = extractProjectTitleFromPath(file.name);
-              if (fileTitle) {
-                loaded.title = fileTitle;
-              }
-              onProjectLoadedRef.current(loaded);
-              setCurrentFilePath(file.name);
-              setLastSavedAt(loaded.lastModified);
-              setSyncStatus('saved');
-              try {
-                if (typeof sessionStorage !== 'undefined') {
-                  sessionStorage.setItem('foliant_session_project', JSON.stringify(loaded));
-                }
-              } catch {
-                // ignore
-              }
+              loadProject(loaded, file.name);
               resolve(true);
-            } catch (readErr) {
-              console.error('Failed to parse uploaded project:', readErr);
+            } catch {
               resolve(false);
             } finally {
               if (input.parentNode) {
@@ -328,39 +336,22 @@ export function useProjectPersistence({
       if (!targetPath) return false;
 
       const loadedProject = await executeReadBundle(targetPath);
-
-      onProjectLoadedRef.current(loadedProject);
-      setCurrentFilePath(targetPath);
-      setLastSavedAt(loadedProject.lastModified);
-      setSyncStatus('saved');
-      try {
-        localStorage.setItem(LAST_FOLIANT_PROJECT_KEY, targetPath);
-      } catch {
-        // ignore storage errors
-      }
+      loadProject(loadedProject, targetPath);
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error('[Foliant Persistence] Open Project failed:', err);
       setError(msg);
       onErrorRef.current?.(msg);
       return false;
     }
-  }, [currentFilePath]);
+  }, [currentFilePath, loadProject]);
 
   const saveSilently = useCallback(async (): Promise<boolean> => {
     if (!isTauriApp()) {
       const now = Date.now();
-      try {
-        if (typeof sessionStorage !== 'undefined') {
-          sessionStorage.setItem('foliant_session_project', JSON.stringify({ ...project, lastModified: now }));
-        }
-        setLastSavedAt(now);
-        setSyncStatus('saved');
-        return true;
-      } catch {
-        return false;
-      }
+      setLastSavedAt(now);
+      setSyncStatus('saved');
+      return true;
     }
 
     const trimmedPath = currentFilePath?.trim();
@@ -371,8 +362,7 @@ export function useProjectPersistence({
       setLastSavedAt(timestamp);
       setSyncStatus('saved');
       return true;
-    } catch (err: unknown) {
-      console.error(`[Foliant Persistence] Silent write to '${trimmedPath}' failed:`, err);
+    } catch {
       setSyncStatus('unsaved');
       return false;
     }
@@ -380,88 +370,23 @@ export function useProjectPersistence({
 
   const newProject = useCallback(
     (title: string = 'Untitled Project') => {
-      const fresh = createEmptyProject(undefined, title);
+      // 1. Reset state completely
       setCurrentFilePath(null);
       setLastSavedAt(null);
       setError(null);
       setSyncStatus('unsaved');
       try {
         localStorage.removeItem(LAST_FOLIANT_PROJECT_KEY);
+        localStorage.removeItem('lastFoliantProject');
         localStorage.removeItem('foliant_moodboard_cache_v1');
-        localStorage.removeItem(getMoodboardCacheKey(fresh.id));
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('foliant-visuals-loaded', { detail: [] }));
         }
       } catch {
         // ignore storage errors
       }
+      const fresh = createEmptyProject(undefined, title);
       onProjectLoadedRef.current(fresh);
-    },
-    []
-  );
-
-  const loadProject = useCallback(
-    (loaded: FoliantProject, filePath: string | null = null) => {
-      if (filePath) {
-        const fileTitle = extractProjectTitleFromPath(filePath);
-        if (fileTitle) {
-          loaded.title = fileTitle;
-        }
-      }
-      setCurrentFilePath(filePath);
-      setLastSavedAt(filePath ? loaded.lastModified : null);
-      setError(null);
-      setSyncStatus(filePath ? 'saved' : 'unsaved');
-      if (filePath) {
-        try {
-          localStorage.setItem(LAST_FOLIANT_PROJECT_KEY, filePath);
-        } catch {
-          // ignore storage errors
-        }
-      }
-      try {
-        const rawVisuals = Array.isArray(loaded.visuals) ? loaded.visuals : [];
-        let visuals = rawVisuals.filter((v) => !isCastleOrLegacyArtifact(v));
-
-        // If loaded.visuals in the project was empty, check if this project has cached visuals in localStorage
-        if (visuals.length === 0) {
-          try {
-            const cachedStr =
-              localStorage.getItem(getMoodboardCacheKey(loaded.id)) ||
-              localStorage.getItem('foliant_moodboard_cache_v1');
-            if (cachedStr) {
-              const parsed = JSON.parse(cachedStr);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                const cleanCached = parsed.filter((v) => !isCastleOrLegacyArtifact(v));
-                if (cleanCached.length > 0) {
-                  visuals = cleanCached;
-                }
-              }
-            }
-          } catch {
-            // ignore cache parse errors
-          }
-        }
-
-        loaded.visuals = visuals;
-
-        if (visuals.length > 0) {
-          const lightweight = visuals.map(({ id, path, name, sectionId }) => ({
-            id,
-            path,
-            name,
-            sectionId,
-          }));
-          localStorage.setItem(getMoodboardCacheKey(loaded.id), JSON.stringify(lightweight));
-          localStorage.setItem('foliant_moodboard_cache_v1', JSON.stringify(lightweight));
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('foliant-visuals-loaded', { detail: visuals }));
-          }
-        }
-      } catch {
-        // ignore storage errors
-      }
-      onProjectLoadedRef.current(loaded);
     },
     []
   );

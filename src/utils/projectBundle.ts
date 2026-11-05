@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { FoliantProject, ProjectVisualItem } from '../types/project';
 import { isTauriApp } from './platform';
-import { getMoodboardCacheKey, isCastleOrLegacyArtifact } from '../components/context/MoodboardBlock/constants';
+import { isCastleOrLegacyArtifact } from '../components/context/MoodboardBlock/constants';
 
 /**
  * Extracts the project file name from a POSIX or Windows path.
@@ -71,21 +71,6 @@ export async function writeProjectBundle(
 
   if (isTauriApp()) {
     let payload = { ...projectToSave };
-    if (typeof localStorage !== 'undefined') {
-      try {
-        const stored =
-          localStorage.getItem(getMoodboardCacheKey(payload.id)) ||
-          localStorage.getItem('foliant_moodboard_cache_v1');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            payload.visuals = parsed;
-          }
-        }
-      } catch {
-        // ignore cache reading error
-      }
-    }
 
     if (Array.isArray(payload.visuals)) {
       payload.visuals = payload.visuals
@@ -129,40 +114,8 @@ export async function readProjectBundle(filePath: string): Promise<FoliantProjec
 
     if (Array.isArray(loaded.visuals)) {
       loaded.visuals = loaded.visuals.filter((v) => !isCastleOrLegacyArtifact(v));
-    }
-
-    if ((!loaded.visuals || loaded.visuals.length === 0) && typeof localStorage !== 'undefined') {
-      try {
-        const stored =
-          localStorage.getItem(getMoodboardCacheKey(loaded.id)) ||
-          localStorage.getItem('foliant_moodboard_cache_v1');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            loaded.visuals = parsed.filter((v) => !isCastleOrLegacyArtifact(v));
-          }
-        }
-      } catch {
-        // ignore
-      }
-    }
-
-    if (loaded.visuals && loaded.visuals.length > 0 && typeof localStorage !== 'undefined') {
-      try {
-        const lightweight = loaded.visuals.map(({ id, path, name, sectionId }) => ({
-          id,
-          path,
-          name,
-          sectionId,
-        }));
-        localStorage.setItem(getMoodboardCacheKey(loaded.id), JSON.stringify(lightweight));
-        localStorage.setItem('foliant_moodboard_cache_v1', JSON.stringify(lightweight));
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('foliant-visuals-loaded', { detail: loaded.visuals }));
-        }
-      } catch {
-        // ignore storage error
-      }
+    } else {
+      loaded.visuals = [];
     }
 
     return loaded;

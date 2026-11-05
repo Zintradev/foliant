@@ -57,13 +57,11 @@ describe('checkForAppUpdates Service', () => {
     expect(mockCheck).not.toHaveBeenCalled();
   });
 
-  it('safely warns when running outside of Tauri without calling updater plugin', async () => {
+  it('safely handles running outside of Tauri without calling updater plugin', async () => {
     vi.spyOn(platform, 'isTauriApp').mockReturnValue(false);
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     const result = await checkForAppUpdates({ silent: false, language: 'es' });
     expect(result.status).toBe('not-desktop');
-    expect(warnSpy).toHaveBeenCalled();
     expect(mockCheck).not.toHaveBeenCalled();
   });
 

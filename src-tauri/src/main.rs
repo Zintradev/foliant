@@ -181,14 +181,7 @@ async fn save_reference_image_base64(
     project_path: Option<String>,
     project_id: Option<String>,
 ) -> Result<String, String> {
-    eprintln!(
-        "[Rust:save_reference_image_base64] Received request for file: '{file_name}' (payload len: {}, project: {:?}, id: {:?})",
-        data_base64.len(),
-        project_path,
-        project_id
-    );
     if file_name.trim().is_empty() {
-        eprintln!("[Rust:save_reference_image_base64] Error: file_name is empty");
         return Err("file_name must not be empty".to_string());
     }
 
@@ -209,15 +202,10 @@ async fn save_reference_image_base64(
         );
         let mut buf = Vec::new();
         decoder.read_to_end(&mut buf).map_err(|e| {
-            eprintln!("[Rust:save_reference_image_base64] Base64 decode error: {e}");
             format!("Failed to decode base64 image data: {e}")
         })?;
         buf
     };
-    eprintln!(
-        "[Rust:save_reference_image_base64] Decoded {} bytes for '{file_name}'",
-        bytes.len()
-    );
 
     // Sanitise the file name
     let safe_name: String = file_name
@@ -230,16 +218,8 @@ async fn save_reference_image_base64(
     let dest = target_dir.join(&safe_name);
 
     fs::write(&dest, &bytes).map_err(|e| {
-        eprintln!(
-            "[Rust:save_reference_image_base64] Write error at '{}': {e}",
-            dest.display()
-        );
         format!("Failed to write image '{}': {e}", dest.display())
     })?;
-    eprintln!(
-        "[Rust:save_reference_image_base64] Saved successfully to project visuals: '{}'",
-        dest.display()
-    );
 
     // Also write to project-scoped temp visuals directory
     let safe_proj_id = project_id
@@ -253,10 +233,6 @@ async fn save_reference_image_base64(
     let _ = fs::create_dir_all(&temp_visuals);
     let temp_dest = temp_visuals.join(&safe_name);
     let _ = fs::write(&temp_dest, &bytes);
-    eprintln!(
-        "[Rust:save_reference_image_base64] Saved copy to temp visuals: '{}'",
-        temp_dest.display()
-    );
 
     Ok(dest
         .to_str()
@@ -278,10 +254,6 @@ async fn list_reference_images(
     project_path: Option<String>,
     project_id: Option<String>,
 ) -> Result<Vec<String>, String> {
-    eprintln!(
-        "[Rust:list_reference_images] START: project_path={:?}, project_id={:?}",
-        project_path, project_id
-    );
     let allowed_extensions = ["png", "jpg", "jpeg", "gif", "webp", "svg", "avif"];
     let mut paths = Vec::new();
     let mut seen_filenames = std::collections::HashSet::new();
@@ -352,11 +324,6 @@ async fn list_reference_images(
 
     // Sort alphabetically for deterministic ordering in the UI
     paths.sort();
-    eprintln!(
-        "[Rust:list_reference_images] RETURN: found {} images: {:?}",
-        paths.len(),
-        paths
-    );
     Ok(paths)
 }
 

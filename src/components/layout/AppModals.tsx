@@ -62,6 +62,8 @@ export interface AppModalsProps {
   onLoadDemoFirstRun?: () => void;
   onStartEmptyFirstRun?: () => void;
   onOpenExistingFirstRun?: () => void;
+  onImportManuskriptFirstRun?: () => void;
+  onCloseFirstRun?: () => void;
   onHighlightViewChange?: (view: import('../../types/navigation').MainViewId | null) => void;
   isNewProjectConfirmOpen?: boolean;
   onConfirmNewProject?: () => void;
@@ -103,6 +105,8 @@ export const AppModals = memo(function AppModals({
   onLoadDemoFirstRun,
   onStartEmptyFirstRun,
   onOpenExistingFirstRun,
+  onImportManuskriptFirstRun,
+  onCloseFirstRun,
   onHighlightViewChange,
   isNewProjectConfirmOpen = false,
   onConfirmNewProject,
@@ -237,6 +241,8 @@ export const AppModals = memo(function AppModals({
             onLoadDemo={onLoadDemoFirstRun || (() => {})}
             onStartEmpty={onStartEmptyFirstRun || (() => {})}
             onOpenExisting={onOpenExistingFirstRun}
+            onImportManuskript={onImportManuskriptFirstRun}
+            onClose={onCloseFirstRun}
           />
         )}
 

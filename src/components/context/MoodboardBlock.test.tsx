@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import MoodboardBlock from './MoodboardBlock';
 import { invoke } from '@tauri-apps/api/core';
-import { MOODBOARD_CACHE_KEY } from './MoodboardBlock/constants';
+import { ProjectVisualItem } from '../../types/project';
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
@@ -11,6 +11,11 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 describe('MoodboardBlock Component', () => {
+  const defaultVisuals: ProjectVisualItem[] = [
+    { id: '1', path: 'C:/images/landscape.jpg', name: 'landscape.jpg', sectionId: 'general' },
+    { id: '2', path: 'C:/images/forest.png', name: 'forest.png', sectionId: 'general' },
+  ];
+
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
@@ -19,24 +24,17 @@ describe('MoodboardBlock Component', () => {
       'C:/images/landscape.jpg',
       'C:/images/forest.png',
     ]);
-    localStorage.setItem(
-      MOODBOARD_CACHE_KEY,
-      JSON.stringify([
-        { id: '1', path: 'C:/images/landscape.jpg', name: 'landscape.jpg', sectionId: 'general' },
-        { id: '2', path: 'C:/images/forest.png', name: 'forest.png', sectionId: 'general' },
-      ])
-    );
   });
 
   it('renders multi-select file input', async () => {
-    render(<MoodboardBlock title="Moodboard" />);
+    render(<MoodboardBlock title="Moodboard" initialVisuals={defaultVisuals} />);
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     expect(fileInput).toBeInTheDocument();
     expect(fileInput).toHaveAttribute('multiple');
   });
 
   it('renders compact inline-flex folder headers that toggle collapse with rotating chevron', async () => {
-    render(<MoodboardBlock title="Moodboard" />);
+    render(<MoodboardBlock title="Moodboard" initialVisuals={defaultVisuals} />);
 
     // Wait for images to load
     await waitFor(() => {
@@ -65,7 +63,7 @@ describe('MoodboardBlock Component', () => {
   });
 
   it('renders Pinterest masonry layout with columns-2 md:columns-4', async () => {
-    render(<MoodboardBlock title="Moodboard" />);
+    render(<MoodboardBlock title="Moodboard" initialVisuals={defaultVisuals} />);
 
     await waitFor(() => {
       expect(screen.getByText('landscape.jpg')).toBeInTheDocument();
@@ -80,7 +78,7 @@ describe('MoodboardBlock Component', () => {
   });
 
   it('supports dragging an image between folder sections', async () => {
-    render(<MoodboardBlock title="Moodboard" />);
+    render(<MoodboardBlock title="Moodboard" initialVisuals={defaultVisuals} />);
 
     await waitFor(() => {
       expect(screen.getByText('landscape.jpg')).toBeInTheDocument();
@@ -118,7 +116,7 @@ describe('MoodboardBlock Component', () => {
   });
 
   it('ensures all internal elements in ThumbnailCard have pointer-events-none', async () => {
-    render(<MoodboardBlock title="Moodboard" />);
+    render(<MoodboardBlock title="Moodboard" initialVisuals={defaultVisuals} />);
 
     await waitFor(() => {
       expect(screen.getByText('landscape.jpg')).toBeInTheDocument();
@@ -134,41 +132,36 @@ describe('MoodboardBlock Component', () => {
     });
   });
 
-  it('falls back gracefully to localStorage when running on web (no Tauri IPC)', async () => {
+  it('renders visuals correctly from in-memory state without localStorage when running on web (no Tauri IPC)', async () => {
     delete (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
-    localStorage.setItem(
-      MOODBOARD_CACHE_KEY,
-      JSON.stringify([
-        {
-          id: 'web-1',
-          path: 'web-sample.jpg',
-          name: 'web-sample.jpg',
-          sectionId: 'general',
-          base64: 'data:image/png;base64,mockWebImg',
-        },
-      ])
-    );
 
-    render(<MoodboardBlock title="Moodboard" />);
+    const webVisuals: ProjectVisualItem[] = [
+      {
+        id: 'web-1',
+        path: 'web-sample.jpg',
+        name: 'web-sample.jpg',
+        sectionId: 'general',
+        base64: 'data:image/png;base64,mockWebImg',
+      },
+    ];
+
+    render(<MoodboardBlock title="Moodboard" initialVisuals={webVisuals} />);
     await waitFor(() => {
       expect(screen.getByText('web-sample.jpg')).toBeInTheDocument();
     });
   });
 
-  it('actively strips and rejects castle.jpg if present in localStorage or disk', async () => {
-    localStorage.setItem(
-      MOODBOARD_CACHE_KEY,
-      JSON.stringify([
-        { id: 'bad-1', path: 'C:/visuals/castle.jpg', name: 'castle.jpg', sectionId: 'general' },
-        { id: 'ok-1', path: 'C:/visuals/valid.png', name: 'valid.png', sectionId: 'general' },
-      ])
-    );
+  it('actively strips and rejects castle.jpg if present in initialVisuals or disk', async () => {
+    const mixedVisuals: ProjectVisualItem[] = [
+      { id: 'bad-1', path: 'C:/visuals/castle.jpg', name: 'castle.jpg', sectionId: 'general' },
+      { id: 'ok-1', path: 'C:/visuals/valid.png', name: 'valid.png', sectionId: 'general' },
+    ];
     (invoke as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([
       'C:/visuals/castle.jpg',
       'C:/visuals/valid.png',
     ]);
 
-    render(<MoodboardBlock title="Moodboard" />);
+    render(<MoodboardBlock title="Moodboard" initialVisuals={mixedVisuals} />);
     await waitFor(() => {
       expect(screen.getByText('valid.png')).toBeInTheDocument();
     });
@@ -177,7 +170,14 @@ describe('MoodboardBlock Component', () => {
 
   it('supports swapping image positions when visualsDropMode is swap', async () => {
     const onUpdate = vi.fn();
-    render(<MoodboardBlock title="Moodboard" visualsDropMode="swap" onUpdateVisuals={onUpdate} />);
+    render(
+      <MoodboardBlock
+        title="Moodboard"
+        visualsDropMode="swap"
+        initialVisuals={defaultVisuals}
+        onUpdateVisuals={onUpdate}
+      />
+    );
 
     await waitFor(() => {
       expect(screen.getByText('landscape.jpg')).toBeInTheDocument();
@@ -207,7 +207,14 @@ describe('MoodboardBlock Component', () => {
 
   it('restores original positions when dragging back in shift mode without dropping (arrepentimiento)', async () => {
     const onUpdate = vi.fn();
-    render(<MoodboardBlock title="Moodboard" visualsDropMode="shift" onUpdateVisuals={onUpdate} />);
+    render(
+      <MoodboardBlock
+        title="Moodboard"
+        visualsDropMode="shift"
+        initialVisuals={defaultVisuals}
+        onUpdateVisuals={onUpdate}
+      />
+    );
 
     await waitFor(() => {
       expect(screen.getByText('landscape.jpg')).toBeInTheDocument();
@@ -242,18 +249,52 @@ describe('MoodboardBlock Component', () => {
     ]);
   });
 
-  it('does not display rogue files from disk when cache is empty for an unsaved project', async () => {
+  it('does not display rogue files from disk when project visuals are empty', async () => {
     localStorage.clear();
     (invoke as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([
       'C:/temp/castle.jpg',
       'C:/temp/rogue.png',
     ]);
 
-    render(<MoodboardBlock title="Moodboard" projectId="new-proj" />);
+    render(<MoodboardBlock title="Moodboard" projectId="new-proj" initialVisuals={[]} />);
     await waitFor(() => {
       expect(screen.queryByText('castle.jpg')).not.toBeInTheDocument();
       expect(screen.queryByText('rogue.png')).not.toBeInTheDocument();
     });
   });
-});
 
+  it('strictly resets moodboard state to empty when switching to a project without visuals (no state bleeding)', async () => {
+    const { rerender } = render(
+      <MoodboardBlock title="Moodboard" projectId="proj-with-images" initialVisuals={defaultVisuals} />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('landscape.jpg')).toBeInTheDocument();
+      expect(screen.getByText('forest.png')).toBeInTheDocument();
+    });
+
+    // Re-render as a new empty project (e.g. user created or loaded a clean project)
+    rerender(
+      <MoodboardBlock title="Moodboard" projectId="proj-empty" initialVisuals={[]} />
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText('landscape.jpg')).not.toBeInTheDocument();
+      expect(screen.queryByText('forest.png')).not.toBeInTheDocument();
+    });
+  });
+
+  it('never persists moodboard visuals or sections to localStorage', async () => {
+    localStorage.clear();
+    render(<MoodboardBlock title="Moodboard" projectId="clean-proj" initialVisuals={defaultVisuals} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('landscape.jpg')).toBeInTheDocument();
+    });
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      expect(key).not.toMatch(/^foliant_moodboard/);
+    }
+  });
+});

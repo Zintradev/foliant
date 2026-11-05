@@ -137,8 +137,8 @@ export function useTimelineDragDrop({
           }
         }
       }
-    } catch (error) {
-      console.error('Error reordering storyline:', error);
+    } catch {
+      // non-fatal reorder error
     } finally {
       dragStorylineIndex.current = null;
       dragStorylineNode.current = null;

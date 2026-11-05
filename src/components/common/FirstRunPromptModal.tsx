@@ -1,5 +1,5 @@
-import React from 'react';
-import { Sparkles, BookOpen, Feather, FolderOpen } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Sparkles, BookOpen, Feather, FolderOpen, FolderDown, X } from 'lucide-react';
 import { useTranslation } from '../../i18n/translations';
 
 interface FirstRunPromptModalProps {
@@ -7,6 +7,8 @@ interface FirstRunPromptModalProps {
   onLoadDemo: () => void;
   onStartEmpty: () => void;
   onOpenExisting?: () => void;
+  onImportManuskript?: () => void;
+  onClose?: () => void;
 }
 
 export const FirstRunPromptModal: React.FC<FirstRunPromptModalProps> = ({
@@ -14,8 +16,21 @@ export const FirstRunPromptModal: React.FC<FirstRunPromptModalProps> = ({
   onLoadDemo,
   onStartEmpty,
   onOpenExisting,
+  onImportManuskript,
+  onClose,
 }) => {
   const { t } = useTranslation();
+
+  useEffect(() => {
+    if (!isOpen || !onClose) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -26,7 +41,18 @@ export const FirstRunPromptModal: React.FC<FirstRunPromptModalProps> = ({
       aria-label="Welcome to Foliant"
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-200 select-none"
     >
-      <div className="w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-lg p-6 shadow-2xl flex flex-col items-center text-center text-zinc-200 animate-in zoom-in-95 duration-150">
+      <div className="relative w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-lg p-6 shadow-2xl flex flex-col items-center text-center text-zinc-200 animate-in zoom-in-95 duration-150">
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t('close', 'Close')}
+            className="absolute top-4 right-4 p-1 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/80 transition cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+
         <div className="w-12 h-12 rounded-full bg-emerald-950/60 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-4 shadow-inner">
           <Sparkles className="w-6 h-6" />
         </div>
@@ -80,6 +106,29 @@ export const FirstRunPromptModal: React.FC<FirstRunPromptModalProps> = ({
                   {t(
                     'openExistingProjectDesc',
                     'Select an existing .foliant file from your computer.'
+                  )}
+                </div>
+              </div>
+            </button>
+          )}
+
+          {onImportManuskript && (
+            <button
+              type="button"
+              onClick={onImportManuskript}
+              className="w-full flex items-center gap-3 p-3 rounded-md bg-zinc-900/90 hover:bg-zinc-850 border border-zinc-750 hover:border-amber-500/60 transition group text-left cursor-pointer"
+            >
+              <div className="p-2 rounded-sm bg-amber-950/40 border border-amber-800/40 text-amber-400 group-hover:scale-105 transition-transform shrink-0">
+                <FolderDown className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-semibold text-zinc-200 group-hover:text-amber-300 transition-colors">
+                  {t('importManuskript', 'Import Manuskript Project...')}
+                </div>
+                <div className="text-[11px] text-zinc-400 leading-snug mt-0.5">
+                  {t(
+                    'importManuskriptDesc',
+                    'Import an existing novel project from a Manuskript folder.'
                   )}
                 </div>
               </div>

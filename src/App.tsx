@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { FoliantProject, createEmptyProject } from './types/project';
 import { useProjectPersistence } from './hooks/useProjectPersistence';
 import {
-  checkFileExists,
   executeReadBundle,
   LAST_FOLIANT_PROJECT_KEY,
 } from './hooks/projectPersistenceUtils';
@@ -26,7 +25,6 @@ import { countWords } from './utils/textMetrics';
 import { DEFAULT_PROJECT, getDefaultProject } from './data/getMockProject';
 import { useAppCloseGuard } from './hooks/useAppCloseGuard';
 import { isTauriApp, closeDesktopApp } from './utils/platform';
-import { normalizeLoadedProject } from './utils/projectBundle';
 import { checkForAppUpdates } from './utils/updater';
 
 export default function App() {
@@ -34,7 +32,7 @@ export default function App() {
     try {
       return Boolean(
         typeof localStorage !== 'undefined' &&
-        localStorage.getItem(LAST_FOLIANT_PROJECT_KEY)
+        (localStorage.getItem(LAST_FOLIANT_PROJECT_KEY) || localStorage.getItem('lastFoliantProject'))
       );
     } catch {
       return false;
@@ -59,15 +57,8 @@ export default function App() {
     if (isFirstRun) {
       return createEmptyProject();
     }
-    if (!isTauriApp() && typeof sessionStorage !== 'undefined') {
-      try {
-        const stored = sessionStorage.getItem('foliant_session_project');
-        if (stored) {
-          return normalizeLoadedProject(JSON.parse(stored));
-        }
-      } catch {
-        // fallback
-      }
+    if (isTauriApp() && hasSavedProjectKey) {
+      return createEmptyProject();
     }
     const initialLang = loadSettings()?.preferences?.language || 'en';
     return getDefaultProject(initialLang);
@@ -87,6 +78,8 @@ export default function App() {
         }
         return curr;
       });
+    } else {
+      setActiveChapterId('');
     }
   }, []);
 
@@ -166,14 +159,23 @@ export default function App() {
     if (hasAutoLoadedRef.current) return;
     hasAutoLoadedRef.current = true;
 
-    let isCancelled = false;
     const lastPath = typeof localStorage !== 'undefined'
-      ? localStorage.getItem(LAST_FOLIANT_PROJECT_KEY)
+      ? (localStorage.getItem(LAST_FOLIANT_PROJECT_KEY) || localStorage.getItem('lastFoliantProject'))
       : null;
 
+    if (lastPath && typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(LAST_FOLIANT_PROJECT_KEY, lastPath);
+        localStorage.removeItem('lastFoliantProject');
+      } catch {}
+    }
+
     if (!lastPath || !isTauriApp()) {
-      if (!lastPath && !sessionStorage.getItem('foliant_welcome_answered')) {
-        setIsFirstRunPromptOpen(true);
+      if (!lastPath) {
+        const isWelcomeAnswered = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('foliant_welcome_answered') === 'true';
+        if (!isWelcomeAnswered) {
+          setIsFirstRunPromptOpen(true);
+        }
       }
       return;
     }
@@ -182,36 +184,32 @@ export default function App() {
 
     async function autoLoadLastProject() {
       try {
-        const fileExists = await checkFileExists(validPath);
-        if (!fileExists) {
-          throw new Error('Project file no longer exists');
-        }
         const loaded = await executeReadBundle(validPath);
-        if (isCancelled) {
-          return;
-        }
         loadProjectRef.current(loaded, validPath);
-        if (loaded.chapters.length > 0) {
+        if (loaded.chapters && loaded.chapters.length > 0) {
           const firstScene = loaded.chapters.find((c) => c.type === 'scene') ?? loaded.chapters[0];
           setActiveChapterId(firstScene.id);
+        } else {
+          setActiveChapterId('');
         }
         setIsDirty(false);
         setIsFirstRunPromptOpen(false);
-      } catch (err) {
-        console.warn('[Foliant Startup] Could not auto-load last project:', err);
-        if (isCancelled) return;
+      } catch {
         try {
           localStorage.removeItem(LAST_FOLIANT_PROJECT_KEY);
+          localStorage.removeItem('lastFoliantProject');
         } catch {}
+        setProject(createEmptyProject());
+        setActiveChapterId('');
+        setIsDirty(false);
         setIsFirstRunPromptOpen(true);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('foliant-visuals-loaded', { detail: [] }));
+        }
       }
     }
 
     void autoLoadLastProject();
-
-    return () => {
-      isCancelled = true;
-    };
   }, []);
 
   const { resetAutoSaveTimer } = useAppAutoSave({
@@ -236,9 +234,10 @@ export default function App() {
 
   useAppCloseGuard({
     hasUnsavedChanges:
-      persistence.editorSaveStatus === 'unsaved' ||
-      persistence.editorSaveStatus === 'saving' ||
-      isDirty,
+      !isFirstRunPromptOpen &&
+      (persistence.editorSaveStatus === 'unsaved' ||
+        persistence.editorSaveStatus === 'saving' ||
+        isDirty),
     onRequestCloseConfirm: handleRequestCloseConfirm,
     language: appSettings.preferences?.language || 'en',
   });
@@ -343,6 +342,24 @@ export default function App() {
       setIsFirstRunPromptOpen(false);
     }
   }, [handleOpenProjectWithDirtyReset]);
+
+  const handleImportManuskriptFirstRun = useCallback(async () => {
+    const success = await persistence.handleImportManuskript();
+    if (success) {
+      try {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('foliant_welcome_answered', 'true');
+        }
+        localStorage.setItem('foliant_first_run_completed', 'true');
+        localStorage.setItem('foliant_welcome_completed', 'true');
+      } catch {}
+      setIsFirstRunPromptOpen(false);
+    }
+  }, [persistence.handleImportManuskript]);
+
+  const handleCloseFirstRun = useCallback(() => {
+    void closeDesktopApp();
+  }, []);
 
   useGlobalShortcuts({
     onSave: persistence.handleManualSave,
@@ -452,6 +469,8 @@ export default function App() {
           onLoadDemoFirstRun={executeLoadDemoProject}
           onStartEmptyFirstRun={handleStartEmptyProject}
           onOpenExistingFirstRun={handleOpenExistingFirstRun}
+          onImportManuskriptFirstRun={handleImportManuskriptFirstRun}
+          onCloseFirstRun={handleCloseFirstRun}
           onLoadDemoProject={handleRequestLoadDemoFromGuide}
           isLoadDemoConfirmOpen={isLoadDemoConfirmOpen}
           onConfirmLoadDemo={executeLoadDemoProject}

@@ -58,7 +58,6 @@ export function useEpubExport(project: FoliantProject): UseEpubExportReturn {
           });
         }
       } catch (err: unknown) {
-        console.error('[Foliant] EPUB export failed:', err);
         const msg = err instanceof Error ? err.message : String(err);
         setExportResultData({
           type: 'error',

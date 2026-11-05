@@ -70,8 +70,7 @@ export function useEditorPersistence({
             onStatusChangeRef.current?.('unsaved');
           }
         }
-      } catch (error) {
-        console.error(`Failed to auto-save chapter [${targetChapterId}]:`, error);
+      } catch {
         if (isCurrentActive) {
           onStatusChangeRef.current?.('unsaved');
         }
@@ -176,7 +175,9 @@ export function useEditorPersistence({
         invoke('save_chapter_file', {
           path: `../${activeChapterIdRef.current}.md`,
           content: lastContent,
-        }).catch((err) => console.error('Unmount background save error:', err));
+        }).catch(() => {
+          // ignore unmount save error
+        });
       }
     };
   }, [editor]);

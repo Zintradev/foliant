@@ -88,8 +88,8 @@ export function useMoodboardDragDrop({
           await uploadFile(file, targetSec);
         }
       }
-    } catch (error) {
-      console.error('[D&D - MoodboardBlock - Canvas Drop Error]', error);
+    } catch {
+      // non-fatal canvas drop error
     }
   };
 
@@ -278,8 +278,8 @@ export function useMoodboardDragDrop({
           }
         }
       }
-    } catch (error) {
-      console.error('[D&D - MoodboardBlock - Drop Error]', error);
+    } catch {
+      // non-fatal drop error
     } finally {
       dragItemIndex.current = null;
       dragNode.current = null;
@@ -336,8 +336,8 @@ export function useMoodboardDragDrop({
           }
         }
       }
-    } catch (error) {
-      console.error('[D&D - MoodboardBlock - Section Drop Error]', error);
+    } catch {
+      // non-fatal section drop error
     } finally {
       dragItemIndex.current = null;
       dragNode.current = null;

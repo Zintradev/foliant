@@ -313,7 +313,6 @@ describe('useProjectPersistence (Single .foliant Bundle Architecture)', () => {
     expect(success).toBe(false);
     expect(result.current.error).toBe('EACCES: permission denied');
     expect(result.current.syncStatus).toBe('unsaved');
-    expect(consoleErrorSpy).toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
   });
 
@@ -405,11 +404,10 @@ describe('useProjectPersistence (Single .foliant Bundle Architecture)', () => {
     expect(openSuccess).toBe(false);
     expect(result.current.error).toContain('Corrupted or invalid Foliant project archive');
     expect(onProjectLoaded).not.toHaveBeenCalled();
-    expect(consoleErrorSpy).toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
   });
 
-  it('in web mode (no Tauri IPC), saveProject saves strictly to sessionStorage for the session', async () => {
+  it('in web mode (no Tauri IPC), saveProject updates memory state and does not persist core data to sessionStorage', async () => {
     delete (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
     sessionStorage.clear();
 
@@ -427,12 +425,13 @@ describe('useProjectPersistence (Single .foliant Bundle Architecture)', () => {
 
     expect(success).toBe(true);
     expect(result.current.saveStatus).toBe('saved');
-    const stored = sessionStorage.getItem('foliant_session_project');
-    expect(stored).not.toBeNull();
-    expect(JSON.parse(stored!).title).toBe('The Cipher Mystery');
+    expect(sessionStorage.getItem('foliant_session_project')).toBeNull();
+    expect(onProjectLoaded).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'The Cipher Mystery' })
+    );
   });
 
-  it('in web mode, saveProjectAs downloads the file locally and updates sessionStorage', async () => {
+  it('in web mode, saveProjectAs downloads the file locally and updates memory state without sessionStorage', async () => {
     delete (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
     sessionStorage.clear();
 
@@ -451,7 +450,47 @@ describe('useProjectPersistence (Single .foliant Bundle Architecture)', () => {
     expect(success).toBe(true);
     expect(result.current.saveStatus).toBe('saved');
     expect(result.current.currentFilePath).toContain('.foliant');
-    const stored = sessionStorage.getItem('foliant_session_project');
-    expect(stored).not.toBeNull();
+    expect(sessionStorage.getItem('foliant_session_project')).toBeNull();
+    expect(onProjectLoaded).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'The Cipher Mystery' })
+    );
+  });
+
+  it('verifies LAST_FOLIANT_PROJECT_KEY is strictly lastOpenedProjectPath and only path is stored', () => {
+    expect(LAST_FOLIANT_PROJECT_KEY).toBe('lastOpenedProjectPath');
+  });
+
+  it('ensures loadProject does not restore cached visuals from localStorage when file visuals are empty', () => {
+    localStorage.setItem(
+      'foliant_moodboard_cache_v1',
+      JSON.stringify([{ id: 'ghost-1', path: 'C:/ghost.jpg', name: 'ghost.jpg' }])
+    );
+    localStorage.setItem(
+      'foliant_moodboard_proj-test',
+      JSON.stringify([{ id: 'ghost-2', path: 'C:/ghost2.jpg', name: 'ghost2.jpg' }])
+    );
+
+    const { result } = renderHook(() =>
+      useProjectPersistence({
+        project: mockProject,
+        onProjectLoaded,
+      })
+    );
+
+    const emptyVisualsProject: FoliantProject = {
+      ...createEmptyProject('proj-test', 'Empty Visuals Project'),
+      visuals: [],
+    };
+
+    act(() => {
+      result.current.loadProject(emptyVisualsProject, 'C:\\Novels\\empty.foliant');
+    });
+
+    expect(onProjectLoaded).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'proj-test',
+        visuals: [],
+      })
+    );
   });
 });

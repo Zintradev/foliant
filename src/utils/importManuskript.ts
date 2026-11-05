@@ -313,8 +313,7 @@ async function loadCharacters(baseDir: string): Promise<CharacterItem[]> {
         })
     );
     return characterResults.filter((char): char is CharacterItem => char !== null);
-  } catch (err) {
-    console.warn('[Manuskript Importer] characters/ folder not found or unreadable:', err);
+  } catch {
     return [];
   }
 }
@@ -359,8 +358,8 @@ async function loadPlots(baseDir: string): Promise<StorylineItem[]> {
         linkedChapterIds: [],
       });
     });
-  } catch (err) {
-    console.warn('[Manuskript Importer] Failed to load plots.xml:', err);
+  } catch {
+    // non-fatal plots load failure
   }
   return storylines;
 }
@@ -420,8 +419,8 @@ async function loadWorldItems(baseDir: string): Promise<WorldItem[]> {
         tags: [],
       });
     });
-  } catch (err) {
-    console.warn('[Manuskript Importer] Failed to load world.opml:', err);
+  } catch {
+    // non-fatal world items load failure
   }
   return worldItems;
 }
@@ -509,8 +508,8 @@ export async function traverseOutline(
         });
       }
     }
-  } catch (err) {
-    console.error(`[Manuskript Importer] Error traversing outline directory at '${currentDir}':`, err);
+  } catch {
+    // non-fatal outline traversal error
   }
   return nodes;
 }
@@ -549,8 +548,8 @@ export async function importManuskriptProject(): Promise<ImportManuskriptResult 
         }
       }
     }
-  } catch (err) {
-    console.warn('[Manuskript Importer] Could not inspect project descriptor:', err);
+  } catch {
+    // non-fatal project descriptor error
   }
 
   const [characters, storylines, worldItems] = await Promise.all([
@@ -563,8 +562,8 @@ export async function importManuskriptProject(): Promise<ImportManuskriptResult 
   try {
     const outlinePath = await join(selectedPath, 'outline');
     chapters = await traverseOutline(outlinePath, null);
-  } catch (err) {
-    console.error('[Manuskript Importer] Failed to access outline folder:', err);
+  } catch {
+    // non-fatal outline folder access error
   }
 
   if (chapters.length === 0) {

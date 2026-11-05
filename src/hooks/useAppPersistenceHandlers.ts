@@ -87,19 +87,19 @@ export function useAppPersistenceHandlers({
     setIsNewProjectConfirmOpen(false);
   }, []);
 
-  const handleImportManuskript = useCallback(async () => {
+  const handleImportManuskript = useCallback(async (): Promise<boolean> => {
     if (!isTauriApp()) {
       setImportModalData({
         type: 'error',
         message:
           'La importación de proyectos Manuskript por carpetas nativas solo está disponible en la versión de escritorio de Foliant.',
       });
-      return;
+      return false;
     }
 
     try {
       const result = await importManuskriptProject();
-      if (!result) return;
+      if (!result) return false;
       loadProject(result.project, result.bundlePath);
       setIsDirty?.(false);
       if (result.project.chapters.length > 0) {
@@ -114,13 +114,14 @@ export function useAppPersistenceHandlers({
         charCount: result.project.characters.length,
         worldCount: result.project.worldItems.length,
       });
+      return true;
     } catch (err: unknown) {
-      console.error('[Foliant] Manuskript import failed:', err);
       const msg = err instanceof Error ? err.message : String(err);
       setImportModalData({
         type: 'error',
         message: msg,
       });
+      return false;
     }
   }, [loadProject, setActiveChapterId]);
 

@@ -44,8 +44,8 @@ export default function ExportResultModal({ data, onClose }: ExportResultModalPr
       await navigator.clipboard.writeText(path);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.warn('[ExportResultModal] Could not copy path:', err);
+    } catch {
+      // non-fatal clipboard error
     }
   };
 
@@ -54,8 +54,8 @@ export default function ExportResultModal({ data, onClose }: ExportResultModalPr
     setOpeningFolder(true);
     try {
       await revealItemInDir(path);
-    } catch (err) {
-      console.warn('[ExportResultModal] Could not reveal item in directory:', err);
+    } catch {
+      // non-fatal reveal error
     } finally {
       setOpeningFolder(false);
     }

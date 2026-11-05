@@ -107,8 +107,7 @@ export const MoodboardThumbnailCard = React.memo(function MoodboardThumbnailCard
           loading="lazy"
           decoding="async"
           className="w-full h-auto object-cover transition-transform duration-200 group-hover:scale-[1.02] block pointer-events-none select-none"
-          onError={(e) => {
-            console.error(`[MoodboardThumbnailCard] Failed to load image: "${image.name}". displaySrc: "${displaySrc?.slice(0, 80)}", path: "${image.path}"`, e);
+          onError={() => {
             if (!loadError && image.base64) {
               setLoadError(true);
             }
