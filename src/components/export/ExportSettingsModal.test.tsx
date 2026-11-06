@@ -4,17 +4,18 @@ import '@testing-library/jest-dom/vitest';
 import ExportSettingsModal from './ExportSettingsModal';
 import { DEFAULT_PROJECT } from '../../data/mockProject';
 import { FoliantProject } from '../../types/project';
+import { EpubExportOptions } from '../../utils/exportEpub';
 
 describe('ExportSettingsModal Component', () => {
   let mockProject: FoliantProject;
-  let mockOnClose: ReturnType<typeof vi.fn>;
-  let mockOnExport: ReturnType<typeof vi.fn>;
+  let mockOnClose: any;
+  let mockOnExport: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockProject = JSON.parse(JSON.stringify(DEFAULT_PROJECT));
-    mockOnClose = vi.fn();
-    mockOnExport = vi.fn();
+    mockOnClose = vi.fn<() => void>() as unknown as () => void;
+    mockOnExport = vi.fn<(options: EpubExportOptions) => void>() as unknown as (options: EpubExportOptions) => void;
   });
 
   it('renders nothing when isOpen is false', () => {
