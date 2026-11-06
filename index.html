@@ -122,9 +122,31 @@
       const current = document.documentElement.getAttribute('data-lang') || 'es';
       updateLangButtons(current);
       updateAppLinks(current);
+
+      // Detect user operating system to highlight relevant download option
+      try {
+        const ua = (navigator.userAgent || '').toLowerCase();
+        const isMac = ua.includes('mac');
+        const isWin = ua.includes('win');
+        if (isWin) {
+          document.querySelectorAll('.platform-card-windows').forEach(function (el) {
+            el.classList.add('ring-1', 'ring-sky-500/50');
+          });
+          document.querySelectorAll('.os-badge-win').forEach(function (el) {
+            el.classList.remove('hidden');
+          });
+        } else if (isMac) {
+          document.querySelectorAll('.platform-card-mac').forEach(function (el) {
+            el.classList.add('ring-1', 'ring-zinc-400/40');
+          });
+          document.querySelectorAll('.os-badge-mac').forEach(function (el) {
+            el.classList.remove('hidden');
+          });
+        }
+      } catch (_) { }
     });
 
-    // Dynamically sync version with latest GitHub release without hardcoding
+    // Dynamically sync version & exact asset URLs with latest GitHub release
     (async function fetchLatestReleaseVersion() {
       try {
         const res = await fetch('https://api.github.com/repos/Zintradev/foliant/releases/latest');
@@ -138,6 +160,49 @@
             document.querySelectorAll('.app-version-text').forEach(function (el) {
               el.textContent = tag;
             });
+          }
+          if (data && Array.isArray(data.assets)) {
+            // MSI installer asset
+            const msiAsset = data.assets.find(function (a) {
+              return a.name && a.name.toLowerCase().endsWith('.msi');
+            });
+            if (msiAsset) {
+              document.querySelectorAll('.download-windows-msi').forEach(function (el) {
+                el.href = msiAsset.browser_download_url;
+              });
+            }
+
+            // Windows Portable ZIP asset
+            const winZipAsset = data.assets.find(function (a) {
+              const n = (a.name || '').toLowerCase();
+              return n.includes('windows') && n.endsWith('.zip');
+            });
+            if (winZipAsset) {
+              document.querySelectorAll('.download-windows-zip').forEach(function (el) {
+                el.href = winZipAsset.browser_download_url;
+              });
+            }
+
+            // Mac DMG installer asset
+            const dmgAsset = data.assets.find(function (a) {
+              return a.name && a.name.toLowerCase().endsWith('.dmg');
+            });
+            if (dmgAsset) {
+              document.querySelectorAll('.download-mac-dmg').forEach(function (el) {
+                el.href = dmgAsset.browser_download_url;
+              });
+            }
+
+            // Mac Portable ZIP asset
+            const macZipAsset = data.assets.find(function (a) {
+              const n = (a.name || '').toLowerCase();
+              return (n.includes('mac') || n.includes('macos') || n.includes('darwin')) && n.endsWith('.zip');
+            });
+            if (macZipAsset) {
+              document.querySelectorAll('.download-mac-zip').forEach(function (el) {
+                el.href = macZipAsset.browser_download_url;
+              });
+            }
           }
         }
       } catch (_) { }
@@ -257,71 +322,205 @@
         </span>
       </p>
 
-      <!-- CTAs Section: Web Trial + Direct Download Buttons -->
-      <div class="mt-10 flex flex-wrap items-center justify-center gap-3.5 max-w-4xl mx-auto">
-        <!-- CTA 1: Probar en la web -->
-        <a href="./app/"
-          class="w-full sm:w-auto h-[58px] inline-flex items-center justify-center gap-3 px-5 rounded-xl text-sm font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:translate-y-0 text-center">
-          <svg class="w-5 h-5 text-zinc-950 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-            stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
-          </svg>
-          <div class="text-left whitespace-nowrap">
-            <span class="block leading-tight font-bold lang-es">Probar en la web</span>
-            <span class="block leading-tight font-bold lang-en">Try on the Web</span>
-            <span class="block text-[11px] font-normal text-zinc-900/80 lang-es">Sin instalación previa • Demo</span>
-            <span class="block text-[11px] font-normal text-zinc-900/80 lang-en">No install required • Demo</span>
-          </div>
-        </a>
+      <!-- CTAs Section: Web Trial + Official Desktop Downloads Hub -->
+      <div class="mt-10 max-w-4xl mx-auto space-y-6">
+        <!-- CTA 1: Probar en la web (Live Interactive Demo) -->
+        <div class="flex justify-center">
+          <a href="./app/"
+            class="w-full sm:w-auto h-[54px] inline-flex items-center justify-center gap-3 px-6 rounded-xl text-sm font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:translate-y-0 text-center">
+            <svg class="w-5 h-5 text-zinc-950 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+            </svg>
+            <div class="text-left whitespace-nowrap">
+              <span class="block leading-tight font-bold lang-es">Probar en la web</span>
+              <span class="block leading-tight font-bold lang-en">Try on the Web</span>
+              <span class="block text-[11px] font-normal text-zinc-900/80 lang-es">Sin instalación previa • Demo interactiva</span>
+              <span class="block text-[11px] font-normal text-zinc-900/80 lang-en">No install required • Interactive demo</span>
+            </div>
+          </a>
+        </div>
 
-        <!-- CTA 2: Direct Download for Windows -->
-        <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows.exe" download
-          class="w-full sm:w-auto h-[58px] inline-flex items-center justify-center gap-3 px-5 rounded-xl text-sm font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-100 border border-zinc-700/80 hover:border-emerald-500/60 transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 text-center">
-          <!-- Windows Icon -->
-          <svg class="w-5 h-5 text-sky-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.949-1.801" />
-          </svg>
-          <div class="text-left whitespace-nowrap">
-            <span class="block leading-tight font-bold lang-es">Descargar Windows</span>
-            <span class="block leading-tight font-bold lang-en">Download Windows</span>
-            <span class="block text-[11px] font-normal text-zinc-400">.exe directa (<span
-                class="app-version-text">v0.1.0</span>)</span>
+        <!-- Official Desktop Downloads Grid -->
+        <div>
+          <div class="text-center mb-3">
+            <span class="text-[11px] uppercase tracking-wider font-semibold text-zinc-400">
+              <span class="lang-es">O descarga Foliant para tu sistema operativo:</span>
+              <span class="lang-en">Or download Foliant for your operating system:</span>
+            </span>
           </div>
-        </a>
 
-        <!-- CTA 3: Windows Portable (.zip) -->
-        <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows-Portable.zip" download
-          class="w-full sm:w-auto h-[58px] inline-flex items-center justify-center gap-3 px-5 rounded-xl text-sm font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-100 border border-zinc-700/80 hover:border-emerald-500/60 transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 text-center">
-          <!-- Portable / Folder Icon -->
-          <svg class="w-5 h-5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-            stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
-          </svg>
-          <div class="text-left whitespace-nowrap">
-            <span class="block leading-tight font-bold lang-es">Windows Portable</span>
-            <span class="block leading-tight font-bold lang-en">Windows Portable</span>
-            <span class="block text-[11px] font-normal text-zinc-400">.zip sin instalación</span>
-          </div>
-        </a>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+            <!-- Windows Platform Group -->
+            <div
+              class="platform-card-windows p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm flex flex-col gap-2.5 transition-all">
+              <div class="flex items-center justify-between px-1">
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-sky-400" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                      d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.949-1.801" />
+                  </svg>
+                  <span class="text-xs font-semibold text-zinc-200">Windows</span>
+                  <span
+                    class="os-badge-win hidden text-[10px] px-1.5 py-0.2 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30">
+                    <span class="lang-es">Tu SO</span>
+                    <span class="lang-en">Your OS</span>
+                  </span>
+                </div>
+                <span class="text-[10px] font-mono text-zinc-500">64-bit • Win 10 / 11</span>
+              </div>
 
-        <!-- CTA 4: Direct Download for Mac -->
-        <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Mac.dmg" download
-          class="w-full sm:w-auto h-[58px] inline-flex items-center justify-center gap-3 px-5 rounded-xl text-sm font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-100 border border-zinc-700/80 hover:border-emerald-500/60 transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 text-center">
-          <!-- Apple Icon -->
-          <svg class="w-5 h-5 text-zinc-300 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.64-.78 1.08-1.86.96-2.95-1 .04-2.12.67-2.78 1.44-.58.67-1.1 1.77-.96 2.84 1.12.09 2.14-.55 2.78-1.33z" />
-          </svg>
-          <div class="text-left whitespace-nowrap">
-            <span class="block leading-tight font-bold lang-es">Descargar Mac</span>
-            <span class="block leading-tight font-bold lang-en">Download Mac</span>
-            <span class="block text-[11px] font-normal text-zinc-400">.dmg directa (<span
-                class="app-version-text">v0.1.0</span>)</span>
+              <!-- Botón Principal Destacado: Descargar para Windows (.msi) -->
+              <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows.msi" download
+                class="download-windows-msi group relative w-full h-[62px] px-3.5 sm:px-4 rounded-xl font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-100 border border-sky-500/40 hover:border-sky-400 transition-all shadow-md hover:shadow-sky-500/10 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-between">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div
+                    class="w-9 h-9 rounded-lg bg-sky-500/15 border border-sky-500/30 flex items-center justify-center shrink-0 text-sky-400 group-hover:scale-105 transition-transform">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                      <path
+                        d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.949-1.801" />
+                    </svg>
+                  </div>
+                  <div class="text-left min-w-0">
+                    <div class="flex items-center gap-1.5">
+                      <span class="font-bold text-sm text-zinc-100 group-hover:text-white transition-colors lang-es truncate">Descargar para Windows</span>
+                      <span class="font-bold text-sm text-zinc-100 group-hover:text-white transition-colors lang-en truncate">Download for Windows</span>
+                      <span
+                        class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 font-semibold shrink-0">.msi</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-[11px] text-zinc-400">
+                      <span class="lang-es">Instalador oficial</span>
+                      <span class="lang-en">Official installer</span>
+                      <span>•</span>
+                      <span class="app-version-text">v0.1.0</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex flex-col items-end gap-1 shrink-0 ml-2">
+                  <span
+                    class="text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    <span class="lang-es">Recomendado</span>
+                    <span class="lang-en">Recommended</span>
+                  </span>
+                  <svg class="w-4 h-4 text-zinc-400 group-hover:text-sky-300 group-hover:translate-y-0.5 transition-all"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.5V16.5M7.5 12 12 16.5m0 0L16.5 12M12 16.5V3" />
+                  </svg>
+                </div>
+              </a>
+
+              <!-- Botón Secundario: Windows Portable (.zip) -->
+              <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows-Portable.zip" download
+                class="download-windows-zip group w-full h-[46px] px-3.5 rounded-xl font-medium bg-zinc-950/70 hover:bg-zinc-850 text-zinc-300 hover:text-zinc-100 border border-zinc-800 hover:border-zinc-700 transition-all flex items-center justify-between">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <svg class="w-4 h-4 text-amber-400/90 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                  </svg>
+                  <div class="flex items-baseline gap-1.5 truncate">
+                    <span class="text-xs font-semibold text-zinc-300 group-hover:text-zinc-100">Windows Portable</span>
+                    <span class="text-[10px] font-mono text-amber-400/90">(.zip)</span>
+                  </div>
+                </div>
+                <span class="text-[10px] text-zinc-500 group-hover:text-zinc-400 shrink-0 flex items-center gap-1">
+                  <span class="lang-es">Portable • Sin instalación</span>
+                  <span class="lang-en">Portable • No install</span>
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.5V16.5M7.5 12 12 16.5m0 0L16.5 12M12 16.5V3" />
+                  </svg>
+                </span>
+              </a>
+            </div>
+
+            <!-- Mac Platform Group -->
+            <div
+              class="platform-card-mac p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm flex flex-col gap-2.5 transition-all">
+              <div class="flex items-center justify-between px-1">
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-zinc-300" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                      d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.64-.78 1.08-1.86.96-2.95-1 .04-2.12.67-2.78 1.44-.58.67-1.1 1.77-.96 2.84 1.12.09 2.14-.55 2.78-1.33z" />
+                  </svg>
+                  <span class="text-xs font-semibold text-zinc-200">macOS</span>
+                  <span
+                    class="os-badge-mac hidden text-[10px] px-1.5 py-0.2 rounded bg-zinc-700 text-zinc-200 border border-zinc-600">
+                    <span class="lang-es">Tu SO</span>
+                    <span class="lang-en">Your OS</span>
+                  </span>
+                </div>
+                <span class="text-[10px] font-mono text-zinc-500">Apple Silicon & Intel • macOS 11+</span>
+              </div>
+
+              <!-- Botón Principal Destacado: Descargar para Mac (.dmg) -->
+              <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Mac.dmg" download
+                class="download-mac-dmg group relative w-full h-[62px] px-3.5 sm:px-4 rounded-xl font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-100 border border-zinc-600/70 hover:border-zinc-400 transition-all shadow-md hover:shadow-zinc-500/10 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-between">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div
+                    class="w-9 h-9 rounded-lg bg-zinc-800/90 border border-zinc-700/80 flex items-center justify-center shrink-0 text-zinc-200 group-hover:scale-105 transition-transform">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                      <path
+                        d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.64-.78 1.08-1.86.96-2.95-1 .04-2.12.67-2.78 1.44-.58.67-1.1 1.77-.96 2.84 1.12.09 2.14-.55 2.78-1.33z" />
+                    </svg>
+                  </div>
+                  <div class="text-left min-w-0">
+                    <div class="flex items-center gap-1.5">
+                      <span class="font-bold text-sm text-zinc-100 group-hover:text-white transition-colors lang-es truncate">Descargar para Mac</span>
+                      <span class="font-bold text-sm text-zinc-100 group-hover:text-white transition-colors lang-en truncate">Download for Mac</span>
+                      <span
+                        class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 font-semibold shrink-0">.dmg</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-[11px] text-zinc-400">
+                      <span class="lang-es">Instalador oficial</span>
+                      <span class="lang-en">Official installer</span>
+                      <span>•</span>
+                      <span class="app-version-text">v0.1.0</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex flex-col items-end gap-1 shrink-0 ml-2">
+                  <span
+                    class="text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    <span class="lang-es">Recomendado</span>
+                    <span class="lang-en">Recommended</span>
+                  </span>
+                  <svg class="w-4 h-4 text-zinc-400 group-hover:text-zinc-200 group-hover:translate-y-0.5 transition-all"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.5V16.5M7.5 12 12 16.5m0 0L16.5 12M12 16.5V3" />
+                  </svg>
+                </div>
+              </a>
+
+              <!-- Botón Secundario: Mac Portable (.zip) -->
+              <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-macOS-Portable.zip" download
+                class="download-mac-zip group w-full h-[46px] px-3.5 rounded-xl font-medium bg-zinc-950/70 hover:bg-zinc-850 text-zinc-300 hover:text-zinc-100 border border-zinc-800 hover:border-zinc-700 transition-all flex items-center justify-between">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <svg class="w-4 h-4 text-amber-400/90 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                  </svg>
+                  <div class="flex items-baseline gap-1.5 truncate">
+                    <span class="text-xs font-semibold text-zinc-300 group-hover:text-zinc-100">Mac Portable</span>
+                    <span class="text-[10px] font-mono text-amber-400/90">(.zip)</span>
+                  </div>
+                </div>
+                <span class="text-[10px] text-zinc-500 group-hover:text-zinc-400 shrink-0 flex items-center gap-1">
+                  <span class="lang-es">Portable • Sin instalación</span>
+                  <span class="lang-en">Portable • No install</span>
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.5V16.5M7.5 12 12 16.5m0 0L16.5 12M12 16.5V3" />
+                  </svg>
+                </span>
+              </a>
+            </div>
           </div>
-        </a>
+        </div>
       </div>
 
       <!-- Subtle Unified Web & Desktop Security Notice -->
@@ -838,33 +1037,74 @@
             </div>
 
             <!-- Direct Downloads on Desktop card -->
-            <div class="space-y-2">
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows.exe" download
-                  class="h-10 px-3 whitespace-nowrap text-center rounded-lg text-xs font-semibold bg-zinc-850 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/80 hover:border-emerald-500/50 transition flex items-center justify-center gap-2">
-                  <svg class="w-3.5 h-3.5 text-sky-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                    <path
-                      d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.949-1.801" />
-                  </svg>
-                  <span>Windows (.exe)</span>
+            <div class="space-y-2.5">
+              <div class="text-[11px] font-semibold text-zinc-400 flex items-center justify-between">
+                <span class="lang-es">Descargas oficiales de escritorio</span>
+                <span class="lang-en">Official desktop downloads</span>
+                <span class="text-[10px] text-emerald-400 font-mono">v0.1.0</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <!-- Windows (.msi) - Principal Destacado -->
+                <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows.msi" download
+                  class="download-windows-msi h-11 px-3 whitespace-nowrap rounded-lg text-xs font-semibold bg-zinc-850 hover:bg-zinc-800 text-zinc-100 border border-sky-500/40 hover:border-sky-400 transition flex items-center justify-between shadow-sm">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <svg class="w-3.5 h-3.5 text-sky-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                      <path
+                        d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.949-1.801" />
+                    </svg>
+                    <span class="truncate">Windows (.msi)</span>
+                  </div>
+                  <span
+                    class="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                    <span class="lang-es">Rec.</span>
+                    <span class="lang-en">Rec.</span>
+                  </span>
                 </a>
+
+                <!-- Mac (.dmg) - Principal Destacado -->
+                <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Mac.dmg" download
+                  class="download-mac-dmg h-11 px-3 whitespace-nowrap rounded-lg text-xs font-semibold bg-zinc-850 hover:bg-zinc-800 text-zinc-100 border border-zinc-600/60 hover:border-zinc-400 transition flex items-center justify-between shadow-sm">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <svg class="w-3.5 h-3.5 text-zinc-300 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                      <path
+                        d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.64-.78 1.08-1.86.96-2.95-1 .04-2.12.67-2.78 1.44-.58.67-1.1 1.77-.96 2.84 1.12.09 2.14-.55 2.78-1.33z" />
+                    </svg>
+                    <span class="truncate">Mac (.dmg)</span>
+                  </div>
+                  <span
+                    class="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                    <span class="lang-es">Rec.</span>
+                    <span class="lang-en">Rec.</span>
+                  </span>
+                </a>
+
+                <!-- Windows Portable (.zip) - Secundario -->
                 <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows-Portable.zip"
                   download
-                  class="h-10 px-3 whitespace-nowrap text-center rounded-lg text-xs font-semibold bg-zinc-850 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/80 hover:border-emerald-500/50 transition flex items-center justify-center gap-2">
-                  <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                    stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                      d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
-                  </svg>
-                  <span>Portable (.zip)</span>
+                  class="download-windows-zip h-9 px-3 whitespace-nowrap rounded-lg text-[11px] font-medium bg-zinc-900 hover:bg-zinc-850 text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition flex items-center justify-between">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24"
+                      stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                    </svg>
+                    <span class="truncate">Win Portable (.zip)</span>
+                  </div>
+                  <span class="text-[9px] text-zinc-500 shrink-0">Portable</span>
                 </a>
-                <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Mac.dmg" download
-                  class="h-10 px-3 whitespace-nowrap text-center rounded-lg text-xs font-semibold bg-zinc-850 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/80 hover:border-emerald-500/50 transition flex items-center justify-center gap-2">
-                  <svg class="w-3.5 h-3.5 text-zinc-300 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                    <path
-                      d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.64-.78 1.08-1.86.96-2.95-1 .04-2.12.67-2.78 1.44-.58.67-1.1 1.77-.96 2.84 1.12.09 2.14-.55 2.78-1.33z" />
-                  </svg>
-                  <span>Mac (.dmg)</span>
+
+                <!-- Mac Portable (.zip) - Secundario -->
+                <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-macOS-Portable.zip" download
+                  class="download-mac-zip h-9 px-3 whitespace-nowrap rounded-lg text-[11px] font-medium bg-zinc-900 hover:bg-zinc-850 text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition flex items-center justify-between">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24"
+                      stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                    </svg>
+                    <span class="truncate">Mac Portable (.zip)</span>
+                  </div>
+                  <span class="text-[9px] text-zinc-500 shrink-0">Portable</span>
                 </a>
               </div>
               <a href="https://github.com/Zintradev/foliant/releases/latest" target="_blank" rel="noopener noreferrer"
@@ -891,6 +1131,7 @@
           one click.</span>
       </p>
       <div class="mt-8 flex flex-wrap justify-center gap-3">
+        <!-- Probar en la Web -->
         <a href="./app/"
           class="h-11 px-5 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-md transition">
           <span class="lang-es">Probar Foliant Web</span>
@@ -899,31 +1140,64 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
           </svg>
         </a>
-        <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows.exe" download
-          class="h-11 px-5 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-200 border border-zinc-700/80 transition">
-          <svg class="w-3.5 h-3.5 text-sky-400" viewBox="0 0 24 24" fill="currentColor">
+
+        <!-- Windows (.msi) - Principal Destacado -->
+        <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows.msi" download
+          class="download-windows-msi h-11 px-4 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-100 border border-sky-500/50 hover:border-sky-400 transition shadow-sm">
+          <svg class="w-3.5 h-3.5 text-sky-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
             <path
               d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.949-1.801" />
           </svg>
-          <span>Windows (.exe)</span>
+          <span class="lang-es">Windows (.msi)</span>
+          <span class="lang-en">Windows (.msi)</span>
+          <span
+            class="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            <span class="lang-es">Rec</span>
+            <span class="lang-en">Rec</span>
+          </span>
         </a>
+
+        <!-- Windows Portable (.zip) - Secundario -->
         <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Windows-Portable.zip" download
-          class="h-11 px-5 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-200 border border-zinc-700/80 transition">
-          <svg class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          class="download-windows-zip h-11 px-3.5 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-medium bg-zinc-950 hover:bg-zinc-900 text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition">
+          <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
             stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round"
               d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
           </svg>
-          <span>Portable (.zip)</span>
+          <span class="lang-es">Win Portable (.zip)</span>
+          <span class="lang-en">Win Portable (.zip)</span>
         </a>
+
+        <!-- Mac (.dmg) - Principal Destacado -->
         <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-Mac.dmg" download
-          class="h-11 px-5 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-200 border border-zinc-700/80 transition">
-          <svg class="w-3.5 h-3.5 text-zinc-300" viewBox="0 0 24 24" fill="currentColor">
+          class="download-mac-dmg h-11 px-4 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-850 text-zinc-100 border border-zinc-600/60 hover:border-zinc-400 transition shadow-sm">
+          <svg class="w-3.5 h-3.5 text-zinc-300 shrink-0" viewBox="0 0 24 24" fill="currentColor">
             <path
               d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.64-.78 1.08-1.86.96-2.95-1 .04-2.12.67-2.78 1.44-.58.67-1.1 1.77-.96 2.84 1.12.09 2.14-.55 2.78-1.33z" />
           </svg>
-          <span>Mac (.dmg)</span>
+          <span class="lang-es">Mac (.dmg)</span>
+          <span class="lang-en">Mac (.dmg)</span>
+          <span
+            class="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            <span class="lang-es">Rec</span>
+            <span class="lang-en">Rec</span>
+          </span>
         </a>
+
+        <!-- Mac Portable (.zip) - Secundario -->
+        <a href="https://github.com/Zintradev/foliant/releases/latest/download/Foliant-macOS-Portable.zip" download
+          class="download-mac-zip h-11 px-3.5 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-medium bg-zinc-950 hover:bg-zinc-900 text-zinc-300 border border-zinc-800 hover:border-zinc-700 transition">
+          <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+          </svg>
+          <span class="lang-es">Mac Portable (.zip)</span>
+          <span class="lang-en">Mac Portable (.zip)</span>
+        </a>
+
+        <!-- GitHub Source -->
         <a href="https://github.com/Zintradev/foliant" target="_blank" rel="noopener noreferrer"
           class="h-11 px-4 whitespace-nowrap inline-flex items-center gap-2 rounded-lg text-xs font-semibold bg-zinc-950 hover:bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800 transition">
           <span>GitHub</span>
