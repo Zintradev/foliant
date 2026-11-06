@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import ExportSettingsModal from './ExportSettingsModal';
 import { DEFAULT_PROJECT } from '../../data/mockProject';
@@ -14,8 +14,13 @@ describe('ExportSettingsModal Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockProject = JSON.parse(JSON.stringify(DEFAULT_PROJECT));
-    mockOnClose = vi.fn<() => void>() as unknown as () => void;
-    mockOnExport = vi.fn<(options: EpubExportOptions) => void>() as unknown as (options: EpubExportOptions) => void;
+    mockOnClose = vi.fn<() => void>();
+    mockOnExport = vi.fn<(options: EpubExportOptions) => Promise<void>>().mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it('renders nothing when isOpen is false', () => {
@@ -103,11 +108,9 @@ describe('ExportSettingsModal Component', () => {
     class MockFileReader {
       onload: ((e: any) => void) | null = null;
       readAsDataURL() {
-        setTimeout(() => {
-          if (this.onload) {
-            this.onload({ target: { result: 'data:image/jpeg;base64,mockdata' } });
-          }
-        }, 10);
+        if (this.onload) {
+          this.onload({ target: { result: 'data:image/jpeg;base64,mockdata' } });
+        }
       }
     }
     vi.stubGlobal('FileReader', MockFileReader);
@@ -144,8 +147,10 @@ describe('ExportSettingsModal Component', () => {
     const removeBtn = screen.getByRole('button', { name: /Remove/i });
     fireEvent.click(removeBtn);
 
-    expect(screen.queryByText('Cover Ready')).not.toBeInTheDocument();
-    expect(screen.getByText('Click or drag and drop your book cover here')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText('Cover Ready')).not.toBeInTheDocument();
+      expect(screen.getByText('Click or drag and drop your book cover here')).toBeInTheDocument();
+    });
   });
 
   it('switches to Content tab and toggles chapter formatting', () => {
@@ -271,18 +276,20 @@ describe('ExportSettingsModal Component', () => {
     const submitBtn = screen.getByRole('button', { name: /Export EPUB/i });
     fireEvent.click(submitBtn);
 
-    expect(mockOnExport).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: mockProject.title,
-        language: 'es',
-        profile: 'amazon',
-        includeVisualToc: true,
-        chapterFormatting: 'top-folders',
-      })
-    );
+    await waitFor(() => {
+      expect(mockOnExport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: mockProject.title,
+          language: 'es',
+          profile: 'amazon',
+          includeVisualToc: true,
+          chapterFormatting: 'top-folders',
+        })
+      );
+    });
   });
 
-  it('guards against submission when no scenes are selected or isExporting is true', () => {
+  it('guards against submission when no scenes are selected or isExporting is true', async () => {
     const { rerender } = render(
       <ExportSettingsModal
         isOpen={true}
@@ -298,7 +305,9 @@ describe('ExportSettingsModal Component', () => {
 
     // Attempting submit does not call onExport
     fireEvent.submit(screen.getByRole('button', { name: /Exporting EPUB.../i }).closest('form')!);
-    expect(mockOnExport).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockOnExport).not.toHaveBeenCalled();
+    });
 
     // Rerender with 0 scenes selected
     rerender(
@@ -318,10 +327,12 @@ describe('ExportSettingsModal Component', () => {
     expect(exportBtn).toBeDisabled();
 
     fireEvent.submit(exportBtn.closest('form')!);
-    expect(mockOnExport).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockOnExport).not.toHaveBeenCalled();
+    });
   });
 
-  it('handles closing via X button, Cancel button, and Escape key', () => {
+  it('handles closing via X button, Cancel button, and Escape key', async () => {
     render(
       <ExportSettingsModal
         isOpen={true}
@@ -334,15 +345,21 @@ describe('ExportSettingsModal Component', () => {
     // Cancel button
     const cancelBtn = screen.getByRole('button', { name: /Cancel/i });
     fireEvent.click(cancelBtn);
-    expect(mockOnClose).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(mockOnClose).toHaveBeenCalledTimes(1);
+    });
 
     // Escape key
     fireEvent.keyDown(window, { key: 'Escape' });
-    expect(mockOnClose).toHaveBeenCalledTimes(2);
+    await waitFor(() => {
+      expect(mockOnClose).toHaveBeenCalledTimes(2);
+    });
 
     // Close button (X)
     const closeBtn = screen.getByTitle('Close');
     fireEvent.click(closeBtn);
-    expect(mockOnClose).toHaveBeenCalledTimes(3);
+    await waitFor(() => {
+      expect(mockOnClose).toHaveBeenCalledTimes(3);
+    });
   });
 });
