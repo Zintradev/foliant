@@ -54,6 +54,11 @@ If you enjoy Foliant and want to support its ongoing development, you can [buy m
 
 ---
 
+## 🤝 Contributing
+Please read our [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a Pull Request. We require all new code to strictly pass our quality pipeline (`npm run check-all`).
+
+---
+
 ## 🛡️ License
 
 This project is licensed under the PolyForm Noncommercial License 1.0.0.

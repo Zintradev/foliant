@@ -12,8 +12,14 @@ pub use bundle::{check_file_exists, load_project_bundle, save_project_bundle};
 // Helper
 // ---------------------------------------------------------------------------
 
-/// Returns (and creates if necessary) the directory where reference images
-/// are stored: <app_data_dir>/.foliant/assets/images/
+/// Resolves and initializes the global fallback directory for reference images.
+///
+/// Returns the path `<app_data_dir>/.foliant/assets/images/`, creating parent directories
+/// on disk if they do not already exist.
+///
+/// # Context
+/// Used as a persistent global fallback location when an image asset cannot be mapped to an
+/// active project directory or a session-specific temporary bundle cache.
 fn images_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     let base = app
         .path()
@@ -32,11 +38,17 @@ fn images_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 // Commands
 // ---------------------------------------------------------------------------
 
-/// Resolves the visuals directory for a project.
+/// Determines the appropriate directory for visual assets based on the project type.
 ///
-/// For `.foliant` bundle files, assets belong directly inside the bundle archive and
-/// are extracted into the project-scoped system temp directory during the active session.
-/// We strictly avoid creating a loose `visuals/` directory outside the `.foliant` file.
+/// Inspects the provided `project_path` and `project_id` to determine whether assets
+/// should be stored in a project-adjacent folder or an active session scratch directory.
+///
+/// # Context
+/// For folder-based projects (non-`.foliant` paths), visuals reside directly in `<project_dir>/visuals`.
+/// For single-file `.foliant` bundle archives, visual assets belong inside the ZIP archive.
+/// During an active editing session, bundle assets are unpacked into a project-scoped system temp
+/// directory (`<temp>/foliant_visuals/<project_id>/`) to prevent creating loose folders beside
+/// the `.foliant` file. Falls back to [`images_dir`] if temp directory allocation fails.
 fn resolve_project_visuals_dir(
     app: &tauri::AppHandle,
     project_path: Option<&str>,
@@ -77,16 +89,28 @@ fn resolve_project_visuals_dir(
     images_dir(app)
 }
 
-/// Copies a local image file into the project's visuals directory.
+/// Copies an image file from the local filesystem into the project's visuals storage.
 ///
-/// # Arguments
-/// * `source_path` – Absolute path to the original image on the user's disk.
-/// * `file_name`   – Desired file name inside the visuals directory (e.g. "cover.png").
-///                   If empty the source file name is used.
-/// * `project_path` – Optional path to current project folder or .foliant file.
+/// Validates file existence, verifies that the format is a supported image extension,
+/// sanitizes the target filename against path traversal attacks, and copies the asset
+/// into both the project visuals directory and the session temp cache.
 ///
-/// # Returns
-/// The absolute path of the copied asset as a String.
+/// # Context
+/// Enables users to import character portraits, world-building maps, and moodboard items
+/// from arbitrary disk locations into their project without manual file management.
+/// Keeping a synchronized copy in the session temp cache ensures bundle packagers can
+/// discover and archive the asset upon project save.
+///
+/// # Frontend Invocation
+/// Expected arguments from React:
+/// * `source_path` (`string`): Absolute path to the source image file on the local filesystem.
+/// * `file_name` (`string`): Desired filename within the visuals directory (e.g. `"cover.png"`).
+///   If empty, the original filename from `source_path` is preserved.
+/// * `project_path` (`string | null`): Optional path to the active project folder or `.foliant` bundle file.
+/// * `project_id` (`string | null`): Optional unique identifier of the active project.
+///
+/// Returns `Ok(String)` containing the absolute destination path on disk, or `Err(String)` describing
+/// the validation or I/O failure.
 #[tauri::command]
 async fn save_reference_image(
     app: tauri::AppHandle,
@@ -164,15 +188,27 @@ async fn save_reference_image(
         .to_string())
 }
 
-/// Saves a base64-encoded image directly into the project's visuals/ directory.
+/// Decodes a base64-encoded image and writes the binary payload directly into project visual storage.
 ///
-/// # Arguments
-/// * `file_name`    – Target file name including extension (e.g. "sketch.png").
-/// * `data_base64`  – Raw base64 string (or data-URI prefix).
-/// * `project_path` – Optional path to current project folder or .foliant file.
+/// Strips optional Data URL prefixes, decodes base64 bytes using the standard RFC 4648 alphabet,
+/// sanitizes the filename to prevent directory traversal, and writes the resulting binary data
+/// to both the project visuals directory and the session temp scratch directory.
 ///
-/// # Returns
-/// The absolute path of the saved asset as a String.
+/// # Context
+/// Allows the React frontend to save imagery produced directly in the browser environment—such as
+/// canvas drawings, clipboard image pastes, or generated moodboards—without requiring a prior file
+/// on the local disk.
+///
+/// # Frontend Invocation
+/// Expected arguments from React:
+/// * `file_name` (`string`): Target filename including extension (e.g. `"sketch.png"`). Must not be empty.
+/// * `data_base64` (`string`): Base64-encoded image string, optionally prefixed with a data URI scheme
+///   (e.g. `"data:image/png;base64,..."`).
+/// * `project_path` (`string | null`): Optional path to the active project folder or `.foliant` bundle file.
+/// * `project_id` (`string | null`): Optional unique identifier of the active project.
+///
+/// Returns `Ok(String)` containing the absolute destination path on disk, or `Err(String)` if decoding
+/// or file writing fails.
 #[tauri::command]
 async fn save_reference_image_base64(
     app: tauri::AppHandle,
@@ -239,14 +275,24 @@ async fn save_reference_image_base64(
         .to_string())
 }
 
-/// Lists all reference images currently stored in the project's visuals directory.
+/// Lists all valid reference image files associated with a project.
 ///
-/// # Arguments
-/// * `project_path` – Optional path to current project folder or .foliant file.
-/// * `project_id`   – Optional project unique identifier.
+/// Scans both the project-adjacent visuals directory and the project-scoped session temp
+/// directory, filtering entries against supported image extensions (`png`, `jpg`, `jpeg`,
+/// `gif`, `webp`, `svg`, `avif`). Deduplicates identical filenames and returns paths in
+/// sorted alphabetical order.
 ///
-/// # Returns
-/// A Vec of absolute path strings, one per image file found.
+/// # Context
+/// Required by the frontend gallery and visual asset manager to display all available visual
+/// materials across both folder projects and unpacked `.foliant` bundles in a deterministic order.
+///
+/// # Frontend Invocation
+/// Expected arguments from React:
+/// * `project_path` (`string | null`): Optional path to the active project folder or `.foliant` file.
+/// * `project_id` (`string | null`): Optional unique identifier of the active project.
+///
+/// Returns `Ok(Vec<String>)` containing sorted absolute file paths, or `Err(String)` if directory
+/// resolution fails.
 #[tauri::command]
 async fn list_reference_images(
     app: tauri::AppHandle,
@@ -326,12 +372,25 @@ async fn list_reference_images(
     Ok(paths)
 }
 
-/// Deletes a specific reference image from the project's visuals directory.
+/// Removes an image file from the project's visuals storage and temporary caches.
 ///
-/// # Arguments
-/// * `file_name` – File name only (no directory component) of the image to delete.
-/// * `project_path` – Optional path to current project folder or .foliant file.
-/// * `project_id`   – Optional project unique identifier.
+/// Verifies that the provided `file_name` contains no directory traversal sequences
+/// (`/`, `\`, `:`), deletes the file from the resolved project visuals directory if present,
+/// and cleans up matching files in both the project-scoped session temp directory and legacy
+/// fallback caches.
+///
+/// # Context
+/// Ensures asset deletions performed by the user in the frontend media manager do not leave
+/// dangling or orphaned files in the project or system temp directories.
+///
+/// # Frontend Invocation
+/// Expected arguments from React:
+/// * `file_name` (`string`): Base filename only (e.g. `"concept.png"`), without path separators.
+/// * `project_path` (`string | null`): Optional path to the active project folder or `.foliant` file.
+/// * `project_id` (`string | null`): Optional unique identifier of the active project.
+///
+/// Returns `Ok(())` on successful deletion (or if the file was already absent), or `Err(String)`
+/// if path validation or deletion fails.
 #[tauri::command]
 async fn delete_reference_image(
     app: tauri::AppHandle,
@@ -378,8 +437,21 @@ async fn delete_reference_image(
     Ok(())
 }
 
-/// Saves a chapter's markdown/HTML content to disk.
-/// Kept from the original implementation.
+/// Writes chapter or scene text content directly to a designated file on disk.
+///
+/// Ensures parent directories exist before writing the given content string to the specified path.
+///
+/// # Context
+/// Facilitates direct chapter persistence for multi-file workspace workflows, standalone Markdown
+/// exports, or legacy document structures that store chapters as individual filesystem documents
+/// rather than packaging them into a unified `.foliant` bundle archive.
+///
+/// # Frontend Invocation
+/// Expected arguments from React:
+/// * `path` (`string`): Absolute filesystem path where the chapter document should be written.
+/// * `content` (`string`): Full text content (Markdown or HTML) to write to the file.
+///
+/// Returns `Ok(())` on success, or `Err(String)` if directory creation or file writing fails.
 #[tauri::command]
 async fn save_chapter_file(path: String, content: String) -> Result<(), String> {
     if let Some(parent) = Path::new(&path).parent()
@@ -390,8 +462,24 @@ async fn save_chapter_file(path: String, content: String) -> Result<(), String> 
     fs::write(&path, content).map_err(|e| format!("Failed to write file to '{path}': {e}"))
 }
 
-/// Reads an image from disk and encodes it into a standard data URL (`data:image/...;base64,...`).
-/// Bypasses asset protocol and scope restrictions, ensuring instant preview.
+/// Reads an image from disk and encodes its binary data into a standard Data URL string.
+///
+/// Reads the file bytes, detects the MIME type from the file extension (`image/jpeg`,
+/// `image/png`, `image/webp`, etc.), base64-encodes the bytes, and returns a formatted
+/// data URL (`data:<mime>;base64,<payload>`).
+///
+/// # Context
+/// Directly converts local image assets to base64 Data URLs to bypass Tauri asset protocol
+/// restrictions (`asset://`) and webview origin sandboxing. This avoids IPC protocol overhead,
+/// eliminates Content Security Policy (CSP) blocking for local filesystem files, and provides
+/// immediate visual previews in the React editor and canvas widgets.
+///
+/// # Frontend Invocation
+/// Expected arguments from React:
+/// * `file_path` (`string`): Absolute filesystem path of the image to read.
+///
+/// Returns `Ok(String)` containing the complete Data URL, or `Err(String)` if the file
+/// cannot be found or read.
 #[tauri::command]
 async fn read_image_as_data_url(file_path: String) -> Result<String, String> {
     let path = std::path::Path::new(&file_path);
@@ -422,7 +510,20 @@ async fn read_image_as_data_url(file_path: String) -> Result<String, String> {
     Ok(format!("data:{mime};base64,{b64}"))
 }
 
-/// Exits the application process cleanly.
+/// Requests a clean termination of the desktop application process.
+///
+/// Exits the Tauri application process immediately with return code 0.
+///
+/// # Context
+/// Provides a programmatic termination hook for custom UI controls in the React frontend
+/// (e.g. custom title bars, modal exit dialogs, or menu bar quit options) without relying
+/// exclusively on native window frame buttons.
+///
+/// # Frontend Invocation
+/// Expected arguments from React:
+/// * None.
+///
+/// Does not return a value as the process terminates upon invocation.
 #[tauri::command]
 fn exit_app(app: tauri::AppHandle) {
     app.exit(0);
@@ -432,6 +533,11 @@ fn exit_app(app: tauri::AppHandle) {
 // Entry point
 // ---------------------------------------------------------------------------
 
+/// Application entry point for the Foliant desktop client.
+///
+/// Registers core Tauri plugins (filesystem, native dialogs, external opener, process lifecycle,
+/// and auto-updater), registers IPC invoke handlers for frontend communication, and starts
+/// the Tauri runtime loop.
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())

@@ -1,11 +1,25 @@
 pub mod bundle;
 
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+/// Returns a greeting string for IPC connection diagnostics.
+///
+/// This command serves as a verification probe between the React frontend and
+/// the Rust backend to confirm that invoke handlers and serialization operate properly.
+///
+/// # Frontend Invocation
+/// Expected arguments from React:
+/// * `name` (`&str` / `string`): The name or identifier of the entity to greet.
+///
+/// Returns a formatted greeting string: `"Hello, <name>! You've been greeted from Rust!"`.
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
+/// Initializes and launches the Tauri desktop application runtime.
+///
+/// Configures core plugins (opener, native dialogs, filesystem access, process management,
+/// and auto-updates) and mounts invoke command handlers for IPC communication with the
+/// React frontend before starting the primary application event loop.
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()

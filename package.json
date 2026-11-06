@@ -15,7 +15,12 @@
     "test": "vitest run",
     "tauri": "tauri",
     "tauri:build": "tauri build",
-    "tauri:dev": "tauri dev"
+    "tauri:dev": "tauri dev",
+    "check:ts": "tsc --noEmit",
+    "check:rust-fmt": "cd src-tauri && cargo fmt -- --check",
+    "check:rust-clippy": "cd src-tauri && cargo clippy --all-targets --all-features -- -D warnings",
+    "check:rust-test": "cd src-tauri && cargo test",
+    "check-all": "npm run check:ts && npm run test && npm run check:rust-fmt && npm run check:rust-clippy && npm run check:rust-test"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

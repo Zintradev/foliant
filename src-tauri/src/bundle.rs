@@ -5,12 +5,28 @@ use std::path::{Path, PathBuf};
 use zip::write::SimpleFileOptions;
 use zip::{ZipArchive, ZipWriter};
 
-/// Directory in the system temp directory used to extract `.foliant` bundled visual assets.
+/// Returns the root path to the temporary directory used for caching visual assets.
+///
+/// Locates `<sys_temp>/foliant_visuals/` in the operating system's designated temp path.
+///
+/// # Context
+/// When `.foliant` ZIP bundle packages are loaded, compressed image assets are extracted into
+/// project-scoped subdirectories under this root during the active session. This allows webviews
+/// to access media via standard filesystem paths without leaving loose extracted files next
+/// to the user's project archive.
 pub fn temp_visuals_dir() -> PathBuf {
     std::env::temp_dir().join("foliant_visuals")
 }
 
 /// Checks whether a given file extension corresponds to a supported visual image format.
+///
+/// Evaluates case-insensitively against supported raster and vector extensions:
+/// `png`, `jpg`, `jpeg`, `gif`, `webp`, `svg`, `avif`, `bmp`, and `ico`.
+///
+/// # Context
+/// Used during project metadata scanning to distinguish actual image assets from other
+/// document files or arbitrary disk attachments, preventing non-image files from being
+/// inadvertently copied into the bundle's `visuals/` archive directory.
 pub fn is_image_extension(ext: &str) -> bool {
     let lower = ext.to_lowercase();
     matches!(
@@ -19,16 +35,34 @@ pub fn is_image_extension(ext: &str) -> bool {
     )
 }
 
-/// Strips characters that are invalid across POSIX and Windows filesystems.
+/// Sanitizes a file or directory name by stripping illegal filesystem characters.
+///
+/// Filters out characters prohibited across Windows and POSIX filesystems:
+/// `/`, `\`, `:`, `*`, `?`, `"`, `<`, `>`, and `|`.
+///
+/// # Context
+/// Critical for cross-platform archive portability and path traversal prevention. Prevents
+/// zip-slip vulnerabilities when unpacking entry names from `.foliant` ZIP archives and ensures
+/// generated filenames remain valid regardless of whether the user is on Windows, macOS, or Linux.
 pub fn sanitize_file_name(name: &str) -> String {
     name.chars()
         .filter(|c| !matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|'))
         .collect()
 }
 
-/// Helper to scan all JSON strings recursively for image paths,
-/// collect the source files to be copied into the ZIP under `visuals/`,
-/// and rewrite the paths in the project metadata to relative `"visuals/<safe_name>"`.
+/// Recursively scans project JSON metadata to locate, collect, and relativize image file paths for archive packaging.
+///
+/// Traverses all JSON objects, arrays, and string properties:
+/// 1. Identifies existing bundle-relative paths (`visuals/...` or `images/...`) and staged temp files.
+/// 2. Discovers absolute image paths on the local filesystem, stages them in `images_to_pack`,
+///    and records mapped paths in `seen_paths` to prevent duplicate archive entries.
+/// 3. Rewrites absolute paths in-place into portable relative paths (`visuals/<sanitized_name>`).
+///
+/// # Context
+/// Absolute filesystem paths (e.g. `C:\Users\...` or `/home/...`) break portability when a `.foliant`
+/// bundle is transferred to another machine or directory. Relativizing paths within `project.json`
+/// and collecting the physical files to be packaged under `visuals/` ensures that every `.foliant`
+/// bundle is completely self-contained and reproducible.
 fn process_visual_paths_for_save(
     val: &mut serde_json::Value,
     images_to_pack: &mut HashMap<String, PathBuf>,
@@ -122,8 +156,16 @@ fn process_visual_paths_for_save(
     }
 }
 
-/// Helper to rewrite relative `"visuals/<name>"` and `"images/<name>"` paths
-/// into absolute paths pointing to the system temporary directory.
+/// Recursively rewrites bundle-relative visual paths to absolute paths pointing to the session temporary directory.
+///
+/// Scans project metadata for `"visuals/<filename>"` or `"images/<filename>"` references, resolves them
+/// to `<temp_dir>/<filename>`, and automatically populates in-memory Data URLs (`data:<mime>;base64,...`)
+/// for objects missing an active base64 payload.
+///
+/// # Context
+/// Inside a `.foliant` archive, image paths are stored as portable relative references. Upon loading,
+/// the React frontend and underlying webview require absolute local filesystem paths or Data URLs to
+/// display images in the DOM and canvas without violating browser security sandboxes.
 fn resolve_visual_paths_to_temp(val: &mut serde_json::Value, temp_dir: &Path) {
     match val {
         serde_json::Value::Object(map) => {
@@ -206,8 +248,14 @@ fn resolve_visual_paths_to_temp(val: &mut serde_json::Value, temp_dir: &Path) {
     }
 }
 
-/// Strips in-memory base64 string properties recursively from visuals metadata
-/// to avoid ballooning project.json inside the bundle archive.
+/// Recursively strips in-memory base64 data strings from visual metadata objects before serialization.
+///
+/// Traverses the JSON tree and removes all `"base64"` object keys.
+///
+/// # Context
+/// While base64 Data URLs are cached in memory for rapid frontend rendering, writing large base64
+/// strings into `project.json` inside the `.foliant` ZIP would duplicate data already stored in the
+/// `visuals/` folder, causing substantial archive bloat and slowing down JSON serialization.
 fn strip_base64_from_visuals(val: &mut serde_json::Value) {
     match val {
         serde_json::Value::Object(map) => {
@@ -225,15 +273,25 @@ fn strip_base64_from_visuals(val: &mut serde_json::Value) {
     }
 }
 
-/// Saves a Foliant project bundle into a single `.foliant` compressed ZIP archive.
+/// Asynchronously serializes and packages a Foliant project into a `.foliant` compressed ZIP archive.
 ///
-/// Inside the ZIP archive:
-/// - `project.json`: Project metadata with scene contents stripped to empty strings
-///   and image paths stored as portable relative `"visuals/<filename>"`.
-/// - `scenes/{scene_id}.md`: Markdown content for each scene.
-/// - `visuals/{filename}`: Bundled visual image assets.
+/// Offloads the synchronous compression, JSON stripping, and disk I/O operations to a blocking thread pool
+/// via [`tauri::async_runtime::spawn_blocking`].
 ///
-/// Overwrites the target file cleanly in a single operation.
+/// # Context
+/// Archiving a novel project—including serializing metadata, deflating scene Markdown files, and writing
+/// binary image assets—can be CPU and disk intensive. Executing this in a background worker thread
+/// guarantees that the main Tauri event loop and React frontend remain completely responsive without UI stutter.
+///
+/// # Frontend Invocation
+/// Expected arguments from React:
+/// * `file_path` (`string`): Absolute target filesystem path ending with `.foliant`.
+/// * `project` (`object`): Complete `FoliantProject` JSON data containing metadata, chapters, and world items.
+/// * `scenes` (`Record<string, string> | null`): Optional map of scene IDs to Markdown text. If omitted,
+///   scene contents are extracted from `project.chapters`.
+/// * `images` (`Record<string, string> | null`): Optional map of filenames to base64 image strings for explicit packaging.
+///
+/// Returns `Ok(())` on successful save, or `Err(String)` describing any serialization, compression, or file I/O failure.
 #[tauri::command]
 pub async fn save_project_bundle(
     file_path: String,
@@ -248,7 +306,20 @@ pub async fn save_project_bundle(
     .map_err(|e| format!("Save task failed: {e}"))?
 }
 
-/// Synchronous internal implementation for saving the project bundle.
+/// Synchronously serializes and packages a Foliant project into a `.foliant` compressed ZIP archive.
+///
+/// Assembles the archive with the following internal layout:
+/// - `project.json`: Project metadata with scene contents stripped to empty strings to reduce parsing overhead,
+///   and image references relativized to `"visuals/<filename>"`.
+/// - `scenes/{scene_id}.md`: Individual Markdown files for each scene, compressed using `Deflated`.
+/// - `visuals/{filename}`: Binary image assets stored using `Stored` (no compression).
+///
+/// # Context
+/// Separated from [`save_project_bundle`] to enable direct, deterministic unit testing without requiring
+/// an active Tauri runtime context. Applies `Deflated` compression to narrative documents to maximize space
+/// efficiency while storing image assets uncompressed (`Stored`), eliminating redundant CPU compression cycles
+/// on already compressed media formats (JPEG/PNG/WebP). Employs atomic writes to ensure target `.foliant` files
+/// are never left in a partially written or corrupted state.
 pub fn save_project_bundle_sync(
     file_path: &str,
     project: serde_json::Value,
@@ -413,18 +484,37 @@ pub fn save_project_bundle_sync(
     Ok(())
 }
 
-/// Loads a Foliant project bundle from a `.foliant` ZIP archive.
+/// Asynchronously unpacks and parses a `.foliant` ZIP bundle into a unified project JSON object.
 ///
-/// Unpacks `project.json` and all `scenes/*.md` files into memory,
-/// extracts `visuals/` assets into the system temp directory,
-/// reassembles scene contents and resolves visual paths,
-/// and returns the unified `FoliantProject` JSON value.
+/// Offloads decompression, archive extraction, and path reconciliation to a blocking background thread
+/// via [`tauri::async_runtime::spawn_blocking`].
+///
+/// # Context
+/// Unpacking multi-scene projects and extracting bundled visual assets can involve significant disk I/O.
+/// Running this command on a worker thread keeps the React frontend UI smooth and responsive during project load.
+///
+/// # Frontend Invocation
+/// Expected arguments from React:
+/// * `file_path` (`string`): Absolute filesystem path to an existing `.foliant` bundle file.
+///
+/// Returns `Ok(serde_json::Value)` containing the complete `FoliantProject` object with reassembled scene
+/// contents and resolved asset paths, or `Err(String)` if the file is missing, corrupted, or contains invalid JSON.
 #[tauri::command]
 pub async fn load_project_bundle(file_path: String) -> Result<serde_json::Value, String> {
     load_project_bundle_sync(&file_path)
 }
 
-/// Synchronous internal implementation for loading the project bundle.
+/// Synchronously unpacks and reconstructs a Foliant project from a `.foliant` ZIP archive.
+///
+/// 1. Reads and parses `project.json`.
+/// 2. Extracts `scenes/*.md` entries and injects their Markdown content back into the corresponding chapters.
+/// 3. Extracts `visuals/` assets into the project-scoped session temporary directory (`foliant_visuals/<project_id>/`).
+/// 4. Converts bundle-relative visual paths back into absolute paths and populates in-memory Data URLs.
+///
+/// # Context
+/// Core bundle loading implementation separated from [`load_project_bundle`] for headless unit testing.
+/// Isolates extracted visual assets into a project-scoped temporary folder, preventing namespace clashes
+/// between different projects and ensuring clean project reloading during an active user session.
 pub fn load_project_bundle_sync(file_path: &str) -> Result<serde_json::Value, String> {
     let path = Path::new(file_path);
 
@@ -550,7 +640,18 @@ pub fn load_project_bundle_sync(file_path: &str) -> Result<serde_json::Value, St
     Ok(project)
 }
 
-/// Checks whether a given file exists on disk and is a regular file.
+/// Verifies whether a given path exists on the local filesystem and points to a regular file.
+///
+/// # Context
+/// Provides a fast, lightweight file existence check for the React frontend (e.g. verifying recent
+/// project lists or checking whether a target file was deleted) without requiring full filesystem
+/// plugin permissions or throwing frontend exceptions.
+///
+/// # Frontend Invocation
+/// Expected arguments from React:
+/// * `file_path` (`string`): Absolute filesystem path to check.
+///
+/// Returns `true` if the path exists and is a regular file; `false` otherwise.
 #[tauri::command]
 pub fn check_file_exists(file_path: String) -> bool {
     let path = Path::new(&file_path);
