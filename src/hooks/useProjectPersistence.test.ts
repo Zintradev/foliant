@@ -25,12 +25,12 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 describe('useProjectPersistence (Single .foliant Bundle Architecture)', () => {
   let mockProject: FoliantProject;
-  let onProjectLoaded: ReturnType<typeof vi.fn>;
+  let onProjectLoaded: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(exists).mockResolvedValue(true);
-    (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ = { invoke: vi.fn() };
+    (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ = { invoke: vi.fn() as any };
     mockProject = {
       ...createEmptyProject('proj-1', 'The Cipher Mystery'),
       lastModified: 1000,
@@ -49,7 +49,7 @@ describe('useProjectPersistence (Single .foliant Bundle Architecture)', () => {
         },
       ],
     };
-    onProjectLoaded = vi.fn();
+    onProjectLoaded = vi.fn() as any;
   });
 
   it('extracts .foliant file name correctly across Windows and POSIX paths', () => {

@@ -8,14 +8,14 @@ import * as platform from '../../utils/platform';
 
 describe('SettingsModal Component', () => {
   let mockSettings: AppSettings;
-  let mockOnUpdateSettings: ReturnType<typeof vi.fn>;
-  let mockOnClose: ReturnType<typeof vi.fn>;
+  let mockOnUpdateSettings: any;
+  let mockOnClose: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockSettings = JSON.parse(JSON.stringify(DEFAULT_APP_SETTINGS));
-    mockOnUpdateSettings = vi.fn();
-    mockOnClose = vi.fn();
+    mockOnUpdateSettings = vi.fn() as any;
+    mockOnClose = vi.fn() as any;
   });
 
   it('renders nothing when isOpen is false', () => {

@@ -11,16 +11,16 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 describe('FoliantEditor Component', () => {
   const mockInvoke = vi.mocked(invoke);
-  let mockOnChange: ReturnType<typeof vi.fn>;
-  let mockOnStatusChange: ReturnType<typeof vi.fn>;
+  let mockOnChange: any;
+  let mockOnStatusChange: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ = { invoke: vi.fn() };
+    (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ = { invoke: vi.fn() as any };
     mockInvoke.mockReset();
     mockInvoke.mockResolvedValue(undefined as never);
-    mockOnChange = vi.fn();
-    mockOnStatusChange = vi.fn();
+    mockOnChange = vi.fn() as any;
+    mockOnStatusChange = vi.fn() as any;
     if (!Range.prototype.getClientRects) {
       Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
     }
@@ -39,7 +39,7 @@ describe('FoliantEditor Component', () => {
         } as DOMRect);
     }
     if (!Element.prototype.scrollIntoView) {
-      Element.prototype.scrollIntoView = vi.fn();
+      Element.prototype.scrollIntoView = vi.fn() as any;
     }
   });
 
