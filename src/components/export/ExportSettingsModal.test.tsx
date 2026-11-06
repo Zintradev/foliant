@@ -14,8 +14,8 @@ describe('ExportSettingsModal Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockProject = JSON.parse(JSON.stringify(DEFAULT_PROJECT));
-    mockOnClose = vi.fn<() => void>();
-    mockOnExport = vi.fn<(options: EpubExportOptions) => Promise<void>>().mockResolvedValue(undefined);
+    mockOnClose = vi.fn<() => void>() as unknown as () => void;
+    mockOnExport = (vi.fn<(options: EpubExportOptions) => Promise<void>>().mockResolvedValue(undefined)) as unknown as (options: EpubExportOptions) => Promise<void>;
   });
 
   afterEach(() => {
