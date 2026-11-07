@@ -5,7 +5,7 @@
   "type": "module",
   "homepage": "https://Zintradev.github.io/foliant",
   "scripts": {
-    "version": "node sync-version.js && git add src-tauri/tauri.conf.json src-tauri/Cargo.toml",
+    "version": "node sync-version.cjs && git add src-tauri/tauri.conf.json src-tauri/Cargo.toml",
     "dev": "vite",
     "build": "tsc && vite build",
     "build:web": "tsc && vite build",
