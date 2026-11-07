@@ -1,19 +1,18 @@
 const fs = require('fs');
 
-// Read the new version that npm just updated in package.json
 const pkg = require('./package.json');
-const version = pkg.version;
+const fullVersion = pkg.version;
 
-// Update tauri.conf.json
+const cleanVersion = fullVersion.split('-')[0];
+
 const tauriPath = './src-tauri/tauri.conf.json';
 let tauriConf = fs.readFileSync(tauriPath, 'utf8');
-tauriConf = tauriConf.replace(/"version":\s*".*"/, `"version": "${version}"`);
+tauriConf = tauriConf.replace(/"version":\s*".*"/, `"version": "${cleanVersion}"`);
 fs.writeFileSync(tauriPath, tauriConf);
 
-// Update Cargo.toml
 const cargoPath = './src-tauri/Cargo.toml';
 let cargoToml = fs.readFileSync(cargoPath, 'utf8');
-cargoToml = cargoToml.replace(/^version\s*=\s*".*"/m, `version = "${version}"`);
+cargoToml = cargoToml.replace(/^version\s*=\s*".*"/m, `version = "${cleanVersion}"`);
 fs.writeFileSync(cargoPath, cargoToml);
 
-console.log(`Successfully synced: version ${version} in Tauri and Cargo.`);
+console.log(`Sincronizado: Node (${fullVersion}) -> Tauri/Cargo (${cleanVersion})`);
