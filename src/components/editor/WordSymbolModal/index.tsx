@@ -98,7 +98,7 @@ const SymbolCategoryTabs = memo(function SymbolCategoryTabs({
                   : 'border-transparent text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
               }`}
             >
-              {cat.label}
+              {t(cat.labelKey, cat.label)}
             </button>
           );
         })}
@@ -186,7 +186,7 @@ const RecentlyUsedSymbols = memo(function RecentlyUsedSymbols({
             key={`${char}-${i}`}
             type="button"
             onClick={() => onInsert(char)}
-            title={`Insert '${char}'`}
+            title={t('insertCharTitle', [char])}
             className="w-7 h-7 rounded-xs bg-zinc-950 border border-zinc-800 hover:border-zinc-650 hover:bg-zinc-800 text-zinc-200 hover:text-white flex items-center justify-center text-sm font-serif transition shrink-0 cursor-pointer active:scale-95"
           >
             {char}
@@ -219,7 +219,7 @@ const SymbolActionBar = memo(function SymbolActionBar({
             {selectedSymbol?.name || 'Em Dash'}
           </span>
           <span className="text-[10px] text-zinc-400 font-mono">
-            Unicode: {selectedSymbol?.code || 'U+2014'}
+            {t('unicodeLabel', [selectedSymbol?.code || 'U+2014'])}
           </span>
         </div>
       </div>

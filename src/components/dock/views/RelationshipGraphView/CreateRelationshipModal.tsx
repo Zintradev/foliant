@@ -12,6 +12,16 @@ import {
 import { COLOR_PALETTE } from './constants';
 import { useTranslation } from '../../../../i18n/translations';
 
+const COLOR_LABEL_KEYS: Record<string, string> = {
+  blue: 'colorBlueAlliance',
+  rose: 'colorRoseHostile',
+  emerald: 'colorEmeraldFamily',
+  amber: 'colorAmberMentor',
+  purple: 'colorPurpleRomance',
+  cyan: 'colorCyanContract',
+  zinc: 'colorZincNeutral',
+};
+
 interface CreateRelationshipModalProps {
   characters: CharacterItem[];
   junctions: GraphJunctionNode[];
@@ -161,7 +171,7 @@ function CreateRelationshipModalComponent({
               >
                 {Object.entries(COLOR_PALETTE).map(([key, config]) => (
                   <option key={key} value={key}>
-                    {config.label}
+                    {t(COLOR_LABEL_KEYS[key] || '', config.label)}
                   </option>
                 ))}
               </select>
