@@ -6,12 +6,12 @@ export interface SymbolItem {
 
 export type SymbolCategory = 'dialogue' | 'accents' | 'math' | 'editorial' | 'currency';
 
-export const SYMBOL_CATEGORIES: { id: SymbolCategory; label: string }[] = [
-  { id: 'dialogue', label: 'Dialogue & Punctuation' },
-  { id: 'accents', label: 'Latin & Accents' },
-  { id: 'math', label: 'Greek & Math' },
-  { id: 'editorial', label: 'Editorial & Marks' },
-  { id: 'currency', label: 'Currency' },
+export const SYMBOL_CATEGORIES: { id: SymbolCategory; label: string; labelKey: string }[] = [
+  { id: 'dialogue', label: 'Dialogue & Punctuation', labelKey: 'symCatDialogue' },
+  { id: 'accents', label: 'Latin & Accents', labelKey: 'symCatAccents' },
+  { id: 'math', label: 'Greek & Math', labelKey: 'symCatMath' },
+  { id: 'editorial', label: 'Editorial & Marks', labelKey: 'symCatEditorial' },
+  { id: 'currency', label: 'Currency', labelKey: 'symCatCurrency' },
 ];
 
 export const SYMBOLS_DATA: Record<SymbolCategory, SymbolItem[]> = {

@@ -202,7 +202,7 @@ function RelationshipInspectorPanelComponent({
         {((selectedRel.controlOffset && (selectedRel.controlOffset.x !== 0 || selectedRel.controlOffset.y !== 0)) || (selectedRel.labelT !== undefined && Math.abs(selectedRel.labelT - 0.5) > 0.02)) && (
           <div className="pt-1 flex items-center justify-between text-[9px] font-mono text-zinc-400 bg-zinc-900/40 p-1.5 rounded-xs border border-zinc-850">
             <span className="truncate">
-              {selectedRel.controlOffset ? `Bent (${selectedRel.controlOffset.x}, ${selectedRel.controlOffset.y})` : 'Positioned'}
+              {selectedRel.controlOffset ? `${t('relBent')} (${selectedRel.controlOffset.x}, ${selectedRel.controlOffset.y})` : t('relPositioned')}
               {selectedRel.labelT !== undefined ? ` • T: ${Math.round(selectedRel.labelT * 100)}%` : ''}
             </span>
             <button
