@@ -8,6 +8,7 @@ interface RelationshipJunctionNodesProps {
   junctions: GraphJunctionNode[];
   positions: Record<string, NodePosition>;
   selectedJunctionId: string | null;
+  selectedNodeIds?: string[];
   hoveredJunctionId: string | null;
   connectingSourceId: string | null;
   storylines: StorylineItem[];
@@ -24,6 +25,7 @@ function RelationshipJunctionNodesComponent({
   junctions,
   positions,
   selectedJunctionId,
+  selectedNodeIds,
   hoveredJunctionId,
   connectingSourceId,
   storylines,
@@ -41,7 +43,7 @@ function RelationshipJunctionNodesComponent({
     <>
       {junctions.map((junc) => {
         const pos = positions[junc.id] || { x: junc.x, y: junc.y };
-        const isSelected = selectedJunctionId === junc.id;
+        const isSelected = selectedNodeIds ? selectedNodeIds.includes(junc.id) : selectedJunctionId === junc.id;
         const isConnectingSource = connectingSourceId === junc.id;
         const linkedStoryline = storylines.find((s) => s.id === junc.storylineId);
         const storylineTheme = linkedStoryline
@@ -51,6 +53,7 @@ function RelationshipJunctionNodesComponent({
         return (
           <div
             key={junc.id}
+            data-testid={`junction-node-${junc.id}`}
             title={`${junc.label || 'Union Node'}${
               linkedStoryline ? ` • Storyline: ${linkedStoryline.title}` : ''
             } (Right-click to link, click to connect)`}
@@ -76,7 +79,7 @@ function RelationshipJunctionNodesComponent({
               isConnectingSource
                 ? 'bg-blue-900 border-blue-400 ring-2 ring-blue-400 animate-pulse'
                 : isSelected
-                ? 'bg-emerald-900 border-emerald-400 ring-1 ring-emerald-400'
+                ? 'bg-blue-900 border-blue-400 ring-2 ring-blue-400'
                 : storylineTheme
                 ? `${storylineTheme.bg} ${storylineTheme.border} ring-1 ring-white/10 hover:border-emerald-400`
                 : 'bg-zinc-900 border-zinc-700 hover:border-emerald-500 hover:bg-zinc-850'
@@ -84,12 +87,12 @@ function RelationshipJunctionNodesComponent({
           >
             <GitCommit
               className={`w-3.5 h-3.5 ${
-                storylineTheme ? storylineTheme.text : 'text-emerald-400'
+                storylineTheme ? storylineTheme.text : isSelected ? 'text-blue-300' : 'text-emerald-400'
               }`}
             />
 
             {/* Floating Informational Tooltip on Hover */}
-            {hoveredJunctionId === junc.id && !selectedJunctionId && (
+            {hoveredJunctionId === junc.id && !isSelected && (
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-zinc-950 border border-zinc-800 rounded-xs shadow-xl text-[9px] font-mono whitespace-nowrap z-40 pointer-events-none flex items-center gap-1.5">
                 <span className="text-zinc-200 font-semibold">{junc.label || 'Union Node'}</span>
                 {linkedStoryline && storylineTheme && (

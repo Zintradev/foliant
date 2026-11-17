@@ -8,6 +8,8 @@ interface UseNodeDragProps {
   characters: CharacterItem[];
   junctions: GraphJunctionNode[];
   positions: Record<string, NodePosition>;
+  selectedNodeIds?: string[];
+  setSelectedNodeIds?: React.Dispatch<React.SetStateAction<string[]>>;
   setPositions: React.Dispatch<React.SetStateAction<Record<string, NodePosition>>>;
   updateJunctions: (juncs: GraphJunctionNode[]) => void;
   onUpdateCharacterPositions?: (positions: CharacterNodePosition[]) => void;
@@ -24,6 +26,8 @@ export function useNodeDrag({
   characters,
   junctions,
   positions,
+  selectedNodeIds = [],
+  setSelectedNodeIds,
   setPositions,
   updateJunctions,
   onUpdateCharacterPositions,
@@ -39,11 +43,11 @@ export function useNodeDrag({
     nodeId: string;
     startX: number;
     startY: number;
-    initX: number;
-    initY: number;
-    lastX: number;
-    lastY: number;
     isDragging: boolean;
+    initialPositions: Record<string, NodePosition>;
+    movingNodeIds: string[];
+    lastDx: number;
+    lastDy: number;
   } | null>(null);
 
   const snapshotBeforeDragRef = useRef<GraphSnapshot | null>(null);
@@ -69,17 +73,37 @@ export function useNodeDrag({
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {}
 
-    const currentPos = positions[nodeId] || { x: 100, y: 100 };
     snapshotBeforeDragRef.current = takeSnapshot();
+
+    // Determinar qué nodos se van a mover juntos
+    let movingIds: string[];
+    if (selectedNodeIds.includes(nodeId)) {
+      movingIds = selectedNodeIds;
+    } else {
+      if (e.ctrlKey || e.metaKey) {
+        movingIds = [...selectedNodeIds, nodeId];
+        setSelectedNodeIds?.(movingIds);
+      } else {
+        movingIds = [nodeId];
+        setSelectedNodeIds?.([nodeId]);
+      }
+    }
+
+    const initialPositions: Record<string, NodePosition> = {};
+    for (const id of movingIds) {
+      const pos = positions[id] || { x: 100, y: 100 };
+      initialPositions[id] = { ...pos };
+    }
+
     dragNodeRef.current = {
       nodeId,
       startX: e.clientX,
       startY: e.clientY,
-      initX: currentPos.x,
-      initY: currentPos.y,
-      lastX: currentPos.x,
-      lastY: currentPos.y,
       isDragging: false,
+      initialPositions,
+      movingNodeIds: movingIds,
+      lastDx: 0,
+      lastDy: 0,
     };
   };
 
@@ -87,7 +111,7 @@ export function useNodeDrag({
     if (!dragNodeRef.current) return;
     e.stopPropagation();
 
-    const { nodeId, startX, startY, initX, initY, isDragging } = dragNodeRef.current;
+    const { startX, startY, isDragging, initialPositions, movingNodeIds, nodeId } = dragNodeRef.current;
     const moveDist = Math.hypot(e.clientX - startX, e.clientY - startY);
 
     if (!isDragging && moveDist < DRAG_THRESHOLD) {
@@ -96,41 +120,58 @@ export function useNodeDrag({
 
     dragNodeRef.current.isDragging = true;
     const currentZoom = zoomRef.current || 1.0;
-    const dx = (e.clientX - startX) / currentZoom;
-    const dy = (e.clientY - startY) / currentZoom;
+    const dx = Math.round((e.clientX - startX) / currentZoom);
+    const dy = Math.round((e.clientY - startY) / currentZoom);
 
-    let nextX = Math.round(initX + dx);
-    let nextY = Math.round(initY + dy);
+    // Si solo se mueve 1 nodo, aplicamos separación suave con otros nodos no seleccionados
+    if (movingNodeIds.length === 1) {
+      const init = initialPositions[nodeId] || { x: 100, y: 100 };
+      let nextX = init.x + dx;
+      let nextY = init.y + dy;
 
-    const isJunction = junctions.some((j) => j.id === nodeId);
-    const otherNodes: Array<{ id: string; isJunction: boolean }> = [
-      ...characters.filter((c) => c.id !== nodeId).map((c) => ({ id: c.id, isJunction: false })),
-      ...junctions.filter((j) => j.id !== nodeId).map((j) => ({ id: j.id, isJunction: true })),
-    ];
+      const isJunction = junctions.some((j) => j.id === nodeId);
+      const otherNodes: Array<{ id: string; isJunction: boolean }> = [
+        ...characters.filter((c) => c.id !== nodeId).map((c) => ({ id: c.id, isJunction: false })),
+        ...junctions.filter((j) => j.id !== nodeId).map((j) => ({ id: j.id, isJunction: true })),
+      ];
 
-    for (const other of otherNodes) {
-      const oPos = positions[other.id];
-      if (!oPos) continue;
+      for (const other of otherNodes) {
+        const oPos = positions[other.id];
+        if (!oPos) continue;
 
-      const resolved = resolveNodeSeparation(
-        nextX,
-        nextY,
-        isJunction,
-        oPos.x,
-        oPos.y,
-        other.isJunction
-      );
-      nextX = resolved.x;
-      nextY = resolved.y;
+        const resolved = resolveNodeSeparation(
+          nextX,
+          nextY,
+          isJunction,
+          oPos.x,
+          oPos.y,
+          other.isJunction
+        );
+        nextX = resolved.x;
+        nextY = resolved.y;
+      }
+
+      dragNodeRef.current.lastDx = nextX - init.x;
+      dragNodeRef.current.lastDy = nextY - init.y;
+
+      setPositions((prev) => ({
+        ...prev,
+        [nodeId]: { x: nextX, y: nextY },
+      }));
+    } else {
+      // Si se mueven varios nodos a la vez, se desplazan juntos en bloque con el mismo dx y dy
+      dragNodeRef.current.lastDx = dx;
+      dragNodeRef.current.lastDy = dy;
+
+      setPositions((prev) => {
+        const next = { ...prev };
+        for (const id of movingNodeIds) {
+          const init = initialPositions[id] || { x: 100, y: 100 };
+          next[id] = { x: init.x + dx, y: init.y + dy };
+        }
+        return next;
+      });
     }
-
-    dragNodeRef.current.lastX = nextX;
-    dragNodeRef.current.lastY = nextY;
-
-    setPositions((prev) => ({
-      ...prev,
-      [nodeId]: { x: nextX, y: nextY },
-    }));
   };
 
   const handleNodePointerUp = (e: React.PointerEvent<HTMLDivElement>, nodeId: string) => {
@@ -160,21 +201,40 @@ export function useNodeDrag({
         snapshotBeforeDragRef.current = null;
       }
 
-      if (junctions.some((j) => j.id === dragInfo.nodeId)) {
+      const { initialPositions, movingNodeIds, lastDx, lastDy } = dragInfo;
+
+      // Actualizar junctions movidos
+      const movedJuncs = junctions.filter((j) => movingNodeIds.includes(j.id));
+      if (movedJuncs.length > 0) {
         updateJunctions(
-          junctions.map((j) =>
-            j.id === dragInfo.nodeId ? { ...j, x: dragInfo.lastX, y: dragInfo.lastY } : j
-          )
+          junctions.map((j) => {
+            if (movingNodeIds.includes(j.id)) {
+              const init = initialPositions[j.id] || { x: j.x, y: j.y };
+              return { ...j, x: init.x + lastDx, y: init.y + lastDy };
+            }
+            return j;
+          })
         );
-      } else {
-        if (onUpdateCharacterPositions) {
-          const updatedList: CharacterNodePosition[] = characters.map((c) => ({
+      }
+
+      // Actualizar characters movidos
+      if (onUpdateCharacterPositions) {
+        const updatedList: CharacterNodePosition[] = characters.map((c) => {
+          if (movingNodeIds.includes(c.id)) {
+            const init = initialPositions[c.id] || { x: positions[c.id]?.x ?? 100, y: positions[c.id]?.y ?? 100 };
+            return {
+              characterId: c.id,
+              x: init.x + lastDx,
+              y: init.y + lastDy,
+            };
+          }
+          return {
             characterId: c.id,
-            x: c.id === dragInfo.nodeId ? dragInfo.lastX : (positions[c.id]?.x ?? 100),
-            y: c.id === dragInfo.nodeId ? dragInfo.lastY : (positions[c.id]?.y ?? 100),
-          }));
-          onUpdateCharacterPositions(updatedList);
-        }
+            x: positions[c.id]?.x ?? 100,
+            y: positions[c.id]?.y ?? 100,
+          };
+        });
+        onUpdateCharacterPositions(updatedList);
       }
     } else {
       snapshotBeforeDragRef.current = null;

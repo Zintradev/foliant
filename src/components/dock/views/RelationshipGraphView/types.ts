@@ -49,3 +49,16 @@ export interface NodeInfo {
   cy: number;
   isJunction: boolean;
 }
+
+export type SelectionTool = 'pointer' | 'box' | 'lasso';
+
+export interface SelectionBox {
+  startX: number;
+  startY: number;
+  currentX: number;
+  currentY: number;
+}
+
+export interface SelectionLasso {
+  points: Array<{ x: number; y: number }>;
+}

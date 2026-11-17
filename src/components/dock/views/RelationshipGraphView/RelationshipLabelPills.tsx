@@ -4,6 +4,21 @@ import { COLOR_PALETTE } from './constants';
 import { computeRelationshipCurve } from './geometry';
 import { NodeInfo } from './types';
 
+function hexToRgba(hex: string, alpha: number): string {
+  let clean = hex.replace('#', '').trim();
+  if (clean.length === 3) {
+    clean = clean.split('').map((c) => c + c).join('');
+  }
+  const num = parseInt(clean, 16);
+  if (isNaN(num) || clean.length !== 6) {
+    return hex;
+  }
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 interface RelationshipLabelPillsProps {
   visibleRelationships: CharacterRelationship[];
   selectedRelId: string | null;
@@ -32,6 +47,11 @@ function RelationshipLabelPillsComponent({
   return (
     <>
       {visibleRelationships.map((rel) => {
+        // 1. Si una relación no tiene nombre (vacío o solo espacios), no se muestra ningún cartel
+        if (!rel.label || !rel.label.trim()) {
+          return null;
+        }
+
         const sourceInfo = getNodeInfo(rel.sourceId);
         const targetInfo = getNodeInfo(rel.targetId);
         if (!sourceInfo || !targetInfo) return null;
@@ -46,6 +66,8 @@ function RelationshipLabelPillsComponent({
         const colorMeta = COLOR_PALETTE[colorKey] || COLOR_PALETTE.blue;
         const isSelected = selectedRelId === rel.id;
         const isPillDragging = draggingRelId === rel.id;
+        const hasCustomColor = Boolean(rel.customColor);
+        const customColor = rel.customColor;
 
         const isBent = Boolean(
           rel.controlOffset &&
@@ -56,7 +78,7 @@ function RelationshipLabelPillsComponent({
         const tHalfW = targetInfo.isJunction ? 14 : 80;
         const tHalfH = targetInfo.isJunction ? 14 : 36;
 
-        const labelText = rel.label || 'Connected';
+        const labelText = rel.label;
         const labelHalfW = Math.max(34, Math.min(55, labelText.length * 3.8 + 14));
         const labelHalfH = 11;
 
@@ -90,6 +112,25 @@ function RelationshipLabelPillsComponent({
           }
         }
 
+        const customPillStyle: React.CSSProperties = {
+          position: 'absolute',
+          left: `${displayPx}px`,
+          top: `${displayPy}px`,
+          transform: 'translate(-50%, -50%)',
+          ...(hasCustomColor && !isSelected
+            ? {
+                backgroundColor: hexToRgba(customColor!, 0.22),
+                borderColor: hexToRgba(customColor!, 0.75),
+                color: customColor,
+              }
+            : hasCustomColor && isSelected
+            ? {
+                borderColor: customColor,
+                boxShadow: `0 0 0 1px ${customColor}`,
+              }
+            : {}),
+        };
+
         if (isCollapsedPill) {
           return (
             <button
@@ -109,17 +150,14 @@ function RelationshipLabelPillsComponent({
                 onSelectRel(rel.id);
               }}
               title={`${rel.label || 'Relationship'} (Drag: slide / bend curve | Double-click: reset)`}
-              style={{
-                position: 'absolute',
-                left: `${displayPx}px`,
-                top: `${displayPy}px`,
-                transform: 'translate(-50%, -50%)',
-              }}
+              style={customPillStyle}
               className={`relationship-pill pointer-events-auto flex items-center justify-center px-1.5 py-0.5 rounded-xs border text-[9px] font-mono transition shadow-md select-none ${
                 isPillDragging ? 'cursor-grabbing scale-105 ring-1 ring-white/50' : 'cursor-grab hover:scale-105'
               } ${
                 isSelected
                   ? 'bg-zinc-800 border-zinc-400 text-white ring-1 ring-zinc-300 font-bold z-40'
+                  : hasCustomColor
+                  ? 'hover:border-zinc-400 z-30 font-semibold'
                   : `${colorMeta.bg} ${colorMeta.border} ${colorMeta.text} hover:border-zinc-500 z-30`
               }`}
             >
@@ -145,13 +183,8 @@ function RelationshipLabelPillsComponent({
               if (justDraggedRelRef.current) return;
               onSelectRel(rel.id);
             }}
-            title={`${rel.label || 'Relationship'} (Drag: slide / bend curve | Double-click: reset)`}
-            style={{
-              position: 'absolute',
-              left: `${displayPx}px`,
-              top: `${displayPy}px`,
-              transform: 'translate(-50%, -50%)',
-            }}
+            title={`${rel.label} (Drag: slide / bend curve | Double-click: reset)`}
+            style={customPillStyle}
             className={`relationship-pill pointer-events-auto flex items-center gap-1 px-1.5 py-0.5 rounded-xs border text-[9px] font-mono transition shadow-md hover:scale-105 select-none ${
               isPillDragging
                 ? 'cursor-grabbing scale-105 ring-1 ring-white/50'
@@ -159,6 +192,8 @@ function RelationshipLabelPillsComponent({
             } ${
               isSelected
                 ? 'bg-zinc-800 border-zinc-400 text-white ring-1 ring-zinc-300 font-bold z-40'
+                : hasCustomColor
+                ? 'hover:border-zinc-400 z-30 font-semibold'
                 : `${colorMeta.bg} ${colorMeta.border} ${colorMeta.text} hover:border-zinc-500 z-30`
             }`}
           >
@@ -166,7 +201,7 @@ function RelationshipLabelPillsComponent({
               className="w-1.5 h-1.5 rounded-full"
               style={{ backgroundColor: rel.customColor || colorMeta.stroke }}
             />
-            <span className="truncate max-w-[90px]">{rel.label || 'Connected'}</span>
+            <span className="truncate max-w-[90px]">{rel.label}</span>
           </button>
         );
       })}

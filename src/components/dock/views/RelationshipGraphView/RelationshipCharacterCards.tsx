@@ -8,6 +8,7 @@ interface RelationshipCharacterCardsProps {
   characters: CharacterItem[];
   positions: Record<string, NodePosition>;
   editingCardId: string | null;
+  selectedNodeIds?: string[];
   connectingSourceId: string | null;
   onPointerDown: (e: React.PointerEvent<HTMLDivElement>, id: string) => void;
   onPointerMove: (e: React.PointerEvent<HTMLDivElement>) => void;
@@ -24,6 +25,7 @@ function RelationshipCharacterCardsComponent({
   characters,
   positions,
   editingCardId,
+  selectedNodeIds,
   connectingSourceId,
   onPointerDown,
   onPointerMove,
@@ -43,11 +45,12 @@ function RelationshipCharacterCardsComponent({
       {characters.map((char) => {
         const pos = positions[char.id] || { x: 100, y: 100 };
         const isConnectingSource = connectingSourceId === char.id;
-        const isSelected = editingCardId === char.id;
+        const isSelected = selectedNodeIds ? selectedNodeIds.includes(char.id) : editingCardId === char.id;
 
         return (
           <div
             key={char.id}
+            data-testid={`character-card-${char.id}`}
             style={{
               position: 'absolute',
               left: `${pos.x}px`,
@@ -73,7 +76,7 @@ function RelationshipCharacterCardsComponent({
               isConnectingSource
                 ? 'border-blue-500 ring-2 ring-blue-500/50 shadow-blue-950/50'
                 : isSelected
-                ? 'border-zinc-300 ring-1 ring-zinc-300/40 bg-zinc-900'
+                ? 'border-blue-400 ring-2 ring-blue-500/50 bg-zinc-900 shadow-blue-950/30'
                 : 'border-zinc-800 hover:border-zinc-600'
             }`}
           >

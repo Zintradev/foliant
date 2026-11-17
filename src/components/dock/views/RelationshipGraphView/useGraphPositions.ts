@@ -11,6 +11,8 @@ interface UseGraphPositionsProps {
   characters: CharacterItem[];
   junctions: GraphJunctionNode[];
   characterPositions?: CharacterNodePosition[];
+  selectedNodeIds?: string[];
+  setSelectedNodeIds?: React.Dispatch<React.SetStateAction<string[]>>;
   onUpdateCharacterPositions?: (positions: CharacterNodePosition[]) => void;
   updateJunctions: (juncs: GraphJunctionNode[]) => void;
   pushUndoSnapshot: (customSnapshot?: GraphSnapshot) => void;
@@ -26,6 +28,8 @@ export function useGraphPositions({
   characters,
   junctions,
   characterPositions,
+  selectedNodeIds,
+  setSelectedNodeIds,
   onUpdateCharacterPositions,
   updateJunctions,
   pushUndoSnapshot,
@@ -134,6 +138,8 @@ export function useGraphPositions({
     characters,
     junctions,
     positions,
+    selectedNodeIds,
+    setSelectedNodeIds,
     setPositions,
     updateJunctions,
     onUpdateCharacterPositions,
