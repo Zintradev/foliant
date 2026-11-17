@@ -1,6 +1,10 @@
 import { memo } from 'react';
 
-function EditorStylesComponent() {
+interface EditorStylesProps {
+  indentSize?: number;
+}
+
+function EditorStylesComponent({ indentSize = 1.5 }: EditorStylesProps) {
   return (
     <style>{`
       /* Core Editor Typography & Layout */
@@ -94,7 +98,7 @@ function EditorStylesComponent() {
 
       /* First-Line Indentation Rules */
       .foliant-indent-first-line .tiptap p {
-        text-indent: 1.5rem;
+        text-indent: var(--foliant-indent-size, ${indentSize}rem);
         margin-bottom: 0.25rem;
       }
       .foliant-indent-first-line .tiptap h1,

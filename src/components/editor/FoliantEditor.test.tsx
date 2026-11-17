@@ -459,4 +459,36 @@ describe('FoliantEditor Component', () => {
     fireEvent.change(hexInputHighlight, { target: { value: '009900' } });
     fireEvent.click(screen.getByTitle('Close'));
   });
+
+  it('applies custom indent size and indentation class to the editor wrapper', () => {
+    const { container, rerender } = render(
+      <FoliantEditor
+        chapterId="scene-indent"
+        content="<p>First paragraph.</p><p>Second paragraph.</p>"
+        onChange={mockOnChange}
+        onStatusChange={mockOnStatusChange}
+        indentFirstLine={true}
+        indentSize={2.5}
+      />
+    );
+
+    const wrapper = container.querySelector('.foliant-editor-wrapper');
+    expect(wrapper).toBeInTheDocument();
+    expect(wrapper).toHaveClass('foliant-indent-first-line');
+    expect(wrapper).toHaveStyle({ '--foliant-indent-size': '2.5rem' });
+
+    // When disabled, class is removed
+    rerender(
+      <FoliantEditor
+        chapterId="scene-indent"
+        content="<p>First paragraph.</p><p>Second paragraph.</p>"
+        onChange={mockOnChange}
+        onStatusChange={mockOnStatusChange}
+        indentFirstLine={false}
+        indentSize={2.5}
+      />
+    );
+
+    expect(wrapper).not.toHaveClass('foliant-indent-first-line');
+  });
 });

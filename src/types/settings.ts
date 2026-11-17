@@ -198,8 +198,9 @@ export interface AppPreferences {
   preserveManualSceneWidth?: boolean;
   preserveManualPlotHeight?: boolean;
   editorIndentFirstLine?: boolean;
+  editorIndentSize?: number;
   editorFontFamily?: EditorFontFamily;
-  editorPaperColor?: 'paper' | 'white' | 'warm' | 'custom' | 'default';
+  editorPaperColor?: 'paper' | 'white' | 'warm' | 'dark' | 'custom' | 'default';
   editorCustomBg?: string;
   editorCustomText?: string;
   matchEditorBackgroundWithPaper?: boolean;
@@ -227,6 +228,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   preserveManualSceneWidth: false,
   preserveManualPlotHeight: false,
   editorIndentFirstLine: true,
+  editorIndentSize: 1.5,
   editorFontFamily: 'serif',
   editorPaperColor: 'paper',
   editorCustomBg: '#f6f1e8',
