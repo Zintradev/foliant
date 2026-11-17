@@ -4,20 +4,26 @@ interface UseGraphShortcutsProps {
   handleUndo: () => void;
   handleRedo: () => void;
   handleDeleteSelected: () => void;
+  handleCopy?: () => void;
+  handlePaste?: () => void;
   onEscape: () => void;
   selectedRelId: string | null;
   selectedJunctionId: string | null;
   editingCardId: string | null;
+  selectedNodeIds?: string[];
 }
 
 export function useGraphShortcuts({
   handleUndo,
   handleRedo,
   handleDeleteSelected,
+  handleCopy,
+  handlePaste,
   onEscape,
   selectedRelId,
   selectedJunctionId,
   editingCardId,
+  selectedNodeIds = [],
 }: UseGraphShortcutsProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -38,7 +44,7 @@ export function useGraphShortcuts({
       }
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedRelId || selectedJunctionId || editingCardId) {
+        if (selectedRelId || selectedJunctionId || editingCardId || selectedNodeIds.length > 0) {
           e.preventDefault();
           handleDeleteSelected();
           return;
@@ -59,6 +65,14 @@ export function useGraphShortcuts({
         } else if (key === 'y') {
           e.preventDefault();
           handleRedo();
+        } else if (key === 'c') {
+          if (selectedNodeIds.length > 0) {
+            e.preventDefault();
+            handleCopy?.();
+          }
+        } else if (key === 'v') {
+          e.preventDefault();
+          handlePaste?.();
         }
       }
     };
@@ -71,9 +85,12 @@ export function useGraphShortcuts({
     handleUndo,
     handleRedo,
     handleDeleteSelected,
+    handleCopy,
+    handlePaste,
     onEscape,
     selectedRelId,
     selectedJunctionId,
     editingCardId,
+    selectedNodeIds,
   ]);
 }

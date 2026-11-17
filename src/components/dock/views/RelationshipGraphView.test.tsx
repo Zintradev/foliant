@@ -1057,6 +1057,215 @@ describe('RelationshipGraphView', () => {
     fireEvent.click(resetBtn);
     expect(screen.getByText('100%')).toBeInTheDocument();
   });
+
+  describe('User Request Features: Labels, Custom Colors & Multi-selection', () => {
+    it('hides pill label when relationship has no name (empty label), keeping label field in inspector', () => {
+      const handleUpdateRelationships = vi.fn();
+      const emptyLabelRel: CharacterRelationship = {
+        id: 'rel-empty-label',
+        sourceId: 'char-1',
+        targetId: 'char-2',
+        label: '',
+      };
+
+      const { container } = render(
+        <RelationshipGraphView
+          characters={mockCharacters}
+          relationships={[emptyLabelRel]}
+          onUpdateRelationships={handleUpdateRelationships}
+        />
+      );
+
+      // No relationship pill should be visible in the board
+      const pills = container.querySelectorAll('.relationship-pill');
+      expect(pills.length).toBe(0);
+
+      // SVG path still exists so user can click to inspect
+      const clickPath = container.querySelector('svg path[stroke="transparent"]');
+      expect(clickPath).toBeInTheDocument();
+      fireEvent.click(clickPath!);
+
+      // Inspector opens and displays the label input for editing
+      const labelInput = container.querySelector('.animate-in input[type="text"]') as HTMLInputElement;
+      expect(labelInput).toBeInTheDocument();
+      expect(labelInput.value).toBe('');
+
+      // Typing a label updates the relationship without losing the field
+      fireEvent.change(labelInput, { target: { value: 'Secret Pact' } });
+      expect(handleUpdateRelationships).toHaveBeenCalledWith([
+        expect.objectContaining({ id: 'rel-empty-label', label: 'Secret Pact' }),
+      ]);
+    });
+
+    it('styles pill label with the relation custom color when customColor is used', () => {
+      const customRel: CharacterRelationship = {
+        id: 'rel-custom-color',
+        sourceId: 'char-1',
+        targetId: 'char-2',
+        label: 'Arcane Bond',
+        customColor: '#9333ea',
+      };
+
+      const { container } = render(
+        <RelationshipGraphView
+          characters={mockCharacters}
+          relationships={[customRel]}
+        />
+      );
+
+      const pill = container.querySelector('.relationship-pill');
+      expect(pill).toBeInTheDocument();
+      // Should have inline style with color and border corresponding to custom color
+      expect(pill).toHaveStyle({ color: '#9333ea' });
+    });
+
+    it('supports selecting multiple elements via Ctrl+Click', () => {
+      render(
+        <RelationshipGraphView
+          characters={mockCharacters}
+          relationships={mockRelationships}
+        />
+      );
+
+      const card1 = screen.getByTestId('character-card-char-1');
+      const card2 = screen.getByTestId('character-card-char-2');
+
+      // Click card 1
+      fireEvent.click(card1);
+      expect(card1.className).toContain('border-blue-400');
+
+      // Ctrl + Click card 2
+      fireEvent.click(card2, { ctrlKey: true });
+      expect(card1.className).toContain('border-blue-400');
+      expect(card2.className).toContain('border-blue-400');
+
+      // Counter should show 2 selected
+      expect(screen.getByText(/2\s+(seleccionados|selected)/i)).toBeInTheDocument();
+    });
+
+    it('copies and pastes related elements keeping relationship only if both elements are copied', () => {
+      const handleUpdateChars = vi.fn();
+      const handleUpdateRels = vi.fn();
+
+      render(
+        <RelationshipGraphView
+          characters={mockCharacters}
+          relationships={mockRelationships}
+          onUpdateCharacters={handleUpdateChars}
+          onUpdateRelationships={handleUpdateRels}
+        />
+      );
+
+      const card1 = screen.getByTestId('character-card-char-1');
+      const card2 = screen.getByTestId('character-card-char-2');
+
+      // 1. Select both char-1 and char-2
+      fireEvent.click(card1);
+      fireEvent.click(card2, { ctrlKey: true });
+
+      // Copy using Ctrl+C
+      fireEvent.keyDown(window, { key: 'c', ctrlKey: true });
+
+      // Paste using Ctrl+V
+      fireEvent.keyDown(window, { key: 'v', ctrlKey: true });
+
+      // Both characters and the relationship between them should be duplicated
+      expect(handleUpdateChars).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ name: expect.stringContaining('(Copy)') }),
+        ])
+      );
+      expect(handleUpdateRels).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ label: 'Sworn Enemies' }),
+        ])
+      );
+    });
+
+    it('discards relationship when only one of the connected elements is copied and pasted', () => {
+      const handleUpdateChars = vi.fn();
+      const handleUpdateRels = vi.fn();
+
+      render(
+        <RelationshipGraphView
+          characters={mockCharacters}
+          relationships={mockRelationships}
+          onUpdateCharacters={handleUpdateChars}
+          onUpdateRelationships={handleUpdateRels}
+        />
+      );
+
+      const card1 = screen.getByTestId('character-card-char-1');
+
+      // Select ONLY char-1 (not char-2)
+      fireEvent.click(card1);
+
+      // Copy using Ctrl+C
+      fireEvent.keyDown(window, { key: 'c', ctrlKey: true });
+
+      // Paste using Ctrl+V
+      fireEvent.keyDown(window, { key: 'v', ctrlKey: true });
+
+      // Character was cloned
+      expect(handleUpdateChars).toHaveBeenCalled();
+      // Relationship was NOT cloned because only 1 connected element was selected
+      expect(handleUpdateRels).not.toHaveBeenCalled();
+    });
+
+    it('provides box selection and lasso selection tools in header', () => {
+      render(
+        <RelationshipGraphView
+          characters={mockCharacters}
+          relationships={mockRelationships}
+        />
+      );
+
+      // Selection tool buttons exist
+      const boxToolBtn = screen.getByTitle(/Selección en Cuadrado|Box Selection/i);
+      const lassoToolBtn = screen.getByTitle(/Selección a Mano Alzada|Lasso Selection/i);
+      const pointerToolBtn = screen.getByTitle(/Modo Puntero|Pointer/i);
+
+      expect(boxToolBtn).toBeInTheDocument();
+      expect(lassoToolBtn).toBeInTheDocument();
+      expect(pointerToolBtn).toBeInTheDocument();
+
+      // Switch to Box select
+      fireEvent.click(boxToolBtn);
+      expect(boxToolBtn.className).toContain('bg-blue-600');
+
+      // Switch to Lasso select
+      fireEvent.click(lassoToolBtn);
+      expect(lassoToolBtn.className).toContain('bg-blue-600');
+    });
+
+    it('moves multiple selected nodes together and keeps connections alive', () => {
+      const handleUpdatePositions = vi.fn();
+      render(
+        <RelationshipGraphView
+          characters={mockCharacters}
+          relationships={mockRelationships}
+          onUpdateCharacterPositions={handleUpdatePositions}
+        />
+      );
+
+      const card1 = screen.getByTestId('character-card-char-1');
+      const card2 = screen.getByTestId('character-card-char-2');
+
+      // Select both cards
+      fireEvent.click(card1);
+      fireEvent.click(card2, { ctrlKey: true });
+
+      // Drag card 1
+      fireEvent.pointerDown(card1, { button: 0, clientX: 100, clientY: 100 });
+      fireEvent.pointerMove(card1, { clientX: 160, clientY: 140 });
+      fireEvent.pointerUp(card1);
+
+      // Both character positions should be updated with the delta displacement
+      expect(handleUpdatePositions).toHaveBeenCalled();
+      const updatedPositions = handleUpdatePositions.mock.calls[0][0];
+      expect(updatedPositions.length).toBe(2);
+    });
+  });
 });
 
 

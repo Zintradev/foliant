@@ -62,7 +62,7 @@ function CreateRelationshipModalComponent({
       sourceId,
       targetId,
       type: newType,
-      label: label.trim() || t('connectedDefaultLabel', 'Connected'),
+      label: label.trim(),
       style,
       color,
       direction: newDirection,

@@ -296,3 +296,87 @@ export function computeRelationshipCurve(
 
   return { startX, startY, endX, endY, cx, cy, isBent, getPointAt };
 }
+
+/**
+ * Point-in-polygon algorithm (Ray-casting) to test if point is inside a polygon.
+ */
+export function isPointInPolygon(
+  point: { x: number; y: number },
+  polygon: Array<{ x: number; y: number }>
+): boolean {
+  if (polygon.length < 3) return false;
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x;
+    const yi = polygon[i].y;
+    const xj = polygon[j].x;
+    const yj = polygon[j].y;
+    const intersect =
+      yi > point.y !== yj > point.y &&
+      point.x < ((xj - xi) * (point.y - yi)) / (yj - yi || 0.000001) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+/**
+ * Checks whether a node (card or junction) intersects an axis-aligned selection box.
+ */
+export function isNodeInBox(
+  pos: { x: number; y: number },
+  isJunction: boolean,
+  box: { startX: number; startY: number; currentX: number; currentY: number }
+): boolean {
+  const minX = Math.min(box.startX, box.currentX);
+  const maxX = Math.max(box.startX, box.currentX);
+  const minY = Math.min(box.startY, box.currentY);
+  const maxY = Math.max(box.startY, box.currentY);
+
+  const width = isJunction ? 28 : 160;
+  const height = isJunction ? 28 : 72;
+  const left = pos.x;
+  const right = pos.x + width;
+  const top = pos.y;
+  const bottom = pos.y + height;
+
+  return right >= minX && left <= maxX && bottom >= minY && top <= maxY;
+}
+
+/**
+ * Checks whether a node (card or junction) is inside or intersects a freehand lasso polygon.
+ */
+export function isNodeInLasso(
+  pos: { x: number; y: number },
+  isJunction: boolean,
+  lassoPoints: Array<{ x: number; y: number }>
+): boolean {
+  if (lassoPoints.length < 3) return false;
+
+  const width = isJunction ? 28 : 160;
+  const height = isJunction ? 28 : 72;
+  const cx = pos.x + width / 2;
+  const cy = pos.y + height / 2;
+
+  // 1. Center of node is inside the polygon
+  if (isPointInPolygon({ x: cx, y: cy }, lassoPoints)) return true;
+
+  // 2. Any of the 4 bounding box corners is inside the polygon
+  const corners = [
+    { x: pos.x, y: pos.y },
+    { x: pos.x + width, y: pos.y },
+    { x: pos.x, y: pos.y + height },
+    { x: pos.x + width, y: pos.y + height },
+  ];
+  for (const c of corners) {
+    if (isPointInPolygon(c, lassoPoints)) return true;
+  }
+
+  // 3. Any lasso sample point is inside the node's bounding box
+  for (const lp of lassoPoints) {
+    if (lp.x >= pos.x && lp.x <= pos.x + width && lp.y >= pos.y && lp.y <= pos.y + height) {
+      return true;
+    }
+  }
+
+  return false;
+}

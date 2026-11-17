@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useCallback, memo } from 'react';
 import { GraphJunctionNode, CharacterItem } from '../../../../types/dock';
 import { loadSettings } from '../../../../types/settings';
 import { useTranslation } from '../../../../i18n/translations';
-import { RelationshipGraphViewProps } from './types';
+import { RelationshipGraphViewProps, NodePosition } from './types';
 import { useGraphZoomPan } from './useGraphZoomPan';
 import { useGraphPositions } from './useGraphPositions';
 import { useGraphHistory } from './useGraphHistory';
@@ -56,13 +56,15 @@ function RelationshipGraphViewComponent({
   const charactersRef = useRef(characters);
   charactersRef.current = characters;
 
-  const dummyPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
+  const positionsRef = useRef<Record<string, { x: number; y: number }>>({});
+  const setPositionsRef = useRef<React.Dispatch<React.SetStateAction<Record<string, NodePosition>>>>(() => {});
+
   const { canUndo, canRedo, takeSnapshot, pushUndoSnapshot, handleUndo, handleRedo } = useGraphHistory({
-    positionsRef: dummyPositionsRef,
+    positionsRef,
     relationshipsRef,
     junctionsRef,
     charactersRef,
-    setPositions: () => { },
+    setPositions: (action) => setPositionsRef.current(action),
     updateJunctions,
     onUpdateCharacterPositions,
     onUpdateRelationships,
@@ -73,8 +75,8 @@ function RelationshipGraphViewComponent({
     characters,
     relationships,
     junctions,
-    positions: dummyPositionsRef.current,
-    setPositions: () => { },
+    positions: positionsRef.current,
+    setPositions: (action) => setPositionsRef.current(action),
     updateJunctions,
     onUpdateRelationships,
     onUpdateCharacters,
@@ -106,6 +108,8 @@ function RelationshipGraphViewComponent({
     characters,
     junctions,
     characterPositions,
+    selectedNodeIds: selectionHook.selectedNodeIds,
+    setSelectedNodeIds: selectionHook.setSelectedNodeIds,
     onUpdateCharacterPositions,
     updateJunctions,
     pushUndoSnapshot,
@@ -116,23 +120,26 @@ function RelationshipGraphViewComponent({
     setConnectingSourceId: connectionsHook.setConnectingSourceId,
     setElasticCursor: connectionsHook.setElasticCursor,
   });
-  dummyPositionsRef.current = positionsHook.positions;
+
+  positionsRef.current = positionsHook.positions;
+  setPositionsRef.current = positionsHook.setPositions;
 
   useGraphShortcuts({
     handleUndo,
     handleRedo,
     handleDeleteSelected: selectionHook.handleDeleteSelected,
+    handleCopy: selectionHook.handleCopy,
+    handlePaste: selectionHook.handlePaste,
     onEscape: () => {
       connectionsHook.setConnectingSourceId(null);
       connectionsHook.setElasticCursor(null);
-      selectionHook.setSelectedRelId(null);
-      selectionHook.setSelectedJunctionId(null);
+      selectionHook.clearSelection();
       selectionHook.setCanvasContextMenu(null);
-      selectionHook.setEditingCardId(null);
     },
     selectedRelId: selectionHook.selectedRelId,
     selectedJunctionId: selectionHook.selectedJunctionId,
     editingCardId: selectionHook.editingCardId,
+    selectedNodeIds: selectionHook.selectedNodeIds,
   });
 
   const getNodeLabel = (id: string): string => {
@@ -177,10 +184,17 @@ function RelationshipGraphViewComponent({
         relationshipsCount={relationships.length}
         connectingSourceName={connectingSourceName}
         filterType={filterType}
+        selectionTool={selectionHook.selectionTool}
         canUndo={canUndo}
         canRedo={canRedo}
         canConnect={characters.length >= 2}
+        canCopy={selectionHook.canCopy}
+        canPaste={selectionHook.canPaste}
+        selectedCount={selectionHook.selectedNodeIds.length}
         onFilterChange={setFilterType}
+        onToolChange={selectionHook.setSelectionTool}
+        onCopy={selectionHook.handleCopy}
+        onPaste={selectionHook.handlePaste}
         onUndo={handleUndo}
         onRedo={handleRedo}
         onResetLayout={() => {
@@ -193,9 +207,7 @@ function RelationshipGraphViewComponent({
         }}
         onOpenConnectModal={() => selectionHook.setIsCreatingRel(true)}
         onHeaderClick={() => {
-          selectionHook.setEditingCardId(null);
-          selectionHook.setSelectedRelId(null);
-          selectionHook.setSelectedJunctionId(null);
+          selectionHook.clearSelection();
         }}
       />
 
@@ -275,8 +287,6 @@ function RelationshipGraphViewComponent({
         }}
         onCancel={() => setCharacterPendingDelete(null)}
       />
-
-
 
       {selectionHook.isCreatingRel && (
         <CreateRelationshipModal

@@ -6,7 +6,7 @@ import {
   GraphJunctionNode,
   StorylineItem,
 } from '../../../../types/dock';
-import { NodePosition, NodeInfo, CanvasContextMenuState } from './types';
+import { NodePosition, NodeInfo, CanvasContextMenuState, SelectionBox, SelectionLasso } from './types';
 import { MIN_ZOOM, MAX_ZOOM } from './constants';
 import { RelationshipSvgLayer } from './RelationshipSvgLayer';
 import { RelationshipLabelPills } from './RelationshipLabelPills';
@@ -25,6 +25,9 @@ interface RelationshipBoardCanvasProps {
   selectedRelId: string | null;
   selectedJunctionId: string | null;
   editingCardId: string | null;
+  selectedNodeIds?: string[];
+  selectionBox?: SelectionBox | null;
+  selectionLasso?: SelectionLasso | null;
   hoveredJunctionId: string | null;
   connectingSourceId: string | null;
   elasticCursor: { x: number; y: number } | null;
@@ -38,9 +41,10 @@ interface RelationshipBoardCanvasProps {
   getNodeInfo: (id: string) => NodeInfo | null;
   onCanvasMouseDown: (e: React.MouseEvent) => void;
   onCanvasPointerMove: (e: React.PointerEvent<HTMLDivElement>) => void;
+  onCanvasPointerUp?: (e: React.PointerEvent<HTMLDivElement>) => void;
   onCanvasContextMenu: (e: React.MouseEvent) => void;
   onSelectRel: (id: string) => void;
-  onSelectJunction: (id: string) => void;
+  onSelectJunction: (id: string, e?: React.MouseEvent) => void;
   onHoverJunction: (id: string | null) => void;
   onNodePointerDown: (e: React.PointerEvent<HTMLDivElement>, id: string) => void;
   onNodePointerMove: (e: React.PointerEvent<HTMLDivElement>) => void;
@@ -72,6 +76,9 @@ function RelationshipBoardCanvasComponent({
   selectedRelId,
   selectedJunctionId,
   editingCardId,
+  selectedNodeIds = [],
+  selectionBox,
+  selectionLasso,
   hoveredJunctionId,
   connectingSourceId,
   elasticCursor,
@@ -85,6 +92,7 @@ function RelationshipBoardCanvasComponent({
   getNodeInfo,
   onCanvasMouseDown,
   onCanvasPointerMove,
+  onCanvasPointerUp,
   onCanvasContextMenu,
   onSelectRel,
   onSelectJunction,
@@ -116,6 +124,7 @@ function RelationshipBoardCanvasComponent({
       data-testid="relationship-board"
       onMouseDown={onCanvasMouseDown}
       onPointerMove={onCanvasPointerMove}
+      onPointerUp={onCanvasPointerUp}
       onContextMenu={onCanvasContextMenu}
       className={`relative w-full h-full overflow-hidden select-none touch-none ${connectingSourceId
         ? 'cursor-crosshair'
@@ -154,6 +163,7 @@ function RelationshipBoardCanvasComponent({
           storylines={storylines}
           positions={positions}
           selectedJunctionId={selectedJunctionId}
+          selectedNodeIds={selectedNodeIds}
           hoveredJunctionId={hoveredJunctionId}
           connectingSourceId={connectingSourceId}
           onPointerDown={onNodePointerDown}
@@ -162,13 +172,14 @@ function RelationshipBoardCanvasComponent({
           onContextMenu={onNodeContextMenu}
           onMouseEnter={(id) => onHoverJunction(id)}
           onMouseLeave={() => onHoverJunction(null)}
-          onClick={(_e, id) => onSelectJunction(id)}
+          onClick={(e, id) => onSelectJunction(id, e)}
         />
 
         <RelationshipCharacterCards
           characters={characters}
           positions={positions}
           editingCardId={editingCardId}
+          selectedNodeIds={selectedNodeIds}
           connectingSourceId={connectingSourceId}
           onPointerDown={onNodePointerDown}
           onPointerMove={onNodePointerMove}
@@ -193,6 +204,38 @@ function RelationshipBoardCanvasComponent({
           onPointerUp={onPillPointerUp}
           onDoubleClick={onPillDoubleClick}
         />
+
+        {/* Visual Selection Overlay for Box and Freehand Lasso */}
+        {(selectionBox || (selectionLasso && selectionLasso.points.length > 1)) && (
+          <svg
+            className="absolute inset-0 pointer-events-none overflow-visible z-50"
+            style={{ width: '10000px', height: '10000px' }}
+          >
+            {selectionBox && (
+              <rect
+                x={Math.min(selectionBox.startX, selectionBox.currentX)}
+                y={Math.min(selectionBox.startY, selectionBox.currentY)}
+                width={Math.abs(selectionBox.currentX - selectionBox.startX)}
+                height={Math.abs(selectionBox.currentY - selectionBox.startY)}
+                fill="rgba(59, 130, 246, 0.18)"
+                stroke="#60a5fa"
+                strokeWidth={1.5}
+                strokeDasharray="4 3"
+              />
+            )}
+            {selectionLasso && selectionLasso.points.length > 1 && (
+              <polygon
+                points={selectionLasso.points.map((p) => `${p.x},${p.y}`).join(' ')}
+                fill="rgba(59, 130, 246, 0.18)"
+                stroke="#60a5fa"
+                strokeWidth={1.5}
+                strokeDasharray="4 3"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            )}
+          </svg>
+        )}
       </div>
 
       {characters.length === 0 && (
@@ -291,4 +334,3 @@ export const RelationshipZoomControls = memo(function RelationshipZoomControls({
 });
 
 export const RelationshipBoardCanvas = memo(RelationshipBoardCanvasComponent);
-
