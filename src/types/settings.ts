@@ -154,6 +154,7 @@ import { detectDynamicLanguage } from '../i18n/translations';
 
 export type Language = 'en' | 'es';
 export type ThemeMode = 'dark' | 'light' | 'custom';
+export type SceneScrollMode = 'remember' | 'bottom';
 
 export interface CustomThemeColors {
   background: string;
@@ -213,6 +214,7 @@ export interface AppPreferences {
   autoSaveInterval?: number; // In seconds (default: 2)
   autoUpdateCheck?: boolean; // Toggle 'Buscar actualizaciones automáticamente' (default: false)
   confirmDelete?: DeleteConfirmationPreferences;
+  sceneScrollMode?: SceneScrollMode;
 }
 
 export interface AppSettings extends AppColorSettings {
@@ -243,6 +245,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   autoSaveInterval: 300,
   autoUpdateCheck: false,
   confirmDelete: DEFAULT_DELETE_CONFIRMATIONS,
+  sceneScrollMode: 'remember',
 };
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {

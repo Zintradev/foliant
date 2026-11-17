@@ -65,8 +65,26 @@ export default function App() {
   });
   const [activeChapterId, setActiveChapterId] = useState<string>(() => {
     if (isFirstRun) return '';
+    try {
+      const savedActiveScene = typeof localStorage !== 'undefined'
+        ? localStorage.getItem('foliant_last_active_scene')
+        : null;
+      if (savedActiveScene && DEFAULT_PROJECT.chapters.some((c) => c.id === savedActiveScene && c.type === 'scene')) {
+        return savedActiveScene;
+      }
+    } catch {}
     return DEFAULT_PROJECT.chapters.find((c) => c.type === 'scene')?.id ?? '';
   });
+
+  useEffect(() => {
+    if (!activeChapterId || typeof localStorage === 'undefined') return;
+    try {
+      localStorage.setItem(`foliant_last_active_scene_${project.id}`, activeChapterId);
+      localStorage.setItem('foliant_last_active_scene', activeChapterId);
+    } catch {
+      // Non-fatal if localStorage write fails
+    }
+  }, [activeChapterId, project.id]);
 
   const handleProjectLoaded = useCallback((loaded: FoliantProject) => {
     setProject(loaded);
@@ -187,8 +205,12 @@ export default function App() {
         const loaded = await executeReadBundle(validPath);
         loadProjectRef.current(loaded, validPath);
         if (loaded.chapters && loaded.chapters.length > 0) {
+          const savedActiveScene = typeof localStorage !== 'undefined'
+            ? localStorage.getItem(`foliant_last_active_scene_${loaded.id}`) || localStorage.getItem('foliant_last_active_scene')
+            : null;
+          const matchedScene = savedActiveScene && loaded.chapters.find((c) => c.id === savedActiveScene && c.type === 'scene');
           const firstScene = loaded.chapters.find((c) => c.type === 'scene') ?? loaded.chapters[0];
-          setActiveChapterId(firstScene.id);
+          setActiveChapterId(matchedScene ? matchedScene.id : firstScene.id);
         } else {
           setActiveChapterId('');
         }

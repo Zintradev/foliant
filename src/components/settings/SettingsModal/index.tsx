@@ -121,6 +121,10 @@ export const SettingsModal = React.memo(function SettingsModal({
                 preserveManualPlotHeight={prefs?.preserveManualPlotHeight ?? false}
                 autoUpdateCheck={prefs?.autoUpdateCheck ?? false}
                 confirmDelete={prefs?.confirmDelete}
+                editorIndentFirstLine={prefs?.editorIndentFirstLine ?? true}
+                editorIndentSize={prefs?.editorIndentSize ?? 1.5}
+                focusModeShowFormattingToolbar={prefs?.focusModeShowFormattingToolbar ?? false}
+                sceneScrollMode={prefs?.sceneScrollMode ?? 'remember'}
                 onPreferenceChange={handlePreferenceChange}
                 t={t}
               />
@@ -130,14 +134,11 @@ export const SettingsModal = React.memo(function SettingsModal({
               <SettingsAppearanceSection
                 themeMode={prefs?.themeMode || 'dark'}
                 customTheme={customTheme}
-                editorIndentFirstLine={prefs?.editorIndentFirstLine ?? true}
-                editorIndentSize={prefs?.editorIndentSize ?? 1.5}
                 editorFontFamily={prefs?.editorFontFamily ?? 'serif'}
                 editorPaperColor={prefs?.editorPaperColor ?? 'paper'}
                 editorCustomBg={prefs?.editorCustomBg ?? '#f6f1e8'}
                 editorCustomText={prefs?.editorCustomText ?? '#2c2523'}
                 matchEditorBackgroundWithPaper={prefs?.matchEditorBackgroundWithPaper ?? false}
-                focusModeShowFormattingToolbar={prefs?.focusModeShowFormattingToolbar ?? false}
                 onPreferenceChange={handlePreferenceChange}
                 onCustomColorChange={handleCustomColorChange}
                 onOpenColorPicker={setActiveColorPicker}

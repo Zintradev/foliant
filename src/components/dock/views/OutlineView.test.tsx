@@ -146,4 +146,37 @@ describe('OutlineView', () => {
     fireEvent.change(synopsisInput, { target: { value: 'Updated synopsis premise.' } });
     expect(handleUpdateMeta).toHaveBeenCalledWith({ synopsis: 'Updated synopsis premise.' });
   });
+
+  it('restores collapsed folder state from localStorage and persists toggles', () => {
+    const projectId = 'test-proj-folders';
+    const storageKey = `foliant_outline_collapsed_${projectId}`;
+
+    // Pre-seed localStorage with folder-1 collapsed
+    localStorage.setItem(storageKey, JSON.stringify(['folder-1']));
+
+    render(
+      <OutlineView
+        chapters={mockChapters}
+        activeChapterId="other-scene"
+        projectId={projectId}
+        onSelectChapter={vi.fn()}
+        onAddChapter={vi.fn()}
+        isExpanded={false}
+      />
+    );
+
+    // Because folder-1 is collapsed, its child "The Beginning" is not rendered in DOM
+    expect(screen.queryByText('The Beginning')).not.toBeInTheDocument();
+
+    // Toggle folder-1 to expand it
+    const folderChevron = screen.getByText('Act I').closest('div')!;
+    fireEvent.click(folderChevron);
+
+    // After expanding, "The Beginning" should be visible
+    expect(screen.getByText('The Beginning')).toBeInTheDocument();
+
+    // localStorage should now have folder-1 removed (empty array)
+    const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    expect(saved).not.toContain('folder-1');
+  });
 });

@@ -36,7 +36,7 @@ export const SettingsSidebarNav = React.memo(function SettingsSidebarNav({
         }`}
       >
         <Palette className="w-4 h-4 shrink-0 text-zinc-300" />
-        <span>{t('categoryAppearanceEditor', 'Apariencia y Editor')}</span>
+        <span>{t('categoryAppearance', 'Apariencia')}</span>
       </button>
 
       <button

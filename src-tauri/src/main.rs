@@ -4,6 +4,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use tauri::Manager;
+use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 
 mod bundle;
 pub use bundle::{check_file_exists, load_project_bundle, save_project_bundle};
@@ -526,6 +527,7 @@ async fn read_image_as_data_url(file_path: String) -> Result<String, String> {
 /// Does not return a value as the process terminates upon invocation.
 #[tauri::command]
 fn exit_app(app: tauri::AppHandle) {
+    let _ = app.save_window_state(StateFlags::all());
     app.exit(0);
 }
 
@@ -540,6 +542,7 @@ fn exit_app(app: tauri::AppHandle) {
 /// the Tauri runtime loop.
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
