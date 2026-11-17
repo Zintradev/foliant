@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { Search, X, Feather, Layers, FileText } from 'lucide-react';
+import { Search, X, Feather, Layers, FileText, SpellCheck2 } from 'lucide-react';
 import { FoliantProject } from '../../../types/project';
 import { useGlobalSearch, SearchScope, SearchResult } from '../../../hooks/useGlobalSearch';
 import { useTranslation } from '../../../i18n/translations';
@@ -22,22 +22,32 @@ function SearchViewComponent({
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [scope, setScope] = useState<SearchScope>('global');
+  const [isFuzzy, setIsFuzzy] = useState(false);
   const [selectedResultIndex, setSelectedResultIndex] = useState<number>(0);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
 
+  // Auto-focus input when search panel mounts
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }, 50);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Compute search results via the custom search hook
-  const results = useGlobalSearch(query, project, scope, activeSceneId);
+  const results = useGlobalSearch(query, project, scope, activeSceneId, isFuzzy);
 
   // Reset selection index when results change
   useEffect(() => {
     setSelectedResultIndex(0);
-  }, [results.length, query, scope]);
+  }, [results.length, query, scope, isFuzzy]);
 
   const handleResultClick = useCallback(
     (result: SearchResult, idx: number) => {
       setSelectedResultIndex(idx);
-      onSelectResult(result.sceneId, query.trim());
+      onSelectResult(result.sceneId, result.matchedWord || query.trim());
     },
     [onSelectResult, query]
   );
@@ -58,35 +68,49 @@ function SearchViewComponent({
           />
           {query && (
             <button
+              type="button"
               onClick={() => {
                 setQuery('');
                 inputRef.current?.focus();
               }}
               title={t('clearSearch')}
-              className="absolute right-2 p-0.5 text-zinc-400 hover:text-zinc-200 rounded-sm hover:bg-zinc-800 transition"
+              className="absolute right-2 p-0.5 text-zinc-400 hover:text-zinc-200 rounded-sm hover:bg-zinc-800 transition cursor-pointer"
             >
               <X className="w-3 h-3" />
             </button>
           )}
         </div>
 
-        {/* Scope Selector Row */}
+        {/* Scope Selector & Fuzzy Search Row */}
         <div className="flex items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-1.5 text-zinc-400 text-[11px]">
             <Layers className="w-3 h-3 text-zinc-500 shrink-0" />
             <span>{t('searchScope')}:</span>
+            <select
+              value={scope}
+              onChange={(e) => setScope(e.target.value as SearchScope)}
+              aria-label={t('searchScope')}
+              className="bg-zinc-900 border border-zinc-800 rounded-md text-[11px] text-zinc-300 px-2 py-1 focus:outline-none focus:border-emerald-500 cursor-pointer"
+            >
+              <option value="global">{t('scopeGlobal')}</option>
+              <option value="current_folder">{t('scopeFolder')}</option>
+              <option value="current_scene">{t('scopeScene')}</option>
+            </select>
           </div>
 
-          <select
-            value={scope}
-            onChange={(e) => setScope(e.target.value as SearchScope)}
-            aria-label={t('searchScope')}
-            className="bg-zinc-900 border border-zinc-800 rounded-md text-[11px] text-zinc-300 px-2 py-1 focus:outline-none focus:border-emerald-500 cursor-pointer"
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isFuzzy}
+            onClick={() => setIsFuzzy((prev) => !prev)}
+            title={t('fuzzySearchTooltip')}
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium transition cursor-pointer border ${isFuzzy
+                ? 'bg-emerald-950/70 border-emerald-500/60 text-emerald-300 shadow-xs'
+                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850'
+              }`}
           >
-            <option value="global">{t('scopeGlobal')}</option>
-            <option value="current_folder">{t('scopeFolder')}</option>
-            <option value="current_scene">{t('scopeScene')}</option>
-          </select>
+            <SpellCheck2 className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
@@ -139,13 +163,12 @@ function SearchViewComponent({
             <div
               key={`${result.sceneId}-${result.matchIndex ?? idx}`}
               onClick={() => handleResultClick(result, idx)}
-              className={`p-2.5 rounded-md transition border cursor-pointer select-none text-left flex flex-col gap-1 ${
-                isCurrentActive
+              className={`p-2.5 rounded-md transition border cursor-pointer select-none text-left flex flex-col gap-1 ${isCurrentActive
                   ? 'bg-zinc-900 border-emerald-500/50 shadow-xs'
                   : isSelected
-                  ? 'bg-zinc-900/90 border-zinc-700'
-                  : 'bg-zinc-900/40 border-zinc-800/60 hover:bg-zinc-900/80 hover:border-zinc-700'
-              }`}
+                    ? 'bg-zinc-900/90 border-zinc-700'
+                    : 'bg-zinc-900/40 border-zinc-800/60 hover:bg-zinc-900/80 hover:border-zinc-700'
+                }`}
             >
               {/* Scene Title Header */}
               <div className="flex items-center justify-between gap-1.5">
@@ -162,7 +185,7 @@ function SearchViewComponent({
 
               {/* Context Snippet with Yellow Highlight */}
               <p className="text-xs text-zinc-400 font-serif leading-relaxed line-clamp-3">
-                {renderHighlightedSnippet(result.snippet, query)}
+                {renderHighlightedSnippet(result.snippet, result.matchedWord || query)}
               </p>
             </div>
           );

@@ -167,7 +167,7 @@ export default function FileMenuDropdown({
             <Search className="w-3.5 h-3.5 text-zinc-400" />
             <span>{t('search', 'Search')}</span>
           </span>
-          <span className="text-[10px] text-zinc-500 font-mono">Ctrl+Shift+F</span>
+          <span className="text-[10px] text-zinc-500 font-mono">Ctrl+F</span>
         </button>
       )}
 

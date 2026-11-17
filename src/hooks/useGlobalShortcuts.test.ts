@@ -84,6 +84,60 @@ describe('useGlobalShortcuts hook', () => {
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
+  it('triggers onSearch when pressing Ctrl+F', () => {
+    const onSave = vi.fn();
+    const onSaveAs = vi.fn();
+    const onOpen = vi.fn();
+    const onSearch = vi.fn();
+
+    renderHook(() =>
+      useGlobalShortcuts({
+        onSave,
+        onSaveAs,
+        onOpen,
+        onSearch,
+      })
+    );
+
+    const event = new KeyboardEvent('keydown', {
+      key: 'f',
+      ctrlKey: true,
+      shiftKey: false,
+      bubbles: true,
+      cancelable: true,
+    });
+    window.dispatchEvent(event);
+
+    expect(onSearch).toHaveBeenCalledTimes(1);
+  });
+
+  it('triggers onSearch when pressing Cmd+F on macOS', () => {
+    const onSave = vi.fn();
+    const onSaveAs = vi.fn();
+    const onOpen = vi.fn();
+    const onSearch = vi.fn();
+
+    renderHook(() =>
+      useGlobalShortcuts({
+        onSave,
+        onSaveAs,
+        onOpen,
+        onSearch,
+      })
+    );
+
+    const event = new KeyboardEvent('keydown', {
+      key: 'f',
+      metaKey: true,
+      shiftKey: false,
+      bubbles: true,
+      cancelable: true,
+    });
+    window.dispatchEvent(event);
+
+    expect(onSearch).toHaveBeenCalledTimes(1);
+  });
+
   it('triggers onSearch when pressing Ctrl+Shift+F', () => {
     const onSave = vi.fn();
     const onSaveAs = vi.fn();
@@ -109,5 +163,33 @@ describe('useGlobalShortcuts hook', () => {
     window.dispatchEvent(event);
 
     expect(onSearch).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not trigger onSearch when pressing f without modifier keys', () => {
+    const onSave = vi.fn();
+    const onSaveAs = vi.fn();
+    const onOpen = vi.fn();
+    const onSearch = vi.fn();
+
+    renderHook(() =>
+      useGlobalShortcuts({
+        onSave,
+        onSaveAs,
+        onOpen,
+        onSearch,
+      })
+    );
+
+    const event = new KeyboardEvent('keydown', {
+      key: 'f',
+      ctrlKey: false,
+      metaKey: false,
+      shiftKey: false,
+      bubbles: true,
+      cancelable: true,
+    });
+    window.dispatchEvent(event);
+
+    expect(onSearch).not.toHaveBeenCalled();
   });
 });
