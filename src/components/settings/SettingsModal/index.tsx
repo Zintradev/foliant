@@ -131,6 +131,7 @@ export const SettingsModal = React.memo(function SettingsModal({
                 themeMode={prefs?.themeMode || 'dark'}
                 customTheme={customTheme}
                 editorIndentFirstLine={prefs?.editorIndentFirstLine ?? true}
+                editorIndentSize={prefs?.editorIndentSize ?? 1.5}
                 editorFontFamily={prefs?.editorFontFamily ?? 'serif'}
                 editorPaperColor={prefs?.editorPaperColor ?? 'paper'}
                 editorCustomBg={prefs?.editorCustomBg ?? '#f6f1e8'}

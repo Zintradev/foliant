@@ -135,8 +135,8 @@ export const WritingWorkspace = memo(function WritingWorkspace({
     paperBg = customBg;
     paperText = customText;
     paperBorder = 'rgba(120, 120, 120, 0.18)';
-  } else if (paperMode === 'default') {
-    if (themeMode === 'light') {
+  } else if (paperMode === 'dark' || paperMode === 'default') {
+    if (themeMode === 'light' && paperMode === 'default') {
       paperBg = '#ffffff';
       paperText = '#18181b';
       paperBorder = '#e4e4e7';
@@ -289,6 +289,7 @@ export const WritingWorkspace = memo(function WritingWorkspace({
                 onChange={onContentChange}
                 onStatusChange={onEditorStatusChange}
                 indentFirstLine={appSettings.preferences?.editorIndentFirstLine}
+                indentSize={appSettings.preferences?.editorIndentSize ?? 1.5}
                 fontFamily={activeFontFamily}
                 searchTerm={activeSearchTerm}
                 isAutoSave={(appSettings.preferences?.saveMode || 'auto') === 'auto'}

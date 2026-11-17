@@ -183,6 +183,27 @@ describe('SettingsModal Component', () => {
     );
   });
 
+  it('selects dark interface paper color in Appearance tab', () => {
+    render(
+      <SettingsModal
+        isOpen={true}
+        onClose={mockOnClose}
+        settings={mockSettings}
+        onUpdateSettings={mockOnUpdateSettings}
+      />
+    );
+
+    fireEvent.click(screen.getByText(dict.en.categoryAppearanceEditor));
+    expect(screen.getByText(dict.en.paperDark)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText(dict.en.paperDark));
+    expect(mockOnUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({ editorPaperColor: 'dark' }),
+      })
+    );
+  });
+
   it('edits custom theme colors directly when in custom theme mode', () => {
     const customSettings: AppSettings = {
       ...mockSettings,
@@ -234,12 +255,75 @@ describe('SettingsModal Component', () => {
     const checkbox = screen.getByRole('checkbox', { name: new RegExp(dict.en.automaticIndent, 'i') });
     expect(checkbox).toBeChecked();
 
+    // When active, indent size controls are rendered
+    expect(screen.getByLabelText(dict.en.indentSize)).toBeInTheDocument();
+
     fireEvent.click(checkbox);
     expect(mockOnUpdateSettings).toHaveBeenCalledWith(
       expect.objectContaining({
         preferences: expect.objectContaining({ editorIndentFirstLine: false }),
       })
     );
+  });
+
+  it('allows choosing the indent size value when automatic indentation is enabled', () => {
+    render(
+      <SettingsModal
+        isOpen={true}
+        onClose={mockOnClose}
+        settings={mockSettings}
+        onUpdateSettings={mockOnUpdateSettings}
+      />
+    );
+
+    fireEvent.click(screen.getByText(dict.en.categoryAppearanceEditor));
+    const select = screen.getByLabelText(dict.en.indentSize) as HTMLSelectElement;
+    const slider = screen.getByLabelText(`${dict.en.indentSize} Slider`) as HTMLInputElement;
+
+    expect(select).toBeInTheDocument();
+    expect(slider).toBeInTheDocument();
+    expect(select.value).toBe('1.5');
+    expect(slider.value).toBe('1.5');
+
+    // Change via select
+    fireEvent.change(select, { target: { value: '2' } });
+    expect(mockOnUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({ editorIndentSize: 2 }),
+      })
+    );
+    expect(slider.value).toBe('2');
+
+    // Change via slider
+    fireEvent.change(slider, { target: { value: '2.5' } });
+    expect(mockOnUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({ editorIndentSize: 2.5 }),
+      })
+    );
+    expect(select.value).toBe('2.5');
+  });
+
+  it('hides indent size controls when automatic indentation is disabled', () => {
+    const disabledSettings = {
+      ...mockSettings,
+      preferences: {
+        ...mockSettings.preferences,
+        editorIndentFirstLine: false,
+      },
+    };
+
+    render(
+      <SettingsModal
+        isOpen={true}
+        onClose={mockOnClose}
+        settings={disabledSettings}
+        onUpdateSettings={mockOnUpdateSettings}
+      />
+    );
+
+    fireEvent.click(screen.getByText(dict.en.categoryAppearanceEditor));
+    expect(screen.queryByLabelText(dict.en.indentSize)).not.toBeInTheDocument();
   });
 
   it('manages drag & drop modes (timeline and world) and card zoom retention in General section', () => {

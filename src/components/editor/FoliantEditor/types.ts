@@ -12,6 +12,8 @@ export interface FoliantEditorProps {
   onStatusChange?: (status: SaveStatus) => void;
   /** Whether to apply automatic first-line indentation to paragraphs. Default: true. */
   indentFirstLine?: boolean;
+  /** First-line indentation width in rem when indentFirstLine is true. Default: 1.5. */
+  indentSize?: number;
   /** Font family for the editor content. Default: 'serif'. */
   fontFamily?: EditorFontFamily;
   /** Optional search term to jump to and highlight upon loading. */

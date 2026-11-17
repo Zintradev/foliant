@@ -20,6 +20,7 @@ function FoliantEditorComponent({
   onChange,
   onStatusChange,
   indentFirstLine = true,
+  indentSize = 1.5,
   fontFamily = 'serif',
   searchTerm,
   isAutoSave = true,
@@ -107,8 +108,9 @@ function FoliantEditorComponent({
   return (
     <div
       className={`w-full foliant-editor-wrapper foliant-font-${activeFontFamily} ${indentClass}`}
+      style={{ '--foliant-indent-size': `${indentSize}rem` } as React.CSSProperties}
     >
-      <EditorStyles />
+      <EditorStyles indentSize={indentSize} />
 
       {/* Formatting Toolbar at the top of the editor view (if not hosted externally) */}
       {!externalToolbar && !hideToolbar && (

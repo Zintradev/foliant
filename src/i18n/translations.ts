@@ -37,7 +37,7 @@ export const dict = {
     paperWhite: 'White',
     paperWarm: 'Warm White',
     paperCustom: 'Custom',
-    paperDark: 'Theme Default',
+    paperDark: 'Dark',
     editorCustomBg: 'Sheet Background',
     editorCustomText: 'Text Color',
     matchEditorBackground: 'Match workspace background with sheet color',
@@ -132,7 +132,16 @@ export const dict = {
     // Editor & Typography
     editorAndTypography: 'Editor & Formatting',
     automaticIndent: 'Automatic First-Line Indent',
-    automaticIndentDesc: 'Applies standard first-line indent (1.5rem) to novel paragraphs.',
+    automaticIndentDesc: 'Automatically indents the first line of each novel paragraph.',
+    indentSize: 'Indentation Width',
+    indentSizeDesc: 'Select or adjust the indentation width for the first line of paragraphs.',
+    indentMinimal: 'Minimal',
+    indentCompact: 'Compact',
+    indentStandard: 'Standard',
+    indentWide: 'Wide',
+    indentGenerous: 'Generous',
+    indentDeep: 'Deep',
+    indentPreviewSample: 'Once upon a time in a secluded corner of the world, stories came alive...',
 
     // Timeline & Interaction
     timelineDropMode: 'Timeline Drag & Drop Behavior',
@@ -933,7 +942,7 @@ export const dict = {
     paperWhite: 'Blanco',
     paperWarm: 'Blanco Cálido',
     paperCustom: 'Personalizado',
-    paperDark: 'Oscuro (Tema)',
+    paperDark: 'Oscuro',
     editorCustomBg: 'Fondo de la hoja',
     editorCustomText: 'Color del texto',
     matchEditorBackground: 'Hacer coincidir el fondo con la hoja',
@@ -1028,7 +1037,16 @@ export const dict = {
     // Editor & Typography
     editorAndTypography: 'Editor y Formato',
     automaticIndent: 'Sangría Automática de Primera Línea',
-    automaticIndentDesc: 'Aplica sangría automática (1.5rem) al inicio de cada párrafo.',
+    automaticIndentDesc: 'Aplica sangría automática al inicio de cada párrafo.',
+    indentSize: 'Tamaño de Sangría',
+    indentSizeDesc: 'Selecciona o ajusta el ancho de sangría para el inicio de cada párrafo.',
+    indentMinimal: 'Mínima',
+    indentCompact: 'Compacta',
+    indentStandard: 'Estándar',
+    indentWide: 'Amplia',
+    indentGenerous: 'Generosa',
+    indentDeep: 'Profunda',
+    indentPreviewSample: 'Érase una vez en un rincón apartado del mundo donde las historias cobraban vida...',
 
     // Timeline & Interaction
     timelineDropMode: 'Modo de Arrastre en Cronología',
