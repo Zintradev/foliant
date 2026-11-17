@@ -14,7 +14,7 @@ export interface UseGlobalShortcutsOptions {
  * - Ctrl/Cmd + S: Save project
  * - Ctrl/Cmd + Shift + S: Save project as...
  * - Ctrl/Cmd + O: Open project
- * - Ctrl/Cmd + Shift + F: Quick-jump to search tab
+ * - Ctrl/Cmd + F (and Ctrl/Cmd + Shift + F): Quick-jump to search tab
  *
  * Keeps fresh callback references internally to avoid re-attaching event listeners.
  */
@@ -60,8 +60,8 @@ export function useGlobalShortcuts({
         return;
       }
 
-      // Ctrl/Cmd + Shift + F: Search Tab
-      if (e.shiftKey && key === 'f') {
+      // Ctrl/Cmd + F or Ctrl/Cmd + Shift + F: Search Tab
+      if (key === 'f') {
         e.preventDefault();
         callbacksRef.current.onSearch();
         return;

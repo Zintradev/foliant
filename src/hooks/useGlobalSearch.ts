@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import Fuse from 'fuse.js';
 import { FoliantProject, TextNode } from '../types/project';
 
 export type SearchScope = 'global' | 'current_folder' | 'current_scene';
@@ -8,11 +9,14 @@ export interface SearchResult {
   sceneTitle: string;
   snippet: string;
   matchIndex?: number;
+  matchedWord?: string;
+  score?: number;
 }
 
 export interface SearchOptions {
   scope?: SearchScope;
   activeSceneId?: string;
+  fuzzy?: boolean;
 }
 
 export interface UseGlobalSearchOptions extends SearchOptions {
@@ -83,7 +87,7 @@ export function stripHtml(html: string): string {
 
 /**
  * Global search engine that finds case-insensitive matches across scenes
- * in the project according to the specified scope.
+ * in the project according to the specified scope, with optional fuzzy typo tolerance.
  */
 export function searchProject(
   query: string,
@@ -97,6 +101,7 @@ export function searchProject(
   const allScenes = chapters.filter((c) => c.type === 'scene');
   const scope: SearchScope = options?.scope || 'global';
   const activeSceneId = options?.activeSceneId;
+  const isFuzzy = Boolean(options?.fuzzy);
 
   // Filter candidate scenes based on scope
   let candidateScenes = allScenes;
@@ -134,42 +139,177 @@ export function searchProject(
     }
   }
 
-  const results: SearchResult[] = [];
-  const lowerQuery = trimmed.toLowerCase();
   const SNIPPET_BEFORE = 45;
   const SNIPPET_AFTER = 65;
+
+  if (!isFuzzy || trimmed.length < 2) {
+    // Exact case-insensitive search
+    const results: SearchResult[] = [];
+    const lowerQuery = trimmed.toLowerCase();
+
+    for (const scene of candidateScenes) {
+      const plainText = stripHtml(scene.content || '');
+      if (!plainText) continue;
+
+      const lowerText = plainText.toLowerCase();
+      let searchStart = 0;
+
+      while (searchStart < lowerText.length) {
+        const matchIndex = lowerText.indexOf(lowerQuery, searchStart);
+        if (matchIndex === -1) break;
+
+        const snippetStart = Math.max(0, matchIndex - SNIPPET_BEFORE);
+        const snippetEnd = Math.min(plainText.length, matchIndex + trimmed.length + SNIPPET_AFTER);
+
+        let snippet = plainText.substring(snippetStart, snippetEnd).trim();
+        if (snippetStart > 0) {
+          snippet = '...' + snippet;
+        }
+        if (snippetEnd < plainText.length) {
+          snippet = snippet + '...';
+        }
+
+        results.push({
+          sceneId: scene.id,
+          sceneTitle: scene.title || 'Untitled Scene',
+          snippet,
+          matchIndex,
+          matchedWord: plainText.substring(matchIndex, matchIndex + trimmed.length),
+        });
+
+        // Advance search position to find subsequent occurrences
+        searchStart = matchIndex + Math.max(1, trimmed.length);
+      }
+    }
+
+    return results;
+  }
+
+  // --- Fuzzy search via Fuse.js for typo tolerance ---
+  const results: SearchResult[] = [];
+  const wordRegex = /\b[\p{L}\p{N}'-]+\b/gu;
+
+  interface WordOccurrence {
+    sceneId: string;
+    sceneTitle: string;
+    plainText: string;
+    word: string;
+    matchIndex: number;
+  }
+
+  const wordOccurrences = new Map<string, WordOccurrence[]>();
+  const scenesWithPlainText: { id: string; title: string; plainText: string }[] = [];
 
   for (const scene of candidateScenes) {
     const plainText = stripHtml(scene.content || '');
     if (!plainText) continue;
 
-    const lowerText = plainText.toLowerCase();
-    let searchStart = 0;
+    scenesWithPlainText.push({
+      id: scene.id,
+      title: scene.title || 'Untitled Scene',
+      plainText,
+    });
 
-    while (searchStart < lowerText.length) {
-      const matchIndex = lowerText.indexOf(lowerQuery, searchStart);
-      if (matchIndex === -1) break;
-
-      const snippetStart = Math.max(0, matchIndex - SNIPPET_BEFORE);
-      const snippetEnd = Math.min(plainText.length, matchIndex + trimmed.length + SNIPPET_AFTER);
-
-      let snippet = plainText.substring(snippetStart, snippetEnd).trim();
-      if (snippetStart > 0) {
-        snippet = '...' + snippet;
+    let m: RegExpExecArray | null;
+    wordRegex.lastIndex = 0;
+    while ((m = wordRegex.exec(plainText)) !== null) {
+      const lower = m[0].toLowerCase();
+      let list = wordOccurrences.get(lower);
+      if (!list) {
+        list = [];
+        wordOccurrences.set(lower, list);
       }
-      if (snippetEnd < plainText.length) {
-        snippet = snippet + '...';
-      }
-
-      results.push({
+      list.push({
         sceneId: scene.id,
         sceneTitle: scene.title || 'Untitled Scene',
-        snippet,
-        matchIndex,
+        plainText,
+        word: m[0],
+        matchIndex: m.index,
       });
+    }
+  }
 
-      // Advance search position to find subsequent occurrences
-      searchStart = matchIndex + Math.max(1, trimmed.length);
+  const uniqueWordEntries = Array.from(wordOccurrences.keys()).map((w) => ({ word: w }));
+  const fuse = new Fuse(uniqueWordEntries, {
+    keys: ['word'],
+    threshold: 0.4,
+    includeScore: true,
+  });
+
+  const qWords = trimmed.split(/\s+/);
+  const seenMatches = new Set<string>();
+
+  if (qWords.length === 1) {
+    const fuseMatches = fuse.search(qWords[0].toLowerCase());
+    for (const fMatch of fuseMatches) {
+      const matchedLower = fMatch.item.word;
+      const occs = wordOccurrences.get(matchedLower) || [];
+      for (const occ of occs) {
+        const key = `${occ.sceneId}:${occ.matchIndex}`;
+        if (seenMatches.has(key)) continue;
+        seenMatches.add(key);
+
+        const snippetStart = Math.max(0, occ.matchIndex - SNIPPET_BEFORE);
+        const snippetEnd = Math.min(occ.plainText.length, occ.matchIndex + occ.word.length + SNIPPET_AFTER);
+
+        let snippet = occ.plainText.substring(snippetStart, snippetEnd).trim();
+        if (snippetStart > 0) {
+          snippet = '...' + snippet;
+        }
+        if (snippetEnd < occ.plainText.length) {
+          snippet = snippet + '...';
+        }
+
+        results.push({
+          sceneId: occ.sceneId,
+          sceneTitle: occ.sceneTitle,
+          snippet,
+          matchIndex: occ.matchIndex,
+          matchedWord: occ.word,
+          score: fMatch.score,
+        });
+      }
+    }
+  } else {
+    // Multi-word query: resolve fuzzy typos for each word token
+    const resolvedWords = qWords.map((qw) => {
+      const lower = qw.toLowerCase();
+      if (wordOccurrences.has(lower)) return lower;
+      const res = fuse.search(lower);
+      return res.length > 0 ? res[0].item.word : lower;
+    });
+
+    const escapedWords = resolvedWords.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const phraseRegex = new RegExp(escapedWords.join('[\\s,.:;!?"\'-]+'), 'gi');
+
+    for (const scene of scenesWithPlainText) {
+      phraseRegex.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = phraseRegex.exec(scene.plainText)) !== null) {
+        const key = `${scene.id}:${m.index}`;
+        if (seenMatches.has(key)) continue;
+        seenMatches.add(key);
+
+        const snippetStart = Math.max(0, m.index - SNIPPET_BEFORE);
+        const snippetEnd = Math.min(scene.plainText.length, m.index + m[0].length + SNIPPET_AFTER);
+
+        let snippet = scene.plainText.substring(snippetStart, snippetEnd).trim();
+        if (snippetStart > 0) {
+          snippet = '...' + snippet;
+        }
+        if (snippetEnd < scene.plainText.length) {
+          snippet = snippet + '...';
+        }
+
+        results.push({
+          sceneId: scene.id,
+          sceneTitle: scene.title,
+          snippet,
+          matchIndex: m.index,
+          matchedWord: m[0],
+          score: 0.1,
+        });
+      }
     }
   }
 
@@ -184,19 +324,18 @@ export function useGlobalSearch(
   queryOrOptions: string | UseGlobalSearchOptions,
   projectParam?: FoliantProject | TextNode[],
   scopeParam: SearchScope = 'global',
-  activeSceneIdParam?: string
+  activeSceneIdParam?: string,
+  fuzzyParam: boolean = false
 ): SearchResult[] {
-  const query = typeof queryOrOptions === 'string' ? queryOrOptions : queryOrOptions.query;
-  const project =
-    typeof queryOrOptions === 'string'
-      ? projectParam!
-      : queryOrOptions.project;
-  const scope = typeof queryOrOptions === 'string' ? scopeParam : queryOrOptions.scope || 'global';
-  const activeSceneId =
-    typeof queryOrOptions === 'string' ? activeSceneIdParam : queryOrOptions.activeSceneId;
+  const isOptionsObj = typeof queryOrOptions !== 'string';
+  const query = isOptionsObj ? queryOrOptions.query : queryOrOptions;
+  const project = isOptionsObj ? queryOrOptions.project : projectParam!;
+  const scope = isOptionsObj ? queryOrOptions.scope || 'global' : scopeParam;
+  const activeSceneId = isOptionsObj ? queryOrOptions.activeSceneId : activeSceneIdParam;
+  const fuzzy = isOptionsObj ? Boolean(queryOrOptions.fuzzy) : fuzzyParam;
 
   return useMemo(() => {
     if (!project) return [];
-    return searchProject(query, project, { scope, activeSceneId });
-  }, [query, project, scope, activeSceneId]);
+    return searchProject(query, project, { scope, activeSceneId, fuzzy });
+  }, [query, project, scope, activeSceneId, fuzzy]);
 }

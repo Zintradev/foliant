@@ -141,5 +141,48 @@ describe('useGlobalSearch & searchProject', () => {
         expect(r.snippet.toLowerCase()).toContain('echo');
       });
     });
+
+    it('handles minor typos when fuzzy search is active', () => {
+      // Missing letter: 'strngr' for 'stranger'
+      const missingLetter = searchProject('strngr', mockProject, {
+        scope: 'global',
+        fuzzy: true,
+      });
+      expect(missingLetter.length).toBeGreaterThan(0);
+      expect(missingLetter[0].matchedWord?.toLowerCase()).toBe('stranger');
+
+      // Extra letter: 'straanger' for 'stranger'
+      const extraLetter = searchProject('straanger', mockProject, {
+        scope: 'global',
+        fuzzy: true,
+      });
+      expect(extraLetter.length).toBeGreaterThan(0);
+      expect(extraLetter[0].matchedWord?.toLowerCase()).toBe('stranger');
+
+      // Transposed letters: 'stranegr' for 'stranger'
+      const transposed = searchProject('stranegr', mockProject, {
+        scope: 'global',
+        fuzzy: true,
+      });
+      expect(transposed.length).toBeGreaterThan(0);
+      expect(transposed[0].matchedWord?.toLowerCase()).toBe('stranger');
+
+      // Multi-word with typo: 'mysterious stranegr'
+      const multiWord = searchProject('mysterious stranegr', mockProject, {
+        scope: 'global',
+        fuzzy: true,
+      });
+      expect(multiWord).toHaveLength(1);
+      expect(multiWord[0].sceneId).toBe('scene-1');
+      expect(multiWord[0].matchedWord?.toLowerCase()).toBe('mysterious stranger');
+    });
+
+    it('does not match typos when fuzzy search is inactive (exact match mode)', () => {
+      const results = searchProject('stranegr', mockProject, {
+        scope: 'global',
+        fuzzy: false,
+      });
+      expect(results).toHaveLength(0);
+    });
   });
 });

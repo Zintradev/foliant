@@ -125,4 +125,42 @@ describe('GlobalSearchModal', () => {
     expect(screen.getByText('Meeting at Dusk')).toBeDefined();
     expect(screen.queryByText('The Escape')).toBeNull();
   });
+
+  it('supports fuzzy search toggle to forgive typos', () => {
+    const handleSelectResult = vi.fn();
+    const handleClose = vi.fn();
+
+    render(
+      <GlobalSearchModal
+        isOpen={true}
+        onClose={handleClose}
+        project={mockProject}
+        activeSceneId="scene-1"
+        onSelectResult={handleSelectResult}
+      />
+    );
+
+    const searchInput = screen.getByPlaceholderText(/Search across project/i);
+    // Type query with typo: 'silvr' instead of 'silver'
+    fireEvent.change(searchInput, { target: { value: 'silvr' } });
+
+    // With fuzzy OFF, nothing is shown
+    expect(screen.queryByText('Meeting at Dusk')).toBeNull();
+    expect(screen.getByText(/No matching text found/i)).toBeDefined();
+
+    // Toggle Fuzzy ON
+    const fuzzyToggle = screen.getByRole('switch');
+    expect(fuzzyToggle.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(fuzzyToggle);
+    expect(fuzzyToggle.getAttribute('aria-checked')).toBe('true');
+
+    // Both matching scenes now appear
+    expect(screen.getByText('Meeting at Dusk')).toBeDefined();
+    expect(screen.getByText('The Escape')).toBeDefined();
+
+    // Clicking a result selects it with resolved word
+    fireEvent.click(screen.getByText('Meeting at Dusk'));
+    expect(handleSelectResult).toHaveBeenCalledWith('scene-1', 'silver');
+    expect(handleClose).toHaveBeenCalled();
+  });
 });

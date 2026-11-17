@@ -109,4 +109,37 @@ describe('SearchView Component', () => {
     expect(screen.getByText('Meeting at Dusk')).toBeDefined();
     expect(screen.queryByText('The Escape')).toBeNull();
   });
+
+  it('toggles fuzzy search to handle typos in query', () => {
+    const handleSelectResult = vi.fn();
+
+    render(
+      <SearchView
+        project={mockProject}
+        activeSceneId="scene-1"
+        onSelectResult={handleSelectResult}
+      />
+    );
+
+    const input = screen.getByPlaceholderText(/Search project/i);
+    // Type query with typo: 'daggr' instead of 'dagger'
+    fireEvent.change(input, { target: { value: 'daggr' } });
+
+    // With fuzzy OFF by default, no matches are found
+    expect(screen.queryByText('Meeting at Dusk')).toBeNull();
+    expect(screen.getByText(/No matching text found/i)).toBeDefined();
+
+    // Toggle Fuzzy ON
+    const fuzzyToggle = screen.getByRole('switch');
+    expect(fuzzyToggle.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(fuzzyToggle);
+    expect(fuzzyToggle.getAttribute('aria-checked')).toBe('true');
+
+    // With fuzzy ON, the match is found
+    expect(screen.getByText('Meeting at Dusk')).toBeDefined();
+
+    // Clicking the result triggers onSelectResult with the matched word 'dagger'
+    fireEvent.click(screen.getByText('Meeting at Dusk'));
+    expect(handleSelectResult).toHaveBeenCalledWith('scene-1', 'dagger');
+  });
 });

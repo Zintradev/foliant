@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, X, Feather, CornerDownLeft, FileText, Layers } from 'lucide-react';
+import { Search, X, Feather, CornerDownLeft, FileText, Layers, SpellCheck2 } from 'lucide-react';
 import { FoliantProject } from '../../types/project';
 import { useGlobalSearch, SearchScope, SearchResult } from '../../hooks/useGlobalSearch';
 import { useTranslation } from '../../i18n/translations';
@@ -25,13 +25,14 @@ export default function GlobalSearchModal({
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [scope, setScope] = useState<SearchScope>('global');
+  const [isFuzzy, setIsFuzzy] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const resultsContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Compute search results via the custom search hook
-  const results = useGlobalSearch(query, project, scope, activeSceneId);
+  const results = useGlobalSearch(query, project, scope, activeSceneId, isFuzzy);
 
   // Auto-focus input and reset selection when modal opens
   useEffect(() => {
@@ -48,7 +49,7 @@ export default function GlobalSearchModal({
   // Keep selected index within bounds when results change
   useEffect(() => {
     setSelectedIndex(0);
-  }, [results.length, query, scope]);
+  }, [results.length, query, scope, isFuzzy]);
 
   // Scroll active item into view during arrow navigation
   useEffect(() => {
@@ -63,7 +64,7 @@ export default function GlobalSearchModal({
 
   const handleSelect = useCallback(
     (result: SearchResult) => {
-      onSelectResult(result.sceneId, query.trim());
+      onSelectResult(result.sceneId, result.matchedWord || query.trim());
       onClose();
     },
     [onSelectResult, query, onClose]
@@ -125,6 +126,20 @@ export default function GlobalSearchModal({
             className="flex-1 bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
           />
 
+          {query && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery('');
+                inputRef.current?.focus();
+              }}
+              title={t('clearSearch')}
+              className="p-1 text-zinc-400 hover:text-zinc-200 rounded-md hover:bg-zinc-800 transition cursor-pointer shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+
           {/* Scope Selector */}
           <div className="flex items-center gap-1.5 shrink-0">
             <Layers className="w-3.5 h-3.5 text-zinc-500" />
@@ -140,11 +155,27 @@ export default function GlobalSearchModal({
             </select>
           </div>
 
+          {/* Fuzzy Search Toggle */}
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isFuzzy}
+            onClick={() => setIsFuzzy((prev) => !prev)}
+            title={t('fuzzySearchTooltip')}
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition cursor-pointer border shrink-0 ${isFuzzy
+                ? 'bg-emerald-950/70 border-emerald-500/60 text-emerald-300 shadow-xs'
+                : 'bg-zinc-800 border-zinc-700/80 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-750'
+              }`}
+          >
+            <SpellCheck2 className="w-3.5 h-3.5" />
+          </button>
+
           {/* Close Button */}
           <button
+            type="button"
             onClick={onClose}
             title={t('escDismiss')}
-            className="p-1 hover:bg-zinc-800 rounded-md text-zinc-400 hover:text-zinc-200 transition"
+            className="p-1 hover:bg-zinc-800 rounded-md text-zinc-400 hover:text-zinc-200 transition cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -205,11 +236,10 @@ export default function GlobalSearchModal({
                 data-result-index={idx}
                 onClick={() => handleSelect(result)}
                 onMouseEnter={() => setSelectedIndex(idx)}
-                className={`w-full text-left p-3 rounded-lg transition-colors flex flex-col gap-1 cursor-pointer select-none ${
-                  isSelected
+                className={`w-full text-left p-3 rounded-lg transition-colors flex flex-col gap-1 cursor-pointer select-none ${isSelected
                     ? 'bg-zinc-800 border-l-2 border-emerald-400 shadow-sm'
                     : 'hover:bg-zinc-800/50 border-l-2 border-transparent'
-                }`}
+                  }`}
               >
                 {/* Scene Name & Indicator */}
                 <div className="flex items-center justify-between gap-2">
@@ -224,9 +254,9 @@ export default function GlobalSearchModal({
                   )}
                 </div>
 
-                {/* Snippet with exact highlighted match */}
+                {/* Snippet with highlighted match */}
                 <p className="text-xs text-zinc-400 font-serif leading-relaxed line-clamp-2 mt-0.5">
-                  {renderHighlightedSnippet(result.snippet, query)}
+                  {renderHighlightedSnippet(result.snippet, result.matchedWord || query)}
                 </p>
               </button>
             );
