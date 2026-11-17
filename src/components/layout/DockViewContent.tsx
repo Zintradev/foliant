@@ -109,6 +109,7 @@ export const DockViewContent = memo(function DockViewContent({
         <OutlineView
           chapters={project.chapters}
           activeChapterId={activeChapterId}
+          projectId={project.id}
           onSelectChapter={setActiveChapterId}
           onAddChapter={handleAddChapter}
           onDeleteChapter={handleDeleteChapter}

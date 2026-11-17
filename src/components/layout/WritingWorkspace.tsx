@@ -32,6 +32,7 @@ import EditorToolbar from '../editor/FoliantEditor/EditorToolbar';
 import { EditorWorkspaceHeader } from './EditorWorkspaceHeader';
 import { EditorStatusBar } from './EditorStatusBar';
 import { BottomDockPanel } from './BottomDockPanel';
+import { useSceneScrollPersistence } from '../../hooks/useSceneScrollPersistence';
 
 const WordSymbolModal = lazy(() => import('../editor/WordSymbolModal'));
 
@@ -97,6 +98,21 @@ export const WritingWorkspace = memo(function WritingWorkspace({
     appSettings.preferences?.editorFontFamily || 'serif'
   );
   const [isSymbolsModalOpen, setIsSymbolsModalOpen] = useState(false);
+
+  const { scrollContainerRef, handleScroll, restoreScroll } = useSceneScrollPersistence({
+    chapterId: activeChapterId,
+    sceneScrollMode: appSettings.preferences?.sceneScrollMode ?? 'remember',
+  });
+
+  const handleEditorReady = useCallback(
+    (editor: Editor | null) => {
+      setActiveEditor(editor);
+      if (editor) {
+        restoreScroll();
+      }
+    },
+    [restoreScroll]
+  );
 
   useEffect(() => {
     if (appSettings.preferences?.editorFontFamily) {
@@ -270,6 +286,8 @@ export const WritingWorkspace = memo(function WritingWorkspace({
           </div>
         ) : (
           <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
             className="flex-1 overflow-y-auto px-8 py-10 flex justify-center items-start min-h-0"
             style={{ backgroundColor: containerBg }}
           >
@@ -296,7 +314,7 @@ export const WritingWorkspace = memo(function WritingWorkspace({
                 autoSaveInterval={appSettings.preferences?.autoSaveInterval}
                 hideToolbar={true}
                 externalToolbar={true}
-                onEditorReady={setActiveEditor}
+                onEditorReady={handleEditorReady}
                 title={activeChapter?.title}
                 onTitleChange={(newTitle) => onUpdateChapter?.(activeChapterId, { title: newTitle })}
               />

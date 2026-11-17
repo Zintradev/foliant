@@ -6,6 +6,7 @@ export type LayoutMode = 'details' | 'main' | 'split' | '1col' | '2col';
 export interface OutlineViewProps {
   chapters: TextNode[];
   activeChapterId: string;
+  projectId?: string;
   onSelectChapter: (id: string) => void;
   onAddChapter: (type?: 'folder' | 'scene', parentId?: string | null) => void;
   onAddFolder?: (parentId?: string | null) => void;

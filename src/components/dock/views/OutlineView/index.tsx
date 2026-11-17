@@ -185,6 +185,7 @@ const OutlineSplitView = memo(function OutlineSplitView({
 export function OutlineViewComponent({
   chapters,
   activeChapterId,
+  projectId,
   onSelectChapter,
   onAddChapter,
   onDeleteChapter,
@@ -224,7 +225,7 @@ export function OutlineViewComponent({
     handleToggleExpandAll,
     handleAddSceneToParent,
     handleAddFolderToParent,
-  } = useOutlineFolders({ chapters, activeChapterId, onAddChapter, onAddFolder });
+  } = useOutlineFolders({ chapters, activeChapterId, onAddChapter, onAddFolder, projectId });
 
   const closeContextMenu = useCallback(() => setContextMenu(null), []);
 

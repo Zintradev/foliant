@@ -239,7 +239,7 @@ describe('SettingsModal Component', () => {
     );
   });
 
-  it('navigates to Editor tab and toggles first-line indentation', () => {
+  it('toggles first-line indentation in General section', () => {
     render(
       <SettingsModal
         isOpen={true}
@@ -249,7 +249,6 @@ describe('SettingsModal Component', () => {
       />
     );
 
-    fireEvent.click(screen.getByText(dict.en.categoryAppearanceEditor));
     expect(screen.getByText(dict.en.automaticIndent)).toBeInTheDocument();
 
     const checkbox = screen.getByRole('checkbox', { name: new RegExp(dict.en.automaticIndent, 'i') });
@@ -276,7 +275,6 @@ describe('SettingsModal Component', () => {
       />
     );
 
-    fireEvent.click(screen.getByText(dict.en.categoryAppearanceEditor));
     const select = screen.getByLabelText(dict.en.indentSize) as HTMLSelectElement;
     const slider = screen.getByLabelText(`${dict.en.indentSize} Slider`) as HTMLInputElement;
 
@@ -322,7 +320,6 @@ describe('SettingsModal Component', () => {
       />
     );
 
-    fireEvent.click(screen.getByText(dict.en.categoryAppearanceEditor));
     expect(screen.queryByLabelText(dict.en.indentSize)).not.toBeInTheDocument();
   });
 
@@ -375,8 +372,8 @@ describe('SettingsModal Component', () => {
     );
 
     // Toggle preserve scene width
-    const checkboxes = screen.getAllByRole('checkbox');
-    fireEvent.click(checkboxes[0]);
+    const widthCheckbox = screen.getByRole('checkbox', { name: new RegExp(dict.en.preserveWidth, 'i') });
+    fireEvent.click(widthCheckbox);
     expect(mockOnUpdateSettings).toHaveBeenCalledWith(
       expect.objectContaining({
         preferences: expect.objectContaining({ preserveManualSceneWidth: true }),
@@ -384,7 +381,8 @@ describe('SettingsModal Component', () => {
     );
 
     // Toggle preserve track height
-    fireEvent.click(checkboxes[1]);
+    const heightCheckbox = screen.getByRole('checkbox', { name: new RegExp(dict.en.preserveHeight, 'i') });
+    fireEvent.click(heightCheckbox);
     expect(mockOnUpdateSettings).toHaveBeenCalledWith(
       expect.objectContaining({
         preferences: expect.objectContaining({ preserveManualPlotHeight: true }),
@@ -1007,5 +1005,41 @@ describe('SettingsModal Component', () => {
 
     const darkDot = container.querySelector('.bg-\\[\\#09090b\\]');
     expect(darkDot).toBeInTheDocument();
+  });
+
+  it('renders scene scroll position toggle options and updates preferences when clicked', () => {
+    render(
+      <SettingsModal
+        isOpen={true}
+        onClose={mockOnClose}
+        settings={mockSettings}
+        onUpdateSettings={mockOnUpdateSettings}
+      />
+    );
+
+    expect(screen.getByText(dict.en.sceneScrollMode)).toBeInTheDocument();
+
+    const bottomOptionButton = screen.getByText(dict.en.sceneScrollBottom).closest('button')!;
+    expect(bottomOptionButton).toBeInTheDocument();
+    fireEvent.click(bottomOptionButton);
+
+    expect(mockOnUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({
+          sceneScrollMode: 'bottom',
+        }),
+      })
+    );
+
+    const rememberOptionButton = screen.getByText(dict.en.sceneScrollRemember).closest('button')!;
+    fireEvent.click(rememberOptionButton);
+
+    expect(mockOnUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({
+          sceneScrollMode: 'remember',
+        }),
+      })
+    );
   });
 });

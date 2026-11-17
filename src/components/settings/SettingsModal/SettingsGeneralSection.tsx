@@ -1,6 +1,28 @@
 import React, { useState } from 'react';
-import { Languages, Save, Zap, Clock, Globe, StickyNote, Image as ImageIcon, Check, AlertCircle, RefreshCw, Loader2, ShieldCheck, AlertTriangle } from 'lucide-react';
-import { Language, DeleteConfirmationPreferences, DEFAULT_DELETE_CONFIRMATIONS } from '../../../types/settings';
+import {
+  Languages,
+  Save,
+  Zap,
+  Clock,
+  Globe,
+  StickyNote,
+  Image as ImageIcon,
+  Check,
+  AlertCircle,
+  RefreshCw,
+  Loader2,
+  ShieldCheck,
+  AlertTriangle,
+  PenTool,
+  Sliders,
+  Indent,
+} from 'lucide-react';
+import {
+  Language,
+  DeleteConfirmationPreferences,
+  DEFAULT_DELETE_CONFIRMATIONS,
+  SceneScrollMode,
+} from '../../../types/settings';
 import { PreferenceChangeHandler } from './types';
 import { GbFlag, EsFlag } from '../../common/FlagIcons';
 import { checkForAppUpdates, UpdateStatus } from '../../../utils/updater';
@@ -18,6 +40,10 @@ interface SettingsGeneralSectionProps {
   preserveManualPlotHeight: boolean;
   autoUpdateCheck?: boolean;
   confirmDelete?: DeleteConfirmationPreferences;
+  editorIndentFirstLine?: boolean;
+  editorIndentSize?: number;
+  focusModeShowFormattingToolbar?: boolean;
+  sceneScrollMode?: SceneScrollMode;
   onPreferenceChange: PreferenceChangeHandler;
   t: (key: string, fallback?: string) => string;
 }
@@ -34,6 +60,10 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
   preserveManualPlotHeight,
   autoUpdateCheck = false,
   confirmDelete = DEFAULT_DELETE_CONFIRMATIONS,
+  editorIndentFirstLine = true,
+  editorIndentSize = 1.5,
+  focusModeShowFormattingToolbar = false,
+  sceneScrollMode = 'remember',
   onPreferenceChange,
   t,
 }: SettingsGeneralSectionProps) {
@@ -55,6 +85,7 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
       },
     });
   };
+
   const getSelectToneClass = (interval: number) => {
     switch (interval) {
       case 5:
@@ -69,512 +100,750 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
         return 'border-zinc-750 text-zinc-200 bg-zinc-950 focus:ring-emerald-500';
     }
   };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-100">
       <div>
         <h3 className="text-base font-semibold text-zinc-100">{t('categoryGeneral')}</h3>
       </div>
 
-      {/* Language Picker Card */}
-      <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3">
-        <div>
-          <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
-            <Languages className="w-3.5 h-3.5 text-zinc-400" />
-            <span>{t('language')}</span>
-          </label>
+      {/* ------------------------------------------------------------------- */}
+      {/* Category 1: Workspace & System                                      */}
+      {/* ------------------------------------------------------------------- */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 pt-1 pb-0.5">
+          <Languages className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider font-mono">
+            {t('settingsGroupWorkspace', 'Workspace & System')}
+          </span>
+          <div className="h-px flex-1 bg-zinc-800/80" />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 pt-1">
-          <button
-            onClick={() => onPreferenceChange('language', 'en')}
-            className={`flex items-center justify-between p-3 rounded-md border text-xs font-medium transition cursor-pointer ${
-              currentLang === 'en'
-                ? 'border-emerald-500 bg-emerald-950/20 text-zinc-100 ring-1 ring-emerald-500/40'
-                : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-850 text-zinc-300'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <GbFlag className="w-5 h-3.5" />
-              <div className="text-left font-semibold">{t('english')}</div>
-            </div>
-            {currentLang === 'en' && <Check className="w-4 h-4 text-emerald-400" />}
-          </button>
+        {/* Language Picker Card */}
+        <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3">
+          <div>
+            <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
+              <Languages className="w-3.5 h-3.5 text-zinc-400" />
+              <span>{t('language')}</span>
+            </label>
+          </div>
 
-          <button
-            onClick={() => onPreferenceChange('language', 'es')}
-            className={`flex items-center justify-between p-3 rounded-md border text-xs font-medium transition cursor-pointer ${
-              currentLang === 'es'
-                ? 'border-emerald-500 bg-emerald-950/20 text-zinc-100 ring-1 ring-emerald-500/40'
-                : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-850 text-zinc-300'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <EsFlag className="w-5 h-3.5" />
-              <div className="text-left font-semibold">{t('spanish')}</div>
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <button
+              onClick={() => onPreferenceChange('language', 'en')}
+              className={`flex items-center justify-between p-3 rounded-md border text-xs font-medium transition cursor-pointer ${
+                currentLang === 'en'
+                  ? 'border-emerald-500 bg-emerald-950/20 text-zinc-100 ring-1 ring-emerald-500/40'
+                  : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-850 text-zinc-300'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <GbFlag className="w-5 h-3.5" />
+                <div className="text-left font-semibold">{t('english')}</div>
+              </div>
+              {currentLang === 'en' && <Check className="w-4 h-4 text-emerald-400" />}
+            </button>
+
+            <button
+              onClick={() => onPreferenceChange('language', 'es')}
+              className={`flex items-center justify-between p-3 rounded-md border text-xs font-medium transition cursor-pointer ${
+                currentLang === 'es'
+                  ? 'border-emerald-500 bg-emerald-950/20 text-zinc-100 ring-1 ring-emerald-500/40'
+                  : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-850 text-zinc-300'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <EsFlag className="w-5 h-3.5" />
+                <div className="text-left font-semibold">{t('spanish')}</div>
+              </div>
+              {currentLang === 'es' && <Check className="w-4 h-4 text-emerald-400" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Save Mode Selector Card */}
+        <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3">
+          <div>
+            <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
+              <Save className="w-3.5 h-3.5 text-zinc-400" />
+              <span>{t('saveMode')}</span>
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <button
+              type="button"
+              onClick={() => onPreferenceChange('saveMode', 'auto')}
+              className={`flex flex-col justify-between p-3 rounded-md border text-xs font-medium transition cursor-pointer text-left space-y-2 ${
+                saveMode === 'auto'
+                  ? 'border-emerald-500 bg-emerald-950/20 text-zinc-100 ring-1 ring-emerald-500/40'
+                  : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-850 text-zinc-300'
+              }`}
+            >
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2 font-semibold">
+                  <Zap className="w-4 h-4 text-emerald-400" />
+                  <span>{t('saveModeAuto')}</span>
+                </div>
+                {saveMode === 'auto' && <Check className="w-4 h-4 text-emerald-400 shrink-0" />}
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed font-normal">
+                {t('saveModeAutoDesc')}
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onPreferenceChange('saveMode', 'manual')}
+              className={`flex flex-col justify-between p-3 rounded-md border text-xs font-medium transition cursor-pointer text-left space-y-2 ${
+                saveMode === 'manual'
+                  ? 'border-emerald-500 bg-emerald-950/20 text-zinc-100 ring-1 ring-emerald-500/40'
+                  : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-850 text-zinc-300'
+              }`}
+            >
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2 font-semibold">
+                  <Save className="w-4 h-4 text-blue-400" />
+                  <span>{t('saveModeManual')}</span>
+                </div>
+                {saveMode === 'manual' && <Check className="w-4 h-4 text-emerald-400 shrink-0" />}
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed font-normal">
+                {t('saveModeManualDesc')}
+              </p>
+            </button>
+          </div>
+
+          {saveMode === 'auto' && (
+            <div className="pt-3 mt-1 border-t border-zinc-800/80 space-y-3 animate-in fade-in duration-150">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="space-y-0.5">
+                  <label htmlFor="autosave-interval-select" className="text-xs font-medium text-zinc-200 flex items-center gap-1.5">
+                    <Clock className="w-3 h-3 text-emerald-400" />
+                    <span>{t('autoSaveInterval')}</span>
+                  </label>
+                  <p className="text-[11px] text-zinc-400">
+                    {t('autoSaveIntervalDesc')}
+                  </p>
+                </div>
+                <div className="shrink-0">
+                  <select
+                    id="autosave-interval-select"
+                    aria-label={t('autoSaveInterval')}
+                    value={autoSaveInterval}
+                    onChange={(e) => onPreferenceChange('autoSaveInterval', Number(e.target.value))}
+                    className={`px-3 py-1.5 border text-xs rounded-md focus:outline-none focus:ring-1 transition cursor-pointer font-sans ${getSelectToneClass(autoSaveInterval)}`}
+                  >
+                    <option value={5} className="bg-zinc-900 text-red-400 font-medium">
+                      {t('interval5s')}
+                    </option>
+                    <option value={15} className="bg-zinc-900 text-orange-300">
+                      {t('interval15s')}
+                    </option>
+                    <option value={30} className="bg-zinc-900 text-amber-200">
+                      {t('interval30s')}
+                    </option>
+                    <option value={60} className="bg-zinc-900 text-zinc-300">
+                      {t('interval1m')}
+                    </option>
+                    <option value={300} className="bg-zinc-900 text-emerald-400 font-medium">
+                      {t('interval5m')}
+                    </option>
+                    <option value={600} className="bg-zinc-900 text-zinc-300">
+                      {t('interval10m')}
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Informative notice explaining ultra-short frequency drawbacks */}
+              <div className={`p-2.5 rounded-md border text-xs flex items-start gap-2.5 transition-colors ${
+                autoSaveInterval <= 30
+                  ? 'bg-red-950/20 border-red-900/40 text-red-200/90'
+                  : 'bg-zinc-900/60 border-zinc-800/80 text-zinc-400'
+              }`}>
+                <AlertCircle className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${
+                  autoSaveInterval <= 30 ? 'text-red-400' : 'text-zinc-500'
+                }`} />
+                <p className="text-[11px] leading-relaxed">
+                  {t('autoSaveShortNotice')}
+                </p>
+              </div>
             </div>
-            {currentLang === 'es' && <Check className="w-4 h-4 text-emerald-400" />}
-          </button>
+          )}
         </div>
       </div>
 
-      {/* Save Mode Selector Card */}
-      <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3">
-        <div>
-          <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
-            <Save className="w-3.5 h-3.5 text-zinc-400" />
-            <span>{t('saveMode')}</span>
-          </label>
+      {/* ------------------------------------------------------------------- */}
+      {/* Category 2: Writing & Editor Behavior                               */}
+      {/* ------------------------------------------------------------------- */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 pt-2 pb-0.5">
+          <PenTool className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider font-mono">
+            {t('settingsGroupWriting', 'Writing & Editor Behavior')}
+          </span>
+          <div className="h-px flex-1 bg-zinc-800/80" />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-          <button
-            type="button"
-            onClick={() => onPreferenceChange('saveMode', 'auto')}
-            className={`flex flex-col justify-between p-3 rounded-md border text-xs font-medium transition cursor-pointer text-left space-y-2 ${
-              saveMode === 'auto'
-                ? 'border-emerald-500 bg-emerald-950/20 text-zinc-100 ring-1 ring-emerald-500/40'
-                : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-850 text-zinc-300'
-            }`}
-          >
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-2 font-semibold">
-                <Zap className="w-4 h-4 text-emerald-400" />
-                <span>{t('saveModeAuto')}</span>
-              </div>
-              {saveMode === 'auto' && <Check className="w-4 h-4 text-emerald-400 shrink-0" />}
+        {/* First-Line Indent Card */}
+        <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <label htmlFor="setting-editor-indent" className="text-xs font-semibold text-zinc-200 cursor-pointer">
+                {t('automaticIndent', 'Automatic Indentation')}
+              </label>
+              <p className="text-[11px] text-zinc-400 mt-0.5">
+                {t('automaticIndentDesc', 'Automatically indents the first line of each novel paragraph.')}
+              </p>
             </div>
-            <p className="text-[11px] text-zinc-400 leading-relaxed font-normal">
-              {t('saveModeAutoDesc')}
-            </p>
-          </button>
+            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+              <input
+                type="checkbox"
+                id="setting-editor-indent"
+                aria-label={t('automaticIndent', 'Automatic First-Line Indent')}
+                checked={editorIndentFirstLine}
+                onChange={(e) => onPreferenceChange('editorIndentFirstLine', e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
+            </label>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => onPreferenceChange('saveMode', 'manual')}
-            className={`flex flex-col justify-between p-3 rounded-md border text-xs font-medium transition cursor-pointer text-left space-y-2 ${
-              saveMode === 'manual'
-                ? 'border-emerald-500 bg-emerald-950/20 text-zinc-100 ring-1 ring-emerald-500/40'
-                : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-850 text-zinc-300'
-            }`}
-          >
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-2 font-semibold">
-                <Save className="w-4 h-4 text-blue-400" />
-                <span>{t('saveModeManual')}</span>
+          {editorIndentFirstLine && (
+            <div className="pt-3 border-t border-zinc-800/80 space-y-3 animate-in fade-in duration-150">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="space-y-0.5">
+                  <label
+                    htmlFor="setting-editor-indent-size"
+                    className="text-xs font-medium text-zinc-200 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Indent className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>{t('indentSize', 'Indentation Width')}</span>
+                  </label>
+                  <p className="text-[11px] text-zinc-400">
+                    {t('indentSizeDesc', 'Select or adjust the indentation width for the first line of paragraphs.')}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <input
+                    type="range"
+                    id="setting-editor-indent-slider"
+                    aria-label={`${t('indentSize', 'Indentation Width')} Slider`}
+                    min="0.5"
+                    max="3"
+                    step="0.25"
+                    value={editorIndentSize}
+                    onChange={(e) => onPreferenceChange('editorIndentSize', Number(e.target.value))}
+                    className="w-24 sm:w-28 h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                  />
+                  <select
+                    id="setting-editor-indent-size"
+                    aria-label={t('indentSize', 'Indentation Width')}
+                    value={editorIndentSize}
+                    onChange={(e) => onPreferenceChange('editorIndentSize', Number(e.target.value))}
+                    className="px-2.5 py-1.5 border border-zinc-750 text-zinc-200 bg-zinc-950 text-xs rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 transition cursor-pointer font-sans"
+                  >
+                    <option value={0.5} className="bg-zinc-900 text-zinc-300">0.5 rem (8px - {t('indentMinimal', 'Minimal')})</option>
+                    <option value={0.75} className="bg-zinc-900 text-zinc-300">0.75 rem (12px)</option>
+                    <option value={1} className="bg-zinc-900 text-zinc-300">1.0 rem (16px - {t('indentCompact', 'Compact')})</option>
+                    <option value={1.25} className="bg-zinc-900 text-zinc-300">1.25 rem (20px)</option>
+                    <option value={1.5} className="bg-zinc-900 text-emerald-400 font-medium">1.5 rem (24px - {t('indentStandard', 'Standard')})</option>
+                    <option value={1.75} className="bg-zinc-900 text-zinc-300">1.75 rem (28px)</option>
+                    <option value={2} className="bg-zinc-900 text-zinc-300">2.0 rem (32px - {t('indentWide', 'Wide')})</option>
+                    <option value={2.25} className="bg-zinc-900 text-zinc-300">2.25 rem (36px)</option>
+                    <option value={2.5} className="bg-zinc-900 text-zinc-300">2.5 rem (40px - {t('indentGenerous', 'Generous')})</option>
+                    <option value={2.75} className="bg-zinc-900 text-zinc-300">2.75 rem (44px)</option>
+                    <option value={3} className="bg-zinc-900 text-zinc-300">3.0 rem (48px - {t('indentDeep', 'Deep')})</option>
+                  </select>
+                </div>
               </div>
-              {saveMode === 'manual' && <Check className="w-4 h-4 text-emerald-400 shrink-0" />}
-            </div>
-            <p className="text-[11px] text-zinc-400 leading-relaxed font-normal">
-              {t('saveModeManualDesc')}
-            </p>
-          </button>
-        </div>
 
-        {saveMode === 'auto' && (
-          <div className="pt-3 mt-1 border-t border-zinc-800/80 space-y-3 animate-in fade-in duration-150">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="space-y-0.5">
-                <label htmlFor="autosave-interval-select" className="text-xs font-medium text-zinc-200 flex items-center gap-1.5">
-                  <Clock className="w-3 h-3 text-emerald-400" />
-                  <span>{t('autoSaveInterval')}</span>
-                </label>
-                <p className="text-[11px] text-zinc-400">
-                  {t('autoSaveIntervalDesc')}
+              {/* Live Indent Preview */}
+              <div className="p-3 rounded-md bg-zinc-950/80 border border-zinc-800/80 text-xs text-zinc-300 font-serif leading-relaxed select-none">
+                <p
+                  style={{
+                    textIndent: `${editorIndentSize}rem`,
+                    transition: 'text-indent 0.15s ease',
+                  }}
+                >
+                  {t(
+                    'indentPreviewSample',
+                    'Érase una vez en un rincón apartado del mundo donde las historias cobraban vida...'
+                  )}
                 </p>
               </div>
-              <div className="shrink-0">
-                <select
-                  id="autosave-interval-select"
-                  aria-label={t('autoSaveInterval')}
-                  value={autoSaveInterval}
-                  onChange={(e) => onPreferenceChange('autoSaveInterval', Number(e.target.value))}
-                  className={`px-3 py-1.5 border text-xs rounded-md focus:outline-none focus:ring-1 transition cursor-pointer font-sans ${getSelectToneClass(autoSaveInterval)}`}
-                >
-                  <option value={5} className="bg-zinc-900 text-red-400 font-medium">
-                    {t('interval5s')}
-                  </option>
-                  <option value={15} className="bg-zinc-900 text-orange-300">
-                    {t('interval15s')}
-                  </option>
-                  <option value={30} className="bg-zinc-900 text-amber-200">
-                    {t('interval30s')}
-                  </option>
-                  <option value={60} className="bg-zinc-900 text-zinc-300">
-                    {t('interval1m')}
-                  </option>
-                  <option value={300} className="bg-zinc-900 text-emerald-400 font-medium">
-                    {t('interval5m')}
-                  </option>
-                  <option value={600} className="bg-zinc-900 text-zinc-300">
-                    {t('interval10m')}
-                  </option>
-                </select>
+            </div>
+          )}
+        </div>
+
+        {/* Scene Scroll Position Card */}
+        <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3">
+          <div>
+            <label className="text-xs font-semibold text-zinc-200">
+              {t('sceneScrollMode', 'Scene Scroll Position')}
+            </label>
+            <p className="text-[11px] text-zinc-400 mt-0.5">
+              {t(
+                'sceneScrollModeDesc',
+                'Choose whether to remember where you left off or always open scenes scrolled to the bottom.'
+              )}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <button
+              type="button"
+              onClick={() => onPreferenceChange('sceneScrollMode', 'remember')}
+              className={`p-3 rounded-md border text-left transition cursor-pointer flex items-center justify-between ${
+                sceneScrollMode === 'remember'
+                  ? 'border-emerald-500 bg-emerald-950/20 ring-1 ring-emerald-500/40 text-zinc-100'
+                  : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-850 text-zinc-300'
+              }`}
+            >
+              <div>
+                <div className="text-xs font-semibold">
+                  {t('sceneScrollRemember', 'Remember last scroll position')}
+                </div>
+                <p className="text-[10px] text-zinc-400 mt-0.5">
+                  {t('sceneScrollRememberDesc', 'Resumes reading and writing exactly where you scrolled.')}
+                </p>
+              </div>
+              {sceneScrollMode === 'remember' && (
+                <Check className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onPreferenceChange('sceneScrollMode', 'bottom')}
+              className={`p-3 rounded-md border text-left transition cursor-pointer flex items-center justify-between ${
+                sceneScrollMode === 'bottom'
+                  ? 'border-emerald-500 bg-emerald-950/20 ring-1 ring-emerald-500/40 text-zinc-100'
+                  : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-850 text-zinc-300'
+              }`}
+            >
+              <div>
+                <div className="text-xs font-semibold">
+                  {t('sceneScrollBottom', 'Always load scenes scrolled to the bottom')}
+                </div>
+                <p className="text-[10px] text-zinc-400 mt-0.5">
+                  {t('sceneScrollBottomDesc', 'Jumps straight to the end of the text when opening scenes.')}
+                </p>
+              </div>
+              {sceneScrollMode === 'bottom' && (
+                <Check className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Focus Mode Preferences */}
+        <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3">
+          <div>
+            <label className="text-xs font-semibold text-zinc-200">
+              {t('focusModeSettings', 'Focus Mode')}
+            </label>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs text-zinc-200">
+                {t('focusModeShowToolbar', 'Keep formatting toolbar visible')}
+              </div>
+              <p className="text-[11px] text-zinc-400 mt-0.5">
+                {t(
+                  'focusModeShowToolbarDesc',
+                  'Pins formatting tools during focus mode'
+                )}
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+              <input
+                type="checkbox"
+                checked={focusModeShowFormattingToolbar}
+                onChange={(e) => onPreferenceChange('focusModeShowFormattingToolbar', e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* ------------------------------------------------------------------- */}
+      {/* Category 3: Interactivity & Docks                                   */}
+      {/* ------------------------------------------------------------------- */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 pt-2 pb-0.5">
+          <Sliders className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider font-mono">
+            {t('settingsGroupInteractivity', 'Interactivity & Docks')}
+          </span>
+          <div className="h-px flex-1 bg-zinc-800/80" />
+        </div>
+
+        {/* Drag & Drop Behaviors Section - 4 distinct settings grouped together */}
+        <div className="rounded-lg bg-zinc-900/60 border border-zinc-800 divide-y divide-zinc-800/80 overflow-hidden">
+          {/* Timeline Drop Mode */}
+          <div className="p-3 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
+                <Clock className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <span>{t('timelineDropMode')}</span>
+              </label>
+              <div className="text-[11px] text-zinc-500 mt-0.5 pl-5.5">
+                {t('timelineDropModeDesc')}
               </div>
             </div>
 
-            {/* Informative notice explaining ultra-short frequency drawbacks */}
-            <div className={`p-2.5 rounded-md border text-xs flex items-start gap-2.5 transition-colors ${
-              autoSaveInterval <= 30
-                ? 'bg-red-950/20 border-red-900/40 text-red-200/90'
-                : 'bg-zinc-900/60 border-zinc-800/80 text-zinc-400'
-            }`}>
-              <AlertCircle className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${
-                autoSaveInterval <= 30 ? 'text-red-400' : 'text-zinc-500'
-              }`} />
-              <p className="text-[11px] leading-relaxed">
-                {t('autoSaveShortNotice')}
+            <div className="flex items-center p-0.5 bg-zinc-950 border border-zinc-800 rounded-md shrink-0">
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('timelineDropMode', 'shift')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  timelineDropMode === 'shift'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('shiftMode')}</span>
+                {timelineDropMode === 'shift' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('timelineDropMode', 'swap')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  timelineDropMode === 'swap'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('swapMode')}</span>
+                {timelineDropMode === 'swap' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
+            </div>
+          </div>
+
+          {/* World Items Drop Mode */}
+          <div className="p-3 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
+                <Globe className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <span>{t('worldDropMode')}</span>
+              </label>
+              <div className="text-[11px] text-zinc-500 mt-0.5 pl-5.5">
+                {t('worldDropModeDesc')}
+              </div>
+            </div>
+
+            <div className="flex items-center p-0.5 bg-zinc-950 border border-zinc-800 rounded-md shrink-0">
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('worldDropMode', 'shift')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  worldDropMode === 'shift'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('shiftMode')}</span>
+                {worldDropMode === 'shift' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('worldDropMode', 'swap')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  worldDropMode === 'swap'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('swapMode')}</span>
+                {worldDropMode === 'swap' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Notes Drop Mode */}
+          <div className="p-3 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
+                <StickyNote className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <span>{t('notesDropMode')}</span>
+              </label>
+              <div className="text-[11px] text-zinc-500 mt-0.5 pl-5.5">
+                {t('notesDropModeDesc')}
+              </div>
+            </div>
+
+            <div className="flex items-center p-0.5 bg-zinc-950 border border-zinc-800 rounded-md shrink-0">
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('notesDropMode', 'shift')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  notesDropMode === 'shift'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('shiftMode')}</span>
+                {notesDropMode === 'shift' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('notesDropMode', 'swap')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  notesDropMode === 'swap'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('swapMode')}</span>
+                {notesDropMode === 'swap' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Moodboard / Visuals Drop Mode */}
+          <div className="p-3 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
+                <ImageIcon className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <span>{t('visualsDropMode')}</span>
+              </label>
+              <div className="text-[11px] text-zinc-500 mt-0.5 pl-5.5">
+                {t('visualsDropModeDesc')}
+              </div>
+            </div>
+
+            <div className="flex items-center p-0.5 bg-zinc-950 border border-zinc-800 rounded-md shrink-0">
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('visualsDropMode', 'shift')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  visualsDropMode === 'shift'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('shiftMode')}</span>
+                {visualsDropMode === 'shift' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('visualsDropMode', 'swap')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  visualsDropMode === 'swap'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('swapMode')}</span>
+                {visualsDropMode === 'swap' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Preserve Timeline Dimensions (Width & Height) */}
+        <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3.5">
+          <div>
+            <div className="text-xs font-semibold text-zinc-200">
+              {t('preserveTimelineDimensions', 'Preserve dimensions in Timeline')}
+            </div>
+            <p className="text-[11px] text-zinc-400 mt-0.5">
+              {t('preserveTimelineDimensionsDesc', 'Keep individually resized card widths and track heights intact across zoom levels.')}
+            </p>
+          </div>
+
+          <div className="space-y-2 pt-2 border-t border-zinc-800/80">
+            {/* Width toggle */}
+            <div className="flex items-center justify-between text-xs py-1">
+              <div>
+                <span className="text-zinc-200 font-medium">{t('preserveWidth', 'Width')}</span>
+                <p className="text-[11px] text-zinc-400">{t('preserveWidthDesc', 'Preserve manual scene card width on zoom')}</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+                <input
+                  type="checkbox"
+                  aria-label={t('preserveWidth', 'Width')}
+                  checked={preserveManualSceneWidth}
+                  onChange={(e) => onPreferenceChange('preserveManualSceneWidth', e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
+              </label>
+            </div>
+
+            {/* Height toggle */}
+            <div className="flex items-center justify-between text-xs py-1">
+              <div>
+                <span className="text-zinc-200 font-medium">{t('preserveHeight', 'Height')}</span>
+                <p className="text-[11px] text-zinc-400">{t('preserveHeightDesc', 'Preserve manual storyline track height on zoom')}</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+                <input
+                  type="checkbox"
+                  aria-label={t('preserveHeight', 'Height')}
+                  checked={preserveManualPlotHeight}
+                  onChange={(e) => onPreferenceChange('preserveManualPlotHeight', e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ------------------------------------------------------------------- */}
+      {/* Category 4: Safety & Maintenance                                    */}
+      {/* ------------------------------------------------------------------- */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 pt-2 pb-0.5">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider font-mono">
+            {t('settingsGroupSafety', 'Safety & Maintenance')}
+          </span>
+          <div className="h-px flex-1 bg-zinc-800/80" />
+        </div>
+
+        {/* Delete Confirmation Warnings Section */}
+        <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3.5">
+          <div>
+            <div className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+              <span>{t('confirmDeleteSettingsTitle', 'Delete Confirmation Prompts')}</span>
+            </div>
+            <p className="text-[11px] text-zinc-400 mt-0.5">
+              {t('confirmDeleteSettingsDesc', 'Choose which sections ask for confirmation before deleting items')}
+            </p>
+          </div>
+
+          <div className="space-y-2 pt-2 border-t border-zinc-800/80">
+            {[
+              { key: 'outline', label: t('confirmDeleteOutlineOpt', 'Outline & Manuscript (Scenes & Folders)') },
+              { key: 'characters', label: t('confirmDeleteCharactersOpt', 'Characters (Cast dossiers)') },
+              { key: 'storylines', label: t('confirmDeleteStorylinesOpt', 'Storylines (Plot threads)') },
+              { key: 'worldbuilding', label: t('confirmDeleteWorldOpt', 'Worldbuilding (Lore entries)') },
+              { key: 'notes', label: t('confirmDeleteNotesOpt', 'Context Notes (Blocks & notes)') },
+              { key: 'visuals', label: t('confirmDeleteVisualsOpt', 'Visual References (Moodboard images & folders)') },
+              { key: 'relationships', label: t('confirmDeleteRelationshipsOpt', 'Relationship Graph (Connections & character nodes)') },
+            ].map(({ key, label }) => {
+              const isChecked = confirmDelete[key as keyof DeleteConfirmationPreferences] ?? true;
+              return (
+                <div key={key} className="flex items-center justify-between text-xs py-1">
+                  <span className="text-zinc-300">{label}</span>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => {
+                        onPreferenceChange('confirmDelete', {
+                          ...confirmDelete,
+                          [key]: e.target.checked,
+                        });
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
+                  </label>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* App Updates (Local-First Opt-In) Card - Hidden in Web Browsers */}
+        {isDesktop && (
+          <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
+                  <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{t('autoUpdateCheck')}</span>
+                </label>
+                <p className="text-[11px] text-zinc-400">
+                  {t('autoUpdateCheckDesc')}
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  aria-label={t('autoUpdateCheck')}
+                  checked={autoUpdateCheck}
+                  onChange={(e) => onPreferenceChange('autoUpdateCheck', e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
+              </label>
+            </div>
+
+            {/* Local-first instant startup notice */}
+            <div className="p-3 rounded-md border border-emerald-900/40 bg-emerald-950/20 text-emerald-200/90 text-xs flex items-start gap-2.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <p className="text-[11px] leading-relaxed text-zinc-300">
+                <strong className="text-emerald-300 font-semibold block mb-0.5">
+                  {currentLang === 'es' ? 'Compromiso 100% Local-First:' : '100% Local-First Commitment:'}
+                </strong>
+                {t('autoUpdateNotice')}
               </p>
+            </div>
+
+            <div className="pt-3 border-t border-zinc-800/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="text-[11px] text-zinc-400 min-h-[1.25rem] flex items-center">
+                {updateStatusMessage ? (
+                  <span className={`flex items-center gap-1.5 font-medium ${
+                    updateStatus === 'error'
+                      ? 'text-red-400'
+                      : updateStatus === 'up-to-date'
+                      ? 'text-emerald-400'
+                      : 'text-zinc-300'
+                  }`}>
+                    {updateStatus === 'checking' || updateStatus === 'downloading' || updateStatus === 'restarting' ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0 text-emerald-400" />
+                    ) : updateStatus === 'up-to-date' ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    ) : updateStatus === 'error' ? (
+                      <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                    ) : null}
+                    <span>{updateStatusMessage}</span>
+                  </span>
+                ) : (
+                  <span className="text-zinc-500">{t('updates')}</span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleManualCheckUpdates}
+                disabled={updateStatus === 'checking' || updateStatus === 'downloading' || updateStatus === 'restarting'}
+                className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-md border border-zinc-750 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-850 text-zinc-200 text-xs font-medium transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shrink-0"
+              >
+                {updateStatus === 'checking' || updateStatus === 'downloading' || updateStatus === 'restarting' ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                    <span>
+                      {updateStatus === 'downloading'
+                        ? t('downloadingUpdate')
+                        : updateStatus === 'restarting'
+                        ? t('restartingApp')
+                        : t('checkingForUpdates')}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 text-zinc-400" />
+                    <span>{t('checkForUpdatesNow')}</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         )}
       </div>
-
-      {/* Drag & Drop Behaviors Section - 3 distinct, fine settings grouped together */}
-      <div className="rounded-lg bg-zinc-900/60 border border-zinc-800 divide-y divide-zinc-800/80 overflow-hidden">
-        {/* Timeline Drop Mode */}
-        <div className="p-3 flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-              <span>{t('timelineDropMode')}</span>
-            </label>
-            <div className="text-[11px] text-zinc-500 mt-0.5 pl-5.5">
-              {t('timelineDropModeDesc')}
-            </div>
-          </div>
-
-          <div className="flex items-center p-0.5 bg-zinc-950 border border-zinc-800 rounded-md shrink-0">
-            <button
-              type="button"
-              onClick={() => onPreferenceChange('timelineDropMode', 'shift')}
-              className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
-                timelineDropMode === 'shift'
-                  ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
-                  : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-              }`}
-            >
-              <span>{t('shiftMode')}</span>
-              {timelineDropMode === 'shift' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-            </button>
-            <button
-              type="button"
-              onClick={() => onPreferenceChange('timelineDropMode', 'swap')}
-              className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
-                timelineDropMode === 'swap'
-                  ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
-                  : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-              }`}
-            >
-              <span>{t('swapMode')}</span>
-              {timelineDropMode === 'swap' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-            </button>
-          </div>
-        </div>
-
-        {/* World Items Drop Mode */}
-        <div className="p-3 flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
-              <Globe className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-              <span>{t('worldDropMode')}</span>
-            </label>
-            <div className="text-[11px] text-zinc-500 mt-0.5 pl-5.5">
-              {t('worldDropModeDesc')}
-            </div>
-          </div>
-
-          <div className="flex items-center p-0.5 bg-zinc-950 border border-zinc-800 rounded-md shrink-0">
-            <button
-              type="button"
-              onClick={() => onPreferenceChange('worldDropMode', 'shift')}
-              className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
-                worldDropMode === 'shift'
-                  ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
-                  : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-              }`}
-            >
-              <span>{t('shiftMode')}</span>
-              {worldDropMode === 'shift' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-            </button>
-            <button
-              type="button"
-              onClick={() => onPreferenceChange('worldDropMode', 'swap')}
-              className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
-                worldDropMode === 'swap'
-                  ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
-                  : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-              }`}
-            >
-              <span>{t('swapMode')}</span>
-              {worldDropMode === 'swap' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Notes Drop Mode */}
-        <div className="p-3 flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
-              <StickyNote className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-              <span>{t('notesDropMode')}</span>
-            </label>
-            <div className="text-[11px] text-zinc-500 mt-0.5 pl-5.5">
-              {t('notesDropModeDesc')}
-            </div>
-          </div>
-
-          <div className="flex items-center p-0.5 bg-zinc-950 border border-zinc-800 rounded-md shrink-0">
-            <button
-              type="button"
-              onClick={() => onPreferenceChange('notesDropMode', 'shift')}
-              className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
-                notesDropMode === 'shift'
-                  ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
-                  : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-              }`}
-            >
-              <span>{t('shiftMode')}</span>
-              {notesDropMode === 'shift' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-            </button>
-            <button
-              type="button"
-              onClick={() => onPreferenceChange('notesDropMode', 'swap')}
-              className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
-                notesDropMode === 'swap'
-                  ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
-                  : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-              }`}
-            >
-              <span>{t('swapMode')}</span>
-              {notesDropMode === 'swap' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Moodboard / Visuals Drop Mode */}
-        <div className="p-3 flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
-              <ImageIcon className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-              <span>{t('visualsDropMode')}</span>
-            </label>
-            <div className="text-[11px] text-zinc-500 mt-0.5 pl-5.5">
-              {t('visualsDropModeDesc')}
-            </div>
-          </div>
-
-          <div className="flex items-center p-0.5 bg-zinc-950 border border-zinc-800 rounded-md shrink-0">
-            <button
-              type="button"
-              onClick={() => onPreferenceChange('visualsDropMode', 'shift')}
-              className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
-                visualsDropMode === 'shift'
-                  ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
-                  : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-              }`}
-            >
-              <span>{t('shiftMode')}</span>
-              {visualsDropMode === 'shift' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-            </button>
-            <button
-              type="button"
-              onClick={() => onPreferenceChange('visualsDropMode', 'swap')}
-              className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
-                visualsDropMode === 'swap'
-                  ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
-                  : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-              }`}
-            >
-              <span>{t('swapMode')}</span>
-              {visualsDropMode === 'swap' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Preserve Timeline Dimensions (Width & Height) */}
-      <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3.5">
-        <div>
-          <div className="text-xs font-semibold text-zinc-200">
-            {t('preserveTimelineDimensions', 'Preserve dimensions in Timeline')}
-          </div>
-          <p className="text-[11px] text-zinc-400 mt-0.5">
-            {t('preserveTimelineDimensionsDesc', 'Keep individually resized card widths and track heights intact across zoom levels.')}
-          </p>
-        </div>
-
-        <div className="space-y-2 pt-2 border-t border-zinc-800/80">
-          {/* Width toggle */}
-          <div className="flex items-center justify-between text-xs py-1">
-            <div>
-              <span className="text-zinc-200 font-medium">{t('preserveWidth', 'Width')}</span>
-              <p className="text-[11px] text-zinc-400">{t('preserveWidthDesc', 'Preserve manual scene card width on zoom')}</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
-              <input
-                type="checkbox"
-                aria-label={t('preserveWidth', 'Width')}
-                checked={preserveManualSceneWidth}
-                onChange={(e) => onPreferenceChange('preserveManualSceneWidth', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
-            </label>
-          </div>
-
-          {/* Height toggle */}
-          <div className="flex items-center justify-between text-xs py-1">
-            <div>
-              <span className="text-zinc-200 font-medium">{t('preserveHeight', 'Height')}</span>
-              <p className="text-[11px] text-zinc-400">{t('preserveHeightDesc', 'Preserve manual storyline track height on zoom')}</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
-              <input
-                type="checkbox"
-                aria-label={t('preserveHeight', 'Height')}
-                checked={preserveManualPlotHeight}
-                onChange={(e) => onPreferenceChange('preserveManualPlotHeight', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
-            </label>
-          </div>
-        </div>
-      </div>
-
-      {/* Delete Confirmation Warnings Section */}
-      <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3.5">
-        <div>
-          <div className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-            <span>{t('confirmDeleteSettingsTitle', 'Delete Confirmation Prompts')}</span>
-          </div>
-          <p className="text-[11px] text-zinc-400 mt-0.5">
-            {t('confirmDeleteSettingsDesc', 'Choose which sections ask for confirmation before deleting items')}
-          </p>
-        </div>
-
-        <div className="space-y-2 pt-2 border-t border-zinc-800/80">
-          {[
-            { key: 'outline', label: t('confirmDeleteOutlineOpt', 'Outline & Manuscript (Scenes & Folders)') },
-            { key: 'characters', label: t('confirmDeleteCharactersOpt', 'Characters (Cast dossiers)') },
-            { key: 'storylines', label: t('confirmDeleteStorylinesOpt', 'Storylines (Plot threads)') },
-            { key: 'worldbuilding', label: t('confirmDeleteWorldOpt', 'Worldbuilding (Lore entries)') },
-            { key: 'notes', label: t('confirmDeleteNotesOpt', 'Context Notes (Blocks & notes)') },
-            { key: 'visuals', label: t('confirmDeleteVisualsOpt', 'Visual References (Moodboard images & folders)') },
-            { key: 'relationships', label: t('confirmDeleteRelationshipsOpt', 'Relationship Graph (Connections & character nodes)') },
-          ].map(({ key, label }) => {
-            const isChecked = confirmDelete[key as keyof DeleteConfirmationPreferences] ?? true;
-            return (
-              <div key={key} className="flex items-center justify-between text-xs py-1">
-                <span className="text-zinc-300">{label}</span>
-                <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
-                  <input
-                    type="checkbox"
-                    checked={isChecked}
-                    onChange={(e) => {
-                      onPreferenceChange('confirmDelete', {
-                        ...confirmDelete,
-                        [key]: e.target.checked,
-                      });
-                    }}
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
-                </label>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* App Updates (Local-First Opt-In) Card - Hidden in Web Browsers */}
-      {isDesktop && (
-        <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3.5">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
-                <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{t('autoUpdateCheck')}</span>
-              </label>
-              <p className="text-[11px] text-zinc-400">
-                {t('autoUpdateCheckDesc')}
-              </p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer shrink-0">
-              <input
-                type="checkbox"
-                aria-label={t('autoUpdateCheck')}
-                checked={autoUpdateCheck}
-                onChange={(e) => onPreferenceChange('autoUpdateCheck', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
-            </label>
-          </div>
-
-          {/* Local-first instant startup notice */}
-          <div className="p-3 rounded-md border border-emerald-900/40 bg-emerald-950/20 text-emerald-200/90 text-xs flex items-start gap-2.5">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-            <p className="text-[11px] leading-relaxed text-zinc-300">
-              <strong className="text-emerald-300 font-semibold block mb-0.5">
-                {currentLang === 'es' ? 'Compromiso 100% Local-First:' : '100% Local-First Commitment:'}
-              </strong>
-              {t('autoUpdateNotice')}
-            </p>
-          </div>
-
-          <div className="pt-3 border-t border-zinc-800/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="text-[11px] text-zinc-400 min-h-[1.25rem] flex items-center">
-              {updateStatusMessage ? (
-                <span className={`flex items-center gap-1.5 font-medium ${
-                  updateStatus === 'error'
-                    ? 'text-red-400'
-                    : updateStatus === 'up-to-date'
-                    ? 'text-emerald-400'
-                    : 'text-zinc-300'
-                }`}>
-                  {updateStatus === 'checking' || updateStatus === 'downloading' || updateStatus === 'restarting' ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0 text-emerald-400" />
-                  ) : updateStatus === 'up-to-date' ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  ) : updateStatus === 'error' ? (
-                    <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                  ) : null}
-                  <span>{updateStatusMessage}</span>
-                </span>
-              ) : (
-                <span className="text-zinc-500">{t('updates')}</span>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={handleManualCheckUpdates}
-              disabled={updateStatus === 'checking' || updateStatus === 'downloading' || updateStatus === 'restarting'}
-              className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-md border border-zinc-750 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-850 text-zinc-200 text-xs font-medium transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shrink-0"
-            >
-              {updateStatus === 'checking' || updateStatus === 'downloading' || updateStatus === 'restarting' ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
-                  <span>
-                    {updateStatus === 'downloading'
-                      ? t('downloadingUpdate')
-                      : updateStatus === 'restarting'
-                      ? t('restartingApp')
-                      : t('checkingForUpdates')}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-3.5 h-3.5 text-zinc-400" />
-                  <span>{t('checkForUpdatesNow')}</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 });
