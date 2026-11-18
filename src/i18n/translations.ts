@@ -682,10 +682,10 @@ export const dict = {
 
     // Save Mode Settings
     saveMode: 'Save Mode',
-    saveModeAuto: 'Auto-save in Real-time',
-    saveModeAutoDesc: 'Changes are committed immediately as you type or edit.',
-    saveModeManual: 'Manual Confirmation Button',
-    saveModeManualDesc: 'Requires clicking a confirmation/save button to commit changes across panels.',
+    saveModeAuto: 'Automatic Save',
+    saveModeAutoDesc: 'Changes are automatically saved to disk periodically according to the configured interval. All modifications are preserved across views.',
+    saveModeManual: 'Manual Save',
+    saveModeManualDesc: 'Modifications are preserved across views and only written to disk when you manually save (Ctrl+S or Save button).',
     autoSaveInterval: 'Auto-save Interval',
     autoSaveIntervalDesc: 'Delay before saving changes to disk after you stop editing.',
     autoSaveShortNotice: 'Ultra-short frequencies are not recommended to prevent stuttering while typing and unnecessary disk writes.',
@@ -707,6 +707,7 @@ export const dict = {
     keepEditing: 'Stay Here',
     discardAndSwitch: 'Discard & Switch',
     discardAndExit: 'Discard & Exit',
+    saveAndExit: 'Save & Exit',
 
     // Import Modal
     importSuccessTitle: 'Project Imported Successfully',
@@ -1613,9 +1614,9 @@ export const dict = {
     // Save Mode Settings
     saveMode: 'Modo de Guardado',
     saveModeAuto: 'Guardado Automático',
-    saveModeAutoDesc: 'Los cambios se guardan al instante mientras editas o escribes.',
-    saveModeManual: 'Confirmación Manual con Botón',
-    saveModeManualDesc: 'Requiere pulsar un botón para confirmar y aplicar los cambios en los paneles.',
+    saveModeAutoDesc: 'Los cambios se guardan periódicamente en disco según el intervalo configurado. Todas las modificaciones se mantienen entre vistas.',
+    saveModeManual: 'Guardado Manual',
+    saveModeManualDesc: 'Las modificaciones se mantienen entre todas las vistas y se guardan en disco solo al pulsar Guardar (Ctrl+S o botón de guardar).',
     autoSaveInterval: 'Intervalo de Autoguardado',
     autoSaveIntervalDesc: 'Tiempo de espera antes de guardar en disco al dejar de editar.',
     autoSaveShortNotice: 'Las frecuencias ultra-cortas no son recomendables para evitar tirones al escribir y escrituras innecesarias en disco.',
@@ -1637,6 +1638,7 @@ export const dict = {
     keepEditing: 'Permanecer aquí',
     discardAndSwitch: 'Descartar y Cambiar',
     discardAndExit: 'Descartar y Salir',
+    saveAndExit: 'Guardar y Salir',
 
     // Import Modal
     importSuccessTitle: 'Proyecto Importado con Éxito',

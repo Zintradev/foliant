@@ -114,13 +114,14 @@ vi.mock('./components/export/ExportSettingsModal', () => ({
 }));
 
 vi.mock('./components/common/UnsavedChangesModal', () => ({
-  default: ({ isOpen, onCancel, onConfirm }: any) => {
+  default: ({ isOpen, onCancel, onConfirm, onSaveAndExit }: any) => {
     if (!isOpen) return null;
     return (
       <div data-testid="mock-unsaved-modal">
         <span>Unsaved Changes</span>
         <button onClick={onCancel}>Stay Here</button>
         <button onClick={onConfirm}>Discard & Switch</button>
+        {onSaveAndExit && <button onClick={onSaveAndExit}>Save & Exit</button>}
       </div>
     );
   },
@@ -491,7 +492,7 @@ describe('App Component', () => {
     fireEvent.click(screen.getByTitle(dict.en.actWriteTooltip));
   });
 
-  it('guards navigation when unsaved changes exist in outline rename', () => {
+  it('allows seamless navigation between views without interrupting modals', () => {
     render(<App />);
 
     // 1. Right click on chapter in outline to trigger rename
@@ -502,26 +503,11 @@ describe('App Component', () => {
     const renameOption = screen.getByText('Rename');
     fireEvent.click(renameOption);
 
-    // Now renamingNodeId is active -> isDirty is true!
-    // 2. Try navigating to Characters in ActivityBar
+    // 2. Navigating to Characters in ActivityBar directly switches view without unsaved modals
     const castBtn = screen.getByTitle(dict.en.actCastTooltip);
     fireEvent.click(castBtn);
 
-    // UnsavedChangesModal should appear
-    expect(screen.getByText(dict.en.unsavedChangesTitle)).toBeInTheDocument();
-
-    // 3. User clicks "Keep Editing" (Cancel)
-    const keepEditingBtn = screen.getByText(dict.en.keepEditing);
-    fireEvent.click(keepEditingBtn);
-    expect(screen.queryByText(dict.en.unsavedChangesTitle)).not.toBeInTheDocument();
-
-    // 4. Try navigating again and click "Discard & Switch" (Confirm)
-    fireEvent.click(castBtn);
-    expect(screen.getByText(dict.en.unsavedChangesTitle)).toBeInTheDocument();
-    const discardBtn = screen.getByText(dict.en.discardAndSwitch);
-    fireEvent.click(discardBtn);
-
-    // Navigated to Cast view
+    // UnsavedChangesModal must NOT appear
     expect(screen.queryByText(dict.en.unsavedChangesTitle)).not.toBeInTheDocument();
     expect(screen.getAllByText(/Cast/i).length).toBeGreaterThanOrEqual(1);
   });

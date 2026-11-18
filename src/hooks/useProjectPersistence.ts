@@ -45,9 +45,9 @@ export interface UseProjectPersistenceReturn {
   lastSavedAt: number | null;
   error: string | null;
   isSaving: boolean;
-  saveProject: () => Promise<boolean>;
-  saveProjectAs: () => Promise<boolean>;
-  saveSilently: () => Promise<boolean>;
+  saveProject: (snapshot?: FoliantProject) => Promise<boolean>;
+  saveProjectAs: (snapshot?: FoliantProject) => Promise<boolean>;
+  saveSilently: (snapshot?: FoliantProject) => Promise<boolean>;
   openProject: () => Promise<boolean>;
   newProject: (title?: string) => void;
   loadProject: (loaded: FoliantProject, filePath?: string | null) => void;
@@ -106,88 +106,93 @@ export function useProjectPersistence({
     []
   );
 
-  const saveProjectAs = useCallback(async (): Promise<boolean> => {
-    try {
-      setIsSaving(true);
-      setSyncStatus('saving');
-      setError(null);
+  const saveProjectAs = useCallback(
+    async (snapshot?: FoliantProject): Promise<boolean> => {
+      const projectToSave = snapshot ?? project;
+      try {
+        setIsSaving(true);
+        setSyncStatus('saving');
+        setError(null);
 
-      if (!isTauriApp()) {
-        const now = Date.now();
-        const projectToSave: FoliantProject = {
-          ...project,
-          lastModified: now,
-        };
+        if (!isTauriApp()) {
+          const now = Date.now();
+          const cleanProject: FoliantProject = {
+            ...projectToSave,
+            lastModified: now,
+          };
 
-        const safeTitle =
-          (projectToSave.title || 'project')
-            .toLowerCase()
-            .replace(/[^a-z0-9_-]/g, '-')
-            .replace(/-+/g, '-')
-            .replace(/^-|-$/g, '') || 'project';
-        const fileNameToSave = `${safeTitle}.foliant`;
+          const safeTitle =
+            (cleanProject.title || 'project')
+              .toLowerCase()
+              .replace(/[^a-z0-9_-]/g, '-')
+              .replace(/-+/g, '-')
+              .replace(/^-|-$/g, '') || 'project';
+          const fileNameToSave = `${safeTitle}.foliant`;
 
-        downloadFileInBrowser(
-          JSON.stringify(projectToSave, null, 2),
-          fileNameToSave,
-          'application/json'
+          downloadFileInBrowser(
+            JSON.stringify(cleanProject, null, 2),
+            fileNameToSave,
+            'application/json'
+          );
+
+          setCurrentFilePath(fileNameToSave);
+          setLastSavedAt(now);
+          setSyncStatus('saved');
+          setIsSaving(false);
+          onProjectLoadedRef.current(cleanProject);
+          return true;
+        }
+
+        const sanitizedTitle = (projectToSave.title || 'novel')
+          .trim()
+          .replace(/[/\\?%*:|"<>]/g, '-')
+          .trim() || 'novel';
+        const defaultFileName = `${sanitizedTitle}.foliant`;
+
+        let defaultPath = defaultFileName;
+        if (currentFilePath) {
+          const lastSlash = Math.max(currentFilePath.lastIndexOf('/'), currentFilePath.lastIndexOf('\\'));
+          if (lastSlash !== -1) {
+            const dir = currentFilePath.substring(0, lastSlash);
+            const sep = currentFilePath.includes('\\') ? '\\' : '/';
+            defaultPath = `${dir}${sep}${defaultFileName}`;
+          }
+        }
+
+        const targetPath = await promptSaveProjectFile(
+          'Save Foliant Project As',
+          defaultPath
         );
 
-        setCurrentFilePath(fileNameToSave);
-        setLastSavedAt(now);
+        if (!targetPath) {
+          setIsSaving(false);
+          setSyncStatus(currentFilePath ? 'idle' : 'unsaved');
+          return false;
+        }
+
+        const { updatedProject, timestamp } = await executeSaveBundle(targetPath, projectToSave);
+
+        setCurrentFilePath(targetPath);
+        setLastSavedAt(timestamp);
         setSyncStatus('saved');
         setIsSaving(false);
-        onProjectLoadedRef.current(projectToSave);
-        return true;
-      }
-
-      const sanitizedTitle = (project.title || 'novel')
-        .trim()
-        .replace(/[/\\?%*:|"<>]/g, '-')
-        .trim() || 'novel';
-      const defaultFileName = `${sanitizedTitle}.foliant`;
-
-      let defaultPath = defaultFileName;
-      if (currentFilePath) {
-        const lastSlash = Math.max(currentFilePath.lastIndexOf('/'), currentFilePath.lastIndexOf('\\'));
-        if (lastSlash !== -1) {
-          const dir = currentFilePath.substring(0, lastSlash);
-          const sep = currentFilePath.includes('\\') ? '\\' : '/';
-          defaultPath = `${dir}${sep}${defaultFileName}`;
+        try {
+          localStorage.setItem(LAST_FOLIANT_PROJECT_KEY, targetPath);
+        } catch {
+          // ignore storage errors
         }
+
+        onProjectLoadedRef.current(updatedProject);
+        return true;
+      } catch (err: unknown) {
+        return handlePersistenceError('Save Project As failed', err);
       }
+    },
+    [project, currentFilePath, handlePersistenceError]
+  );
 
-      const targetPath = await promptSaveProjectFile(
-        'Save Foliant Project As',
-        defaultPath
-      );
-
-      if (!targetPath) {
-        setIsSaving(false);
-        setSyncStatus(currentFilePath ? 'idle' : 'unsaved');
-        return false;
-      }
-
-      const { updatedProject, timestamp } = await executeSaveBundle(targetPath, project);
-
-      setCurrentFilePath(targetPath);
-      setLastSavedAt(timestamp);
-      setSyncStatus('saved');
-      setIsSaving(false);
-      try {
-        localStorage.setItem(LAST_FOLIANT_PROJECT_KEY, targetPath);
-      } catch {
-        // ignore storage errors
-      }
-
-      onProjectLoadedRef.current(updatedProject);
-      return true;
-    } catch (err: unknown) {
-      return handlePersistenceError('Save Project As failed', err);
-    }
-  }, [project, currentFilePath, handlePersistenceError]);
-
-  const saveProject = useCallback(async (): Promise<boolean> => {
+  const saveProject = useCallback(async (snapshot?: FoliantProject): Promise<boolean> => {
+    const projectToSave = snapshot ?? project;
     if (!isTauriApp()) {
       try {
         setIsSaving(true);
@@ -195,15 +200,15 @@ export function useProjectPersistence({
         setError(null);
 
         const now = Date.now();
-        const projectToSave: FoliantProject = {
-          ...project,
+        const cleanProject: FoliantProject = {
+          ...projectToSave,
           lastModified: now,
         };
 
         setLastSavedAt(now);
         setSyncStatus('saved');
         setIsSaving(false);
-        onProjectLoadedRef.current(projectToSave);
+        onProjectLoadedRef.current(cleanProject);
         return true;
       } catch (err: unknown) {
         setIsSaving(false);
@@ -214,22 +219,22 @@ export function useProjectPersistence({
 
     const trimmedPath = currentFilePath?.trim();
     if (!trimmedPath) {
-      return saveProjectAs();
+      return saveProjectAs(projectToSave);
     }
 
     // If the project title was changed and differs from the current file's name,
     // prompt via saveProjectAs with the new title pre-filled.
     const currentFileTitle = extractProjectTitleFromPath(trimmedPath);
-    const currentProjectTitle = (project.title || '').trim();
+    const currentProjectTitle = (projectToSave.title || '').trim();
     if (currentProjectTitle && currentFileTitle && currentProjectTitle !== currentFileTitle) {
-      return saveProjectAs();
+      return saveProjectAs(projectToSave);
     }
 
     // Edge case 1: Validate if the file still exists on the filesystem.
     // If the file was deleted or moved externally, redirect to Save As.
     const fileExists = await checkFileExists(trimmedPath);
     if (!fileExists) {
-      return saveProjectAs();
+      return saveProjectAs(projectToSave);
     }
 
     try {
@@ -237,7 +242,7 @@ export function useProjectPersistence({
       setSyncStatus('saving');
       setError(null);
 
-      const { updatedProject, timestamp } = await executeSaveBundle(trimmedPath, project);
+      const { updatedProject, timestamp } = await executeSaveBundle(trimmedPath, projectToSave);
 
       setLastSavedAt(timestamp);
       setSyncStatus('saved');
@@ -346,10 +351,11 @@ export function useProjectPersistence({
     }
   }, [currentFilePath, loadProject]);
 
-  const saveSilently = useCallback(async (): Promise<boolean> => {
+  const saveSilently = useCallback(async (snapshot?: FoliantProject): Promise<boolean> => {
+    const projectToSave = snapshot ?? project;
     if (!isTauriApp()) {
-      const now = Date.now();
-      setLastSavedAt(now);
+      const savedTime = snapshot ? snapshot.lastModified : Date.now();
+      setLastSavedAt(savedTime);
       setSyncStatus('saved');
       return true;
     }
@@ -358,11 +364,15 @@ export function useProjectPersistence({
     if (!trimmedPath) return false;
 
     try {
-      const { timestamp } = await executeSaveBundle(trimmedPath, project);
-      setLastSavedAt(timestamp);
+      setIsSaving(true);
+      setSyncStatus('saving');
+      const { timestamp } = await executeSaveBundle(trimmedPath, projectToSave);
+      setLastSavedAt(snapshot ? snapshot.lastModified : timestamp);
       setSyncStatus('saved');
+      setIsSaving(false);
       return true;
     } catch {
+      setIsSaving(false);
       setSyncStatus('unsaved');
       return false;
     }

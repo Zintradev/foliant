@@ -105,6 +105,7 @@ export default function App() {
     currentFilePath, error: persistenceError, saveProject, saveProjectAs,
     saveSilently, openProject, newProject, loadProject, clearError: clearPersistenceError,
     lastSavedAt,
+    saveStatus,
   } = useProjectPersistence({
     project,
     onProjectLoaded: handleProjectLoaded,
@@ -124,6 +125,11 @@ export default function App() {
     setIsDirty,
     onSaveSuccess: () => resetAutoSaveRef.current?.(),
   });
+
+  // Keep save status strictly tied to disk persistence state
+  useEffect(() => {
+    persistence.setEditorSaveStatus(saveStatus);
+  }, [saveStatus, persistence.setEditorSaveStatus]);
 
   const epub = useEpubExport(project);
   const [activeMainView, setActiveMainView] = useState<MainViewId>('write');
@@ -253,6 +259,29 @@ export default function App() {
     setIsCloseConfirmOpen(false);
     void closeDesktopApp();
   }, []);
+  const handleSaveAndExit = useCallback(async () => {
+    const flushDetail: { chapterId?: string; content?: string } = {};
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('foliant-flush-editor', { detail: flushDetail }));
+    }
+
+    let projectToSave = project;
+    if (flushDetail.chapterId && flushDetail.content !== undefined) {
+      projectToSave = {
+        ...projectToSave,
+        lastModified: Date.now(),
+        chapters: projectToSave.chapters.map((ch) =>
+          ch.id === flushDetail.chapterId ? { ...ch, content: flushDetail.content! } : ch
+        ),
+      };
+    }
+
+    const success = await saveProject(projectToSave);
+    if (success) {
+      setIsCloseConfirmOpen(false);
+      void closeDesktopApp();
+    }
+  }, [project, saveProject]);
 
   useAppCloseGuard({
     hasUnsavedChanges:
@@ -320,11 +349,6 @@ export default function App() {
     setIsFirstRunPromptOpen(false);
   }, []);
 
-  const hasUnsavedChangesForTour =
-    persistence.editorSaveStatus === 'unsaved' ||
-    persistence.editorSaveStatus === 'saving' ||
-    isDirty;
-
   const startTourSafely = useCallback(() => {
     setIsHelpGuideOpen(false);
     setProject(createEmptyProject());
@@ -334,12 +358,8 @@ export default function App() {
   }, []);
 
   const handleStartGuidedTour = useCallback(() => {
-    if (hasUnsavedChangesForTour) {
-      nav.setPendingNavigationAction(() => startTourSafely);
-      return;
-    }
     startTourSafely();
-  }, [hasUnsavedChangesForTour, nav, startTourSafely]);
+  }, [startTourSafely]);
   const handleCloseGuidedTour = useCallback(() => setIsGuidedTourActive(false), []);
 
   const handleOpenProjectWithDirtyReset = useCallback(async () => {
@@ -516,6 +536,7 @@ export default function App() {
           isCloseConfirmOpen={isCloseConfirmOpen}
           onCancelCloseConfirm={handleCancelCloseConfirm}
           onConfirmClose={handleConfirmClose}
+          onSaveAndExitCloseConfirm={handleSaveAndExit}
           importModalData={persistence.importModalData}
           onCloseImportResult={handleCloseImportResult}
           isHelpGuideOpen={isHelpGuideOpen}

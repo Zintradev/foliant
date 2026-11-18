@@ -274,8 +274,6 @@ export const DockViewContent = memo(function DockViewContent({
           onChange={handleUpdateCharacters}
           colorSettings={appSettings}
           isExpanded={isExpanded}
-          saveMode={appSettings.preferences?.saveMode || 'auto'}
-          onDirtyChange={setIsDirty}
         />
       );
     case 'worldbuilding':
@@ -285,8 +283,6 @@ export const DockViewContent = memo(function DockViewContent({
           onChange={handleUpdateWorldItems}
           worldDropMode={appSettings.preferences?.worldDropMode}
           isExpanded={isExpanded}
-          saveMode={appSettings.preferences?.saveMode || 'auto'}
-          onDirtyChange={setIsDirty}
         />
       );
     case 'search':
