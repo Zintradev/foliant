@@ -56,11 +56,11 @@
     }
 
     function updateAppLinks(lang) {
+      var safeLang = lang === 'en' ? 'en' : 'es';
       document.querySelectorAll('a').forEach(function(a) {
         var href = a.getAttribute('href');
         if (href && (href.startsWith('./app') || href.startsWith('/app') || href === './app/' || href === './app')) {
-          a.setAttribute('href', './app/?lang=' + lang);
-          a.href = './app/?lang=' + lang;
+          a.setAttribute('href', './app/?lang=' + safeLang);
         }
       });
     }
@@ -70,9 +70,9 @@
       if (a) {
         var href = a.getAttribute('href') || a.href || '';
         if (href.indexOf('/app') !== -1 || href.indexOf('./app') !== -1) {
-          var currentLang = document.documentElement.getAttribute('data-lang') || localStorage.getItem('foliant-lang') || 'es';
-          a.setAttribute('href', './app/?lang=' + currentLang);
-          a.href = './app/?lang=' + currentLang;
+          var currentLang = document.documentElement.getAttribute('data-lang') || localStorage.getItem('foliant-lang');
+          var safeLang = currentLang === 'en' ? 'en' : 'es';
+          a.setAttribute('href', './app/?lang=' + safeLang);
         }
       }
     }, true);

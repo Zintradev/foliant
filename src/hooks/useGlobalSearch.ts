@@ -62,14 +62,17 @@ export function stripHtml(html: string): string {
   }
 
   if (!text) {
+    const htmlEntities: Record<string, string> = {
+      '&nbsp;': ' ',
+      '&lt;': '<',
+      '&gt;': '>',
+      '&quot;': '"',
+      '&#39;': "'",
+      '&amp;': '&',
+    };
     text = spaced
       .replace(/<[^>]+>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
+      .replace(/&(?:nbsp|lt|gt|quot|#39|amp);/g, (match) => htmlEntities[match] || match)
       .replace(/\s+/g, ' ')
       .trim();
   }
