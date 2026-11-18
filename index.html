@@ -20,6 +20,9 @@
   <!-- Shared Tailwind CSS -->
   <link rel="stylesheet" href="/src/index.css" />
 
+  <!-- Web3Forms & hCaptcha Client Script -->
+  <script src="https://web3forms.com/client/script.js" async defer></script>
+
   <style>
     .font-serif-literary {
       font-family: 'Newsreader', Georgia, serif;
@@ -77,6 +80,16 @@
       }
     }, true);
 
+    function updatePlaceholders(lang) {
+      var isEn = lang === 'en';
+      document.querySelectorAll('[data-placeholder-es]').forEach(function (el) {
+        var placeholder = isEn ? el.getAttribute('data-placeholder-en') : el.getAttribute('data-placeholder-es');
+        if (placeholder) {
+          el.setAttribute('placeholder', placeholder);
+        }
+      });
+    }
+
     function setLanguage(lang) {
       document.documentElement.setAttribute('data-lang', lang);
       document.documentElement.setAttribute('lang', lang);
@@ -85,6 +98,7 @@
       } catch (_) { }
       updateLangButtons(lang);
       updateAppLinks(lang);
+      updatePlaceholders(lang);
     }
 
     function updateLangButtons(lang) {
@@ -122,6 +136,7 @@
       const current = document.documentElement.getAttribute('data-lang') || 'es';
       updateLangButtons(current);
       updateAppLinks(current);
+      updatePlaceholders(current);
 
       // Detect user operating system to highlight relevant download option
       try {
@@ -238,6 +253,10 @@
         <a href="#plataformas" class="hover:text-zinc-100 transition">
           <span class="lang-es">Escritorio vs Web</span>
           <span class="lang-en">Desktop vs Web</span>
+        </a>
+        <a href="#feedback" class="hover:text-zinc-100 transition">
+          <span class="lang-es">Propuestas</span>
+          <span class="lang-en">Feedback</span>
         </a>
         <a href="https://github.com/Zintradev/foliant" target="_blank" rel="noopener noreferrer"
           class="hover:text-zinc-100 transition flex items-center gap-1.5">
@@ -1204,6 +1223,124 @@
         </a>
       </div>
     </section>
+
+    <!-- Feedback & Feature Proposals Section (Issue #18) -->
+    <section id="feedback" class="py-16 px-4 sm:px-6 lg:px-8 max-w-2xl mx-auto border-t border-zinc-800/80">
+      <div class="text-center mb-8">
+        <div
+          class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium mb-3">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v4.518Z" />
+          </svg>
+          <span class="lang-es">Comunidad & Propuestas</span>
+          <span class="lang-en">Community & Proposals</span>
+        </div>
+        <h2 class="font-cinzel text-2xl sm:text-3xl font-bold text-zinc-100">
+          <span class="lang-es">Propón una funcionalidad</span>
+          <span class="lang-en">Suggest a Feature</span>
+        </h2>
+        <p class="mt-2 text-sm text-zinc-400 font-serif-literary max-w-lg mx-auto">
+          <span class="lang-es">¿Echas en falta alguna herramienta para tu flujo de escritura? Envíanos tus sugerencias
+            y ayúdanos a construir el mejor entorno para autores.</span>
+          <span class="lang-en">Missing a tool for your writing workflow? Send us your suggestions and help shape the
+            ultimate studio for authors.</span>
+        </p>
+      </div>
+
+      <div class="p-6 sm:p-8 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm shadow-xl">
+        <form id="feedback-form" class="space-y-5" novalidate>
+          <!-- Honeypot -->
+          <input type="checkbox" name="botcheck" class="hidden" style="display: none;" tabindex="-1"
+            autocomplete="off" />
+
+          <!-- Subject: Proposal Title -->
+          <div>
+            <label for="feedback-subject" class="block text-xs font-medium text-zinc-300 mb-1.5">
+              <span class="lang-es">Título de la propuesta <span class="text-emerald-400">*</span></span>
+              <span class="lang-en">Proposal title <span class="text-emerald-400">*</span></span>
+            </label>
+            <input type="text" id="feedback-subject" name="subject" required
+              class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-950/80 border border-zinc-800 text-zinc-100 placeholder-zinc-600 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
+              data-placeholder-es="Ej: Exportación ePub con fuentes incrustadas"
+              data-placeholder-en="E.g.: ePub export with embedded fonts"
+              placeholder="Ej: Exportación ePub con fuentes incrustadas" />
+          </div>
+
+          <!-- Message: Description / Details -->
+          <div>
+            <label for="feedback-message" class="block text-xs font-medium text-zinc-300 mb-1.5">
+              <span class="lang-es">Descripción y detalles <span class="text-emerald-400">*</span></span>
+              <span class="lang-en">Description & details <span class="text-emerald-400">*</span></span>
+            </label>
+            <textarea id="feedback-message" name="message" rows="4" required
+              class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-950/80 border border-zinc-800 text-zinc-100 placeholder-zinc-600 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors resize-y min-h-[96px]"
+              data-placeholder-es="Explica qué función te gustaría ver o qué podemos mejorar..."
+              data-placeholder-en="Describe the feature you'd like to see or what we could improve..."
+              placeholder="Explica qué función te gustaría ver o qué podemos mejorar..."></textarea>
+          </div>
+
+          <!-- Email: Contact email (Optional) -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="feedback-email" class="block text-xs font-medium text-zinc-300">
+                <span class="lang-es">Email de contacto</span>
+                <span class="lang-en">Contact email</span>
+              </label>
+              <span class="text-[11px] text-zinc-500 font-mono">
+                <span class="lang-es">Opcional</span>
+                <span class="lang-en">Optional</span>
+              </span>
+            </div>
+            <input type="email" id="feedback-email" name="email"
+              class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-950/80 border border-zinc-800 text-zinc-100 placeholder-zinc-600 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
+              data-placeholder-es="tu@email.com (solo si deseas respuesta)"
+              data-placeholder-en="you@example.com (only if you want a response)"
+              placeholder="tu@email.com (solo si deseas respuesta)" />
+            <p class="mt-1 text-[11px] text-zinc-500 font-serif-literary">
+              <span class="lang-es">Indica tu email solo si deseas que te contactemos para consultar dudas o avisarte
+                cuando se implemente.</span>
+              <span class="lang-en">Only provide your email if you'd like a response or want to know when it is
+                implemented.</span>
+            </p>
+          </div>
+
+          <!-- Free Anti-spam: hCaptcha container -->
+          <div class="pt-1 flex flex-col items-center sm:items-start min-h-[78px]">
+            <div class="h-captcha" data-captcha="true" data-theme="dark"></div>
+          </div>
+
+          <!-- Status Message Container -->
+          <div id="feedback-status" class="hidden rounded-lg p-3 text-xs font-medium transition-all" role="alert"
+            aria-live="polite"></div>
+
+          <!-- Submit Button -->
+          <div class="pt-1 flex justify-end">
+            <button type="submit" id="feedback-submit-btn"
+              class="w-full sm:w-auto h-11 px-6 inline-flex items-center justify-center gap-2 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition shadow-md shadow-emerald-500/20 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-emerald-500">
+              <span class="btn-text inline-flex items-center gap-2">
+                <span class="lang-es">Enviar propuesta</span>
+                <span class="lang-en">Submit proposal</span>
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                </svg>
+              </span>
+              <span class="btn-spinner hidden items-center gap-2">
+                <svg class="animate-spin h-4 w-4 text-zinc-950" xmlns="http://www.w3.org/2000/svg" fill="none"
+                  viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                  </path>
+                </svg>
+                <span class="lang-es">Enviando propuesta...</span>
+                <span class="lang-en">Submitting proposal...</span>
+              </span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
   </main>
 
   <!-- Footer -->
@@ -1281,6 +1418,159 @@
       </p>
     </div>
   </footer>
+
+  <script>
+    (function initFeedbackForm() {
+      function setupForm() {
+        var form = document.getElementById('feedback-form');
+        if (!form) return;
+
+        var statusEl = document.getElementById('feedback-status');
+        var submitBtn = document.getElementById('feedback-submit-btn');
+        var btnText = submitBtn ? submitBtn.querySelector('.btn-text') : null;
+        var btnSpinner = submitBtn ? submitBtn.querySelector('.btn-spinner') : null;
+
+        function showStatus(type, esMsg, enMsg) {
+          if (!statusEl) return;
+          statusEl.className = type === 'success'
+            ? 'rounded-lg p-3 text-xs font-medium border bg-emerald-950/40 text-emerald-300 border-emerald-500/40 flex items-center gap-2.5'
+            : 'rounded-lg p-3 text-xs font-medium border bg-rose-950/40 text-rose-300 border-rose-500/40 flex items-center gap-2.5';
+
+          var iconSvg = type === 'success'
+            ? '<svg class="w-4 h-4 shrink-0 text-emerald-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg>'
+            : '<svg class="w-4 h-4 shrink-0 text-rose-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>';
+
+          statusEl.innerHTML = iconSvg +
+            '<div><span class="lang-es">' + esMsg + '</span>' +
+            '<span class="lang-en">' + enMsg + '</span></div>';
+          statusEl.classList.remove('hidden');
+        }
+
+        function hideStatus() {
+          if (!statusEl) return;
+          statusEl.classList.add('hidden');
+          statusEl.innerHTML = '';
+        }
+
+        function setLoading(isLoading) {
+          if (!submitBtn) return;
+          submitBtn.disabled = isLoading;
+          if (btnText && btnSpinner) {
+            if (isLoading) {
+              btnText.classList.add('hidden');
+              btnText.classList.remove('inline-flex');
+              btnSpinner.classList.remove('hidden');
+              btnSpinner.classList.add('inline-flex');
+            } else {
+              btnText.classList.remove('hidden');
+              btnText.classList.add('inline-flex');
+              btnSpinner.classList.add('hidden');
+              btnSpinner.classList.remove('inline-flex');
+            }
+          }
+        }
+
+        form.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          hideStatus();
+
+          var subjectInput = form.querySelector('[name="subject"]');
+          var messageInput = form.querySelector('[name="message"]');
+          var emailInput = form.querySelector('[name="email"]');
+          var botcheckInput = form.querySelector('[name="botcheck"]');
+
+          var subject = subjectInput ? subjectInput.value.trim() : '';
+          var message = messageInput ? messageInput.value.trim() : '';
+          var email = emailInput ? emailInput.value.trim() : '';
+
+          if (!subject || !message) {
+            showStatus(
+              'error',
+              'Por favor, rellena el título y la descripción de la propuesta.',
+              'Please fill in both the proposal title and description.'
+            );
+            if (!subject && subjectInput) subjectInput.focus();
+            else if (!message && messageInput) messageInput.focus();
+            return;
+          }
+
+          // Anti-spam hCaptcha verification check
+          var hCaptchaInput = form.querySelector('[name="h-captcha-response"]');
+          var hCaptchaResponse = (hCaptchaInput && hCaptchaInput.value) ||
+            (window.hcaptcha && typeof window.hcaptcha.getResponse === 'function' ? window.hcaptcha.getResponse() : '');
+
+          if (!hCaptchaResponse) {
+            showStatus(
+              'error',
+              'Por favor, marca la casilla del captcha antes de enviar.',
+              'Please complete the captcha verification before submitting.'
+            );
+            return;
+          }
+
+          var payload = {
+            access_key: '25e3975f-b191-4ac3-8a99-a17840bda79e',
+            from_name: 'Foliant Landing Feedback',
+            subject: subject,
+            message: message,
+            botcheck: botcheckInput && botcheckInput.checked ? 'true' : '',
+            'h-captcha-response': hCaptchaResponse
+          };
+
+          if (email) {
+            payload.email = email;
+          }
+
+          setLoading(true);
+
+          try {
+            var response = await fetch('https://api.web3forms.com/submit', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify(payload)
+            });
+
+            var data = await response.json().catch(function () { return {}; });
+
+            if (response.ok && data.success !== false) {
+              showStatus(
+                'success',
+                '¡Propuesta enviada! Gracias por ayudar a mejorar Foliant.',
+                'Proposal sent! Thank you for helping improve Foliant.'
+              );
+              form.reset();
+              if (window.hcaptcha && typeof window.hcaptcha.reset === 'function') {
+                try {
+                  window.hcaptcha.reset();
+                } catch (_) { }
+              }
+            } else {
+              var fallbackEs = (data && data.message) ? data.message : 'Ha ocurrido un error al enviar tu propuesta. Por favor, inténtalo de nuevo.';
+              var fallbackEn = (data && data.message) ? data.message : 'An error occurred while submitting your proposal. Please try again.';
+              showStatus('error', fallbackEs, fallbackEn);
+            }
+          } catch (err) {
+            showStatus(
+              'error',
+              'Error de conexión. Por favor, verifica tu conexión a internet e inténtalo de nuevo.',
+              'Connection error. Please check your internet connection and try again.'
+            );
+          } finally {
+            setLoading(false);
+          }
+        });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupForm);
+      } else {
+        setupForm();
+      }
+    })();
+  </script>
 </body>
 
 </html>
