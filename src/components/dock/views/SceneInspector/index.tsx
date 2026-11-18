@@ -18,6 +18,8 @@ export function SceneInspectorComponent({
   characters = [],
   worldItems = [],
   storylines = [],
+  customStatuses,
+  colorSettings,
   onUpdateNode,
 }: SceneInspectorProps) {
   // Resolve node by prop or lookup from chapters
@@ -138,6 +140,8 @@ export function SceneInspectorComponent({
         isFolder={isFolder}
         title={node.title}
         status={node.status}
+        customStatuses={customStatuses}
+        colorSettings={colorSettings}
         onTitleChange={handleTitleChange}
         onStatusChange={handleStatusChange}
       />

@@ -124,6 +124,8 @@ export const DockViewContent = memo(function DockViewContent({
           projectCoverFileName={project.coverFileName}
           currentFilePath={currentFilePath}
           onUpdateProjectMetadata={handleUpdateProjectMetadata}
+          customStatuses={project.customStatuses}
+          colorSettings={appSettings}
         />
       );
     case 'storyline':
@@ -211,6 +213,8 @@ export const DockViewContent = memo(function DockViewContent({
           characters={project.characters}
           worldItems={project.worldItems}
           storylines={project.storylines}
+          customStatuses={project.customStatuses}
+          colorSettings={appSettings}
           onUpdateNode={handleUpdateChapter}
           onSelectChapter={setActiveChapterId}
         />
@@ -224,6 +228,8 @@ export const DockViewContent = memo(function DockViewContent({
           onSelectChapter={setActiveChapterId}
           onUpdateChapter={handleUpdateChapter}
           targetWordCount={project.targetWords ?? 80000}
+          customStatuses={project.customStatuses}
+          colorSettings={appSettings}
           onUpdateTargetWordCount={(newTarget) => {
             setProject((prev) => ({
               ...prev,

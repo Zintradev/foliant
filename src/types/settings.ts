@@ -32,6 +32,14 @@ export interface AppColorSettings {
     Artifact: ColorThemeKey | string;
     [customCategory: string]: ColorThemeKey | string;
   };
+  statuses: {
+    'Not Started': ColorThemeKey | string;
+    'In Progress': ColorThemeKey | string;
+    'First Draft': ColorThemeKey | string;
+    'Revised': ColorThemeKey | string;
+    'Completed': ColorThemeKey | string;
+    [customStatus: string]: ColorThemeKey | string;
+  };
 }
 
 export interface SwatchMeta {
@@ -139,6 +147,13 @@ export const DEFAULT_COLOR_SETTINGS: AppColorSettings = {
     Faction: 'amber',
     Lore: 'emerald',
     Artifact: 'purple',
+  },
+  statuses: {
+    'Not Started': 'zinc',
+    'In Progress': 'blue',
+    'First Draft': 'amber',
+    'Revised': 'purple',
+    'Completed': 'emerald',
   },
 };
 
@@ -293,6 +308,7 @@ export function loadSettings(): AppSettings {
       roles: { ...DEFAULT_COLOR_SETTINGS.roles, ...(parsed.roles || {}) },
       storylines: { ...DEFAULT_COLOR_SETTINGS.storylines, ...(parsed.storylines || {}) },
       categories: { ...DEFAULT_COLOR_SETTINGS.categories, ...(parsed.categories || {}) },
+      statuses: { ...DEFAULT_COLOR_SETTINGS.statuses, ...(parsed.statuses || {}) },
       preferences: {
         ...DEFAULT_PREFERENCES,
         ...(parsed.preferences || {}),

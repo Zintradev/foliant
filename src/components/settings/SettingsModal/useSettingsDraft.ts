@@ -6,8 +6,10 @@ import {
   DEFAULT_CUSTOM_THEME,
   DEFAULT_PREFERENCES,
   DEFAULT_APP_SETTINGS,
+  DEFAULT_COLOR_SETTINGS,
   saveSettings,
 } from '../../../types/settings';
+import { FoliantProject } from '../../../types/project';
 import { ActiveColorPickerState, PresetType } from './types';
 import { getPresetSettings } from './presetUtils';
 
@@ -17,7 +19,18 @@ interface UseSettingsDraftOptions {
   onUpdateSettings: (newSettings: AppSettings) => void;
   onClose: () => void;
   confirmResetMessage: string;
+  project?: FoliantProject;
+  onUpdateCustomStatuses?: (statuses: string[]) => void;
+  onRenameCustomStatus?: (oldName: string, newName: string) => void;
 }
+
+const DEFAULT_STATUS_NAMES = [
+  'Not Started',
+  'In Progress',
+  'First Draft',
+  'Revised',
+  'Completed',
+];
 
 export function useSettingsDraft({
   isOpen,
@@ -25,6 +38,9 @@ export function useSettingsDraft({
   onUpdateSettings,
   onClose,
   confirmResetMessage,
+  project,
+  onUpdateCustomStatuses,
+  onRenameCustomStatus,
 }: UseSettingsDraftOptions) {
   const [draftSettings, setDraftSettings] = useState<AppSettings>(() => ({
     ...settings,
@@ -40,6 +56,19 @@ export function useSettingsDraft({
   const [newCustomCategoryName, setNewCustomCategoryName] = useState('');
   const [newCustomCategoryColor, setNewCustomCategoryColor] = useState<string>('amber');
 
+  const [customStatuses, setCustomStatuses] = useState<string[]>(() => {
+    if (project?.customStatuses && project.customStatuses.length > 0) {
+      return project.customStatuses;
+    }
+    return Object.keys(settings.statuses || {}).filter(
+      (k) => !DEFAULT_STATUS_NAMES.includes(k)
+    );
+  });
+  const [newCustomStatusName, setNewCustomStatusName] = useState('');
+  const [newCustomStatusColor, setNewCustomStatusColor] = useState<string>('blue');
+  const [editingStatusOriginalName, setEditingStatusOriginalName] = useState<string | null>(null);
+  const [editingStatusDraftName, setEditingStatusDraftName] = useState('');
+
   const [activeColorPicker, setActiveColorPicker] = useState<ActiveColorPickerState | null>(null);
 
   useEffect(() => {
@@ -48,8 +77,17 @@ export function useSettingsDraft({
         ...settings,
         preferences: settings.preferences || DEFAULT_PREFERENCES,
       });
+      if (project?.customStatuses) {
+        setCustomStatuses(project.customStatuses);
+      } else {
+        setCustomStatuses(
+          Object.keys(settings.statuses || {}).filter(
+            (k) => !DEFAULT_STATUS_NAMES.includes(k)
+          )
+        );
+      }
     }
-  }, [isOpen, settings]);
+  }, [isOpen, settings, project?.customStatuses]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -172,6 +210,98 @@ export function useSettingsDraft({
     });
   };
 
+  const handleStatusColorChange = (status: string, color: string) => {
+    commitSettings({
+      ...draftSettings,
+      preferences: { ...(draftSettings.preferences || DEFAULT_PREFERENCES), colorPreset: 'custom' },
+      statuses: {
+        ...(draftSettings.statuses || DEFAULT_COLOR_SETTINGS.statuses),
+        [status]: color,
+      },
+    });
+  };
+
+  const handleAddCustomStatus = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = newCustomStatusName.trim();
+    if (!trimmed) return;
+    if (DEFAULT_STATUS_NAMES.includes(trimmed) || customStatuses.includes(trimmed)) return;
+    const nextStatuses = [...customStatuses, trimmed];
+    setCustomStatuses(nextStatuses);
+    onUpdateCustomStatuses?.(nextStatuses);
+    commitSettings({
+      ...draftSettings,
+      preferences: { ...(draftSettings.preferences || DEFAULT_PREFERENCES), colorPreset: 'custom' },
+      statuses: {
+        ...(draftSettings.statuses || DEFAULT_COLOR_SETTINGS.statuses),
+        [trimmed]: newCustomStatusColor,
+      },
+    });
+    setNewCustomStatusName('');
+  };
+
+  const handleRemoveCustomStatus = (status: string) => {
+    const nextStatuses = customStatuses.filter((s) => s !== status);
+    setCustomStatuses(nextStatuses);
+    onUpdateCustomStatuses?.(nextStatuses);
+    const nextStatusesColors = {
+      ...(draftSettings.statuses || DEFAULT_COLOR_SETTINGS.statuses),
+    };
+    delete nextStatusesColors[status];
+    commitSettings({
+      ...draftSettings,
+      preferences: { ...(draftSettings.preferences || DEFAULT_PREFERENCES), colorPreset: 'custom' },
+      statuses: nextStatusesColors,
+    });
+    if (editingStatusOriginalName === status) {
+      setEditingStatusOriginalName(null);
+      setEditingStatusDraftName('');
+    }
+  };
+
+  const handleStartEditStatus = (status: string) => {
+    setEditingStatusOriginalName(status);
+    setEditingStatusDraftName(status);
+  };
+
+  const handleCancelEditStatus = () => {
+    setEditingStatusOriginalName(null);
+    setEditingStatusDraftName('');
+  };
+
+  const handleSaveEditStatus = (originalName: string) => {
+    const trimmed = editingStatusDraftName.trim();
+    if (!trimmed || trimmed === originalName) {
+      setEditingStatusOriginalName(null);
+      setEditingStatusDraftName('');
+      return;
+    }
+    if (DEFAULT_STATUS_NAMES.includes(trimmed) || customStatuses.includes(trimmed)) {
+      setEditingStatusOriginalName(null);
+      setEditingStatusDraftName('');
+      return;
+    }
+    const nextStatuses = customStatuses.map((s) => (s === originalName ? trimmed : s));
+    setCustomStatuses(nextStatuses);
+    onUpdateCustomStatuses?.(nextStatuses);
+    onRenameCustomStatus?.(originalName, trimmed);
+
+    const nextStatusesColors = {
+      ...(draftSettings.statuses || DEFAULT_COLOR_SETTINGS.statuses),
+    };
+    const prevColor = nextStatusesColors[originalName] || 'blue';
+    delete nextStatusesColors[originalName];
+    nextStatusesColors[trimmed] = prevColor;
+
+    commitSettings({
+      ...draftSettings,
+      preferences: { ...(draftSettings.preferences || DEFAULT_PREFERENCES), colorPreset: 'custom' },
+      statuses: nextStatusesColors,
+    });
+    setEditingStatusOriginalName(null);
+    setEditingStatusDraftName('');
+  };
+
   const handleResetToDefault = () => {
     if (window.confirm(confirmResetMessage)) {
       commitSettings(DEFAULT_APP_SETTINGS);
@@ -199,6 +329,9 @@ export function useSettingsDraft({
     } else if (activeColorPicker.type === 'category') {
       if (activeColorPicker.key === '__new_category__') setNewCustomCategoryColor(hex);
       else handleCategoryColorChange(activeColorPicker.key, hex);
+    } else if (activeColorPicker.type === 'status') {
+      if (activeColorPicker.key === '__new_status__') setNewCustomStatusColor(hex);
+      else handleStatusColorChange(activeColorPicker.key, hex);
     } else if (activeColorPicker.type === 'theme') {
       handleCustomColorChange(activeColorPicker.key as keyof CustomThemeColors, hex);
     }
@@ -219,6 +352,14 @@ export function useSettingsDraft({
     setNewCustomCategoryName,
     newCustomCategoryColor,
     setNewCustomCategoryColor,
+    customStatuses,
+    newCustomStatusName,
+    setNewCustomStatusName,
+    newCustomStatusColor,
+    setNewCustomStatusColor,
+    editingStatusOriginalName,
+    editingStatusDraftName,
+    setEditingStatusDraftName,
     activeColorPicker,
     setActiveColorPicker,
     handlePreferenceChange,
@@ -231,6 +372,12 @@ export function useSettingsDraft({
     handleCategoryColorChange,
     handleAddCustomCategory,
     handleRemoveCustomCategory,
+    handleStatusColorChange,
+    handleAddCustomStatus,
+    handleRemoveCustomStatus,
+    handleStartEditStatus,
+    handleCancelEditStatus,
+    handleSaveEditStatus,
     handleResetToDefault,
     applyPreset,
     customTheme,

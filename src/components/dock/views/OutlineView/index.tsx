@@ -147,6 +147,8 @@ interface OutlineSplitViewProps {
   activeChapterId: string;
   onSelectChapter: (id: string) => void;
   onUpdateChapter?: (id: string, updates: Partial<TextNode>) => void;
+  customStatuses?: string[];
+  colorSettings?: import('../../../../types/settings').AppColorSettings;
 }
 
 const OutlineSplitView = memo(function OutlineSplitView({
@@ -157,6 +159,8 @@ const OutlineSplitView = memo(function OutlineSplitView({
   activeChapterId,
   onSelectChapter,
   onUpdateChapter,
+  customStatuses,
+  colorSettings,
 }: OutlineSplitViewProps) {
   return (
     <div className="flex-1 flex overflow-hidden">
@@ -172,6 +176,8 @@ const OutlineSplitView = memo(function OutlineSplitView({
           onUpdateChapter={onUpdateChapter}
           targetWordCount={80000}
           isExpanded={false}
+          customStatuses={customStatuses}
+          colorSettings={colorSettings}
         />
       </div>
     </div>
@@ -201,6 +207,8 @@ export function OutlineViewComponent({
   projectCoverFileName,
   currentFilePath,
   onUpdateProjectMetadata,
+  customStatuses,
+  colorSettings,
 }: OutlineViewProps) {
   const { t } = useTranslation();
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('main');
@@ -388,6 +396,8 @@ export function OutlineViewComponent({
             activeChapterId={activeChapterId}
             onSelectChapter={onSelectChapter}
             onUpdateChapter={onUpdateChapter}
+            customStatuses={customStatuses}
+            colorSettings={colorSettings}
           />
         )
       ) : (

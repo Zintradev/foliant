@@ -1,5 +1,6 @@
 import { TextNode } from '../../../../types/project';
 import { StorylineItem } from '../../../../types/dock';
+import { AppColorSettings } from '../../../../types/settings';
 
 export type LayoutMode = 'details' | 'main' | 'split' | '1col' | '2col';
 
@@ -28,6 +29,8 @@ export interface OutlineViewProps {
     cover?: string;
     coverFileName?: string;
   }) => void;
+  customStatuses?: string[];
+  colorSettings?: AppColorSettings;
 }
 
 export interface TreeItem {

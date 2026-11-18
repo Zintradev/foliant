@@ -15,6 +15,9 @@ export const SettingsModal = React.memo(function SettingsModal({
   onClose,
   settings,
   onUpdateSettings,
+  project,
+  onUpdateCustomStatuses,
+  onRenameCustomStatus,
 }: SettingsModalProps) {
   const [activeSection, setActiveSection] = useState<SettingsSection>('general');
   const [taxonomyTab, setTaxonomyTab] = useState<TaxonomySubTab>('roles');
@@ -36,6 +39,14 @@ export const SettingsModal = React.memo(function SettingsModal({
     setNewCustomCategoryName,
     newCustomCategoryColor,
     setNewCustomCategoryColor,
+    customStatuses,
+    newCustomStatusName,
+    setNewCustomStatusName,
+    newCustomStatusColor,
+    setNewCustomStatusColor,
+    editingStatusOriginalName,
+    editingStatusDraftName,
+    setEditingStatusDraftName,
     activeColorPicker,
     setActiveColorPicker,
     handlePreferenceChange,
@@ -48,6 +59,12 @@ export const SettingsModal = React.memo(function SettingsModal({
     handleCategoryColorChange,
     handleAddCustomCategory,
     handleRemoveCustomCategory,
+    handleStatusColorChange,
+    handleAddCustomStatus,
+    handleRemoveCustomStatus,
+    handleStartEditStatus,
+    handleCancelEditStatus,
+    handleSaveEditStatus,
     handleResetToDefault,
     applyPreset,
     customTheme,
@@ -59,6 +76,9 @@ export const SettingsModal = React.memo(function SettingsModal({
     onUpdateSettings,
     onClose,
     confirmResetMessage: t('resetDefaultsConfirm'),
+    project,
+    onUpdateCustomStatuses,
+    onRenameCustomStatus,
   });
 
   if (!isOpen) return null;
@@ -174,6 +194,21 @@ export const SettingsModal = React.memo(function SettingsModal({
                 onCategoryColorChange={handleCategoryColorChange}
                 onAddCategory={handleAddCustomCategory}
                 onRemoveCategory={handleRemoveCustomCategory}
+                statuses={draftSettings.statuses || {}}
+                customStatuses={customStatuses}
+                newStatusName={newCustomStatusName}
+                onNewStatusNameChange={setNewCustomStatusName}
+                newStatusColor={newCustomStatusColor}
+                onNewStatusColorChange={setNewCustomStatusColor}
+                onStatusColorChange={handleStatusColorChange}
+                onAddStatus={handleAddCustomStatus}
+                onRemoveStatus={handleRemoveCustomStatus}
+                editingStatusOriginalName={editingStatusOriginalName}
+                editingStatusDraftName={editingStatusDraftName}
+                onEditingStatusDraftNameChange={setEditingStatusDraftName}
+                onStartEditStatus={handleStartEditStatus}
+                onCancelEditStatus={handleCancelEditStatus}
+                onSaveEditStatus={handleSaveEditStatus}
                 activePreset={prefs?.colorPreset}
                 onApplyPreset={applyPreset}
                 onOpenColorPicker={setActiveColorPicker}

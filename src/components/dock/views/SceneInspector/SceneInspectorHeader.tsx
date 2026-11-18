@@ -1,13 +1,16 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { FileText, Folder } from 'lucide-react';
 import { ChapterStatus } from '../../../../types/project';
-import { STATUS_OPTIONS, getStatusBadgeStyle } from '../ProjectStatsView';
+import { AppColorSettings } from '../../../../types/settings';
+import { getAllStatusOptions, getStatusBadgeProps } from '../ProjectStatsView';
 import { useTranslation } from '../../../../i18n/translations';
 
 interface SceneInspectorHeaderProps {
   isFolder: boolean;
   title: string;
   status?: ChapterStatus;
+  customStatuses?: string[];
+  colorSettings?: AppColorSettings;
   onTitleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onStatusChange: (status: ChapterStatus) => void;
 }
@@ -16,6 +19,8 @@ function SceneInspectorHeader({
   isFolder,
   title,
   status,
+  customStatuses,
+  colorSettings,
   onTitleChange,
   onStatusChange,
 }: SceneInspectorHeaderProps) {
@@ -39,6 +44,11 @@ function SceneInspectorHeader({
   };
 
   const currentStatus = status || 'In Progress';
+  const statusOptions = useMemo(
+    () => getAllStatusOptions(customStatuses, currentStatus),
+    [customStatuses, currentStatus]
+  );
+  const badge = getStatusBadgeProps(currentStatus, colorSettings);
 
   return (
     <div className="p-3 bg-zinc-900/60 flex flex-col gap-2 shrink-0">
@@ -61,11 +71,10 @@ function SceneInspectorHeader({
         <select
           value={currentStatus}
           onChange={(e) => onStatusChange(e.target.value as ChapterStatus)}
-          className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded-xs border focus:outline-none focus:ring-1 focus:ring-zinc-600 bg-zinc-900 cursor-pointer ${getStatusBadgeStyle(
-            currentStatus
-          )}`}
+          className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded-xs border focus:outline-none focus:ring-1 focus:ring-zinc-600 cursor-pointer ${badge.className}`}
+          style={badge.style}
         >
-          {STATUS_OPTIONS.map((st) => (
+          {statusOptions.map((st) => (
             <option key={st} value={st} className="bg-zinc-900 text-zinc-200 font-sans">
               {getStatusLabel(st)}
             </option>

@@ -1,5 +1,6 @@
 import { TextNode, ChapterStatus } from '../../../../types/project';
 import { StorylineItem } from '../../../../types/dock';
+import { AppColorSettings } from '../../../../types/settings';
 
 export interface ProjectStatsViewProps {
   chapters: TextNode[];
@@ -10,6 +11,8 @@ export interface ProjectStatsViewProps {
   targetWordCount?: number;
   onUpdateTargetWordCount?: (target: number) => void;
   isExpanded?: boolean;
+  customStatuses?: string[];
+  colorSettings?: AppColorSettings;
 }
 
 export interface TreeStatItem {

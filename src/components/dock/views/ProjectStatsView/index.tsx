@@ -249,6 +249,8 @@ export function ProjectStatsViewComponent({
   targetWordCount: initialTarget = 80000,
   onUpdateTargetWordCount,
   isExpanded = false,
+  customStatuses,
+  colorSettings,
 }: ProjectStatsViewProps) {
   const [targetWordCount, setTargetWordCount] = useState<number>(initialTarget);
   const [searchQuery, setSearchQuery] = useState('');
@@ -405,6 +407,8 @@ export function ProjectStatsViewComponent({
           activeChapterId={activeChapterId}
           collapsedFolderIds={collapsedFolderIds}
           searchQuery={searchQuery}
+          customStatuses={customStatuses}
+          colorSettings={colorSettings}
           onSelectChapter={onSelectChapter}
           onToggleFolder={handleToggleFolder}
           onUpdateChapter={onUpdateChapter}

@@ -1,10 +1,11 @@
 import { AppSettings, AppPreferences, CustomThemeColors } from '../../../types/settings';
+import { FoliantProject } from '../../../types/project';
 
 export type SettingsSection = 'general' | 'appearance' | 'editor' | 'timeline' | 'taxonomy' | 'info';
-export type TaxonomySubTab = 'roles' | 'storylines' | 'categories' | 'presets';
+export type TaxonomySubTab = 'roles' | 'storylines' | 'categories' | 'statuses' | 'presets';
 
 export interface ActiveColorPickerState {
-  type: 'role' | 'storyline' | 'category' | 'theme';
+  type: 'role' | 'storyline' | 'category' | 'status' | 'theme';
   key: string;
   color: string;
   title: string;
@@ -15,6 +16,9 @@ export interface SettingsModalProps {
   onClose: () => void;
   settings: AppSettings;
   onUpdateSettings: (newSettings: AppSettings) => void;
+  project?: FoliantProject;
+  onUpdateCustomStatuses?: (statuses: string[]) => void;
+  onRenameCustomStatus?: (oldName: string, newName: string) => void;
 }
 
 export type PreferenceChangeHandler = <K extends keyof AppPreferences>(

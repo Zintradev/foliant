@@ -65,3 +65,20 @@ export function getStorylineLabel(key: string, t: (key: string, fallback?: strin
   const colorTrans = COLOR_TRANSLATION_MAP[key.toLowerCase()];
   return colorTrans ? t(colorTrans) : key;
 }
+
+export function getStatusLabel(status: string, t: (key: string, fallback?: string) => string): string {
+  switch (status) {
+    case 'Not Started':
+      return t('statusNotStarted');
+    case 'In Progress':
+      return t('statusInProgress');
+    case 'First Draft':
+      return t('statusFirstDraft');
+    case 'Revised':
+      return t('statusRevised');
+    case 'Completed':
+      return t('statusDone');
+    default:
+      return status;
+  }
+}

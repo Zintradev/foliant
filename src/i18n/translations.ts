@@ -188,6 +188,14 @@ export const dict = {
     storylineNamePlaceholder: 'New storyline track (e.g. Romance, Mystery)...',
     addCustomCategory: 'Add Custom Category',
     categoryNamePlaceholder: 'New lore category (e.g. Magic, Fauna)...',
+    workflowStatuses: 'Workflow Statuses',
+    workflowStatusesDesc: 'Progression states and colors for scenes and folders',
+    addCustomStatus: 'Add Custom Status',
+    statusNamePlaceholder: 'New workflow status (e.g. Needs Fact-Checking, Beta Review)...',
+    deleteCustomStatus: 'Delete Custom Status',
+    editCustomStatus: 'Edit Status Name',
+    saveStatusName: 'Save Status',
+    defaultBadge: 'Default',
 
     // Presets
     presets: 'Palette Presets',
@@ -1110,6 +1118,14 @@ export const dict = {
     storylineNamePlaceholder: 'Nueva trama argumental (ej. Romance, Misterio)...',
     addCustomCategory: 'Añadir Categoría Personalizada',
     categoryNamePlaceholder: 'Nueva categoría (ej. Magia, Fauna)...',
+    workflowStatuses: 'Estados de Flujo',
+    workflowStatusesDesc: 'Estados de progreso y colores para escenas y carpetas',
+    addCustomStatus: 'Añadir Estado Personalizado',
+    statusNamePlaceholder: 'Nuevo estado (ej. Requiere Verificación, Revisión Beta)...',
+    deleteCustomStatus: 'Eliminar Estado Personalizado',
+    editCustomStatus: 'Editar Nombre de Estado',
+    saveStatusName: 'Guardar Estado',
+    defaultBadge: 'Predeterminado',
 
     // Presets
     presets: 'Paletas Predefinidas',

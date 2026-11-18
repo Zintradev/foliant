@@ -1,13 +1,36 @@
+import type { CSSProperties } from 'react';
 import { ChapterStatus } from '../../../../types/project';
+import { AppColorSettings, COLOR_SWATCHES } from '../../../../types/settings';
+import { hexToRgb } from '../../../common/DarkColorPicker/colorConversions';
 import { ProgressStatus } from './types';
 
-export const STATUS_OPTIONS: ChapterStatus[] = [
+export const DEFAULT_STATUS_OPTIONS: ChapterStatus[] = [
   'Not Started',
   'In Progress',
   'First Draft',
   'Revised',
   'Completed',
 ];
+
+export const STATUS_OPTIONS: ChapterStatus[] = DEFAULT_STATUS_OPTIONS;
+
+export function getAllStatusOptions(
+  customStatuses?: string[],
+  currentStatus?: string
+): string[] {
+  const options = [...DEFAULT_STATUS_OPTIONS];
+  if (customStatuses && Array.isArray(customStatuses)) {
+    for (const s of customStatuses) {
+      if (s && !options.includes(s as any)) {
+        options.push(s);
+      }
+    }
+  }
+  if (currentStatus && !options.includes(currentStatus as any)) {
+    options.push(currentStatus);
+  }
+  return options;
+}
 
 export function formatReadingTime(words: number): string {
   const minutes = Math.ceil(words / 225);
@@ -67,20 +90,61 @@ export function getProgressStatus(current: number, target: number): ProgressStat
   };
 }
 
-export function getStatusBadgeStyle(status: ChapterStatus): string {
+export interface StatusBadgeProps {
+  className: string;
+  style?: CSSProperties;
+}
+
+export function getStatusBadgeProps(
+  status: ChapterStatus,
+  colorSettings?: AppColorSettings
+): StatusBadgeProps {
+  const colorKey = colorSettings?.statuses?.[status];
+  if (colorKey) {
+    if (COLOR_SWATCHES[colorKey]) {
+      const swatch = COLOR_SWATCHES[colorKey]!;
+      return {
+        className: `${swatch.badgeBorder} ${swatch.badgeBg} ${swatch.badgeText}`,
+      };
+    }
+
+    // Custom hex color (e.g. #e11d48)
+    const cleanHex = colorKey.startsWith('#')
+      ? colorKey.length > 7
+        ? colorKey.slice(0, 7)
+        : colorKey
+      : `#${colorKey}`;
+    const { r, g, b } = hexToRgb(cleanHex);
+    return {
+      className: 'border',
+      style: {
+        backgroundColor: `rgba(${r}, ${g}, ${b}, 0.2)`,
+        borderColor: `rgba(${r}, ${g}, ${b}, 0.6)`,
+        color: cleanHex,
+      },
+    };
+  }
+
   switch (status) {
     case 'Completed':
-      return 'border-emerald-800/60 bg-emerald-950/40 text-emerald-400';
+      return { className: 'border-emerald-800/60 bg-emerald-950/40 text-emerald-400' };
     case 'Revised':
-      return 'border-purple-800/60 bg-purple-950/40 text-purple-400';
+      return { className: 'border-purple-800/60 bg-purple-950/40 text-purple-400' };
     case 'First Draft':
-      return 'border-amber-800/60 bg-amber-950/40 text-amber-400';
+      return { className: 'border-amber-800/60 bg-amber-950/40 text-amber-400' };
     case 'In Progress':
-      return 'border-blue-800/60 bg-blue-950/40 text-blue-400';
+      return { className: 'border-blue-800/60 bg-blue-950/40 text-blue-400' };
     case 'Not Started':
     default:
-      return 'border-zinc-800 bg-zinc-900 text-zinc-400';
+      return { className: 'border-zinc-800 bg-zinc-900 text-zinc-400' };
   }
+}
+
+export function getStatusBadgeStyle(
+  status: ChapterStatus,
+  colorSettings?: AppColorSettings
+): string {
+  return getStatusBadgeProps(status, colorSettings).className;
 }
 
 export function getStatusLabel(s: ChapterStatus, t: (key: string) => string): string {
