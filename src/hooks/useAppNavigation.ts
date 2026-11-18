@@ -18,9 +18,9 @@ interface UseAppNavigationOptions {
 }
 
 export function useAppNavigation({
-  isDirty,
+  isDirty: _isDirty,
   setIsDirty,
-  activeMainView,
+  activeMainView: _activeMainView,
   setActiveMainView,
   activeBottomTab,
   setActiveBottomTab,
@@ -39,21 +39,12 @@ export function useAppNavigation({
         handleOpenSearchTab();
         return;
       }
-      if (isDirty && view !== activeMainView && activeMainView !== 'moodboard') {
-        setPendingNavigationAction(() => () => {
-          if (!persistViewFilters) {
-            setTimelineFilters({ storyline: 'all', character: 'all' });
-          }
-          setActiveMainView(view);
-        });
-        return;
-      }
       if (!persistViewFilters) {
         setTimelineFilters({ storyline: 'all', character: 'all' });
       }
       setActiveMainView(view);
     },
-    [isDirty, activeMainView, persistViewFilters, handleOpenSearchTab, setTimelineFilters, setActiveMainView]
+    [persistViewFilters, handleOpenSearchTab, setTimelineFilters, setActiveMainView]
   );
 
   const handleSelectSearchResult = useCallback(

@@ -36,9 +36,9 @@ function loadStoredDockState(): StoredDockState | null {
 
 export function useDockLayout(options: UseDockLayoutOptions = {}): UseDockLayoutReturn {
   const {
-    isDirty = false,
+    isDirty: _isDirty = false,
     persistViewFilters = false,
-    onPendingNavigation,
+    onPendingNavigation: _onPendingNavigation,
     onResetFilters,
     onOpenWriteView,
   } = options;
@@ -178,40 +178,22 @@ export function useDockLayout(options: UseDockLayoutOptions = {}): UseDockLayout
 
   const handleSelectLeftTab = useCallback(
     (tabId: TabId) => {
-      if (isDirty && tabId !== activeLeftTab && activeLeftTab !== 'moodboard') {
-        onPendingNavigation?.(() => {
-          if (!persistViewFilters) {
-            onResetFilters?.();
-          }
-          setActiveLeftTab(tabId);
-        });
-        return;
-      }
       if (!persistViewFilters) {
         onResetFilters?.();
       }
       setActiveLeftTab(tabId);
     },
-    [isDirty, activeLeftTab, persistViewFilters, onPendingNavigation, onResetFilters]
+    [persistViewFilters, onResetFilters]
   );
 
   const handleSelectRightTab = useCallback(
     (tabId: TabId) => {
-      if (isDirty && tabId !== activeRightTab && activeRightTab !== 'moodboard') {
-        onPendingNavigation?.(() => {
-          if (!persistViewFilters) {
-            onResetFilters?.();
-          }
-          setActiveRightTab(tabId);
-        });
-        return;
-      }
       if (!persistViewFilters) {
         onResetFilters?.();
       }
       setActiveRightTab(tabId);
     },
-    [isDirty, activeRightTab, persistViewFilters, onPendingNavigation, onResetFilters]
+    [persistViewFilters, onResetFilters]
   );
 
   const handleResizeLeft = useCallback((delta: number) => {

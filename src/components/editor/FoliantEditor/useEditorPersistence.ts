@@ -51,6 +51,9 @@ export function useEditorPersistence({
         onStatusChangeRef.current?.('saving');
       }
 
+      // Commit fresh content to parent project state first
+      onChangeRef.current?.(contentToSave, targetChapterId);
+
       try {
         if (isAutoSave && isTauriApp()) {
           await invoke('save_chapter_file', {
@@ -58,9 +61,6 @@ export function useEditorPersistence({
             content: contentToSave,
           });
         }
-
-        // Notify parent state of confirmed written content for this specific chapter
-        onChangeRef.current?.(contentToSave, targetChapterId);
 
         if (isCurrentActive) {
           isDirtyRef.current = false;
@@ -72,6 +72,7 @@ export function useEditorPersistence({
         }
       } catch {
         if (isCurrentActive) {
+          isDirtyRef.current = false;
           onStatusChangeRef.current?.('unsaved');
         }
       }
@@ -102,7 +103,7 @@ export function useEditorPersistence({
 
   // Immediate flush routine for manual save actions (Ctrl+S or menu clicks)
   useEffect(() => {
-    const flushPending = () => {
+    const flushPending = (e?: Event) => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
         debounceTimerRef.current = null;
@@ -111,16 +112,20 @@ export function useEditorPersistence({
         clearTimeout(idleTimerRef.current);
         idleTimerRef.current = null;
       }
-      if (editor && !editor.isDestroyed && isDirtyRef.current) {
+      if (editor && !editor.isDestroyed) {
         const freshContent = editor.getHTML();
         isDirtyRef.current = false;
+        if (e && 'detail' in e && (e as any).detail) {
+          (e as any).detail.chapterId = activeChapterIdRef.current;
+          (e as any).detail.content = freshContent;
+        }
         onChangeRef.current?.(freshContent, activeChapterIdRef.current);
       }
     };
 
     const handleWindowSave = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-        flushPending();
+        flushPending(e);
       }
     };
 
@@ -170,14 +175,19 @@ export function useEditorPersistence({
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
 
-      if (isDirtyRef.current && editor && !editor.isDestroyed && isTauriApp()) {
+      if (isDirtyRef.current && editor && !editor.isDestroyed) {
         const lastContent = editor.getHTML();
-        invoke('save_chapter_file', {
-          path: `../tests/fixtures/${activeChapterIdRef.current}.md`,
-          content: lastContent,
-        }).catch(() => {
-          // ignore unmount save error
-        });
+        isDirtyRef.current = false;
+        onChangeRef.current?.(lastContent, activeChapterIdRef.current);
+
+        if (isTauriApp()) {
+          invoke('save_chapter_file', {
+            path: `../tests/fixtures/${activeChapterIdRef.current}.md`,
+            content: lastContent,
+          }).catch(() => {
+            // ignore unmount save error
+          });
+        }
       }
     };
   }, [editor]);

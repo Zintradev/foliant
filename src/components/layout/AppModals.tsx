@@ -46,6 +46,7 @@ export interface AppModalsProps {
   isCloseConfirmOpen?: boolean;
   onCancelCloseConfirm?: () => void;
   onConfirmClose?: () => void;
+  onSaveAndExitCloseConfirm?: () => void;
 
   // Import Result
   importModalData: ImportModalData;
@@ -89,12 +90,13 @@ export const AppModals = memo(function AppModals({
   onUpdateSettings,
   onUpdateCustomStatuses,
   onRenameCustomStatus,
-  pendingNavigationAction,
-  onCancelPendingNavigation,
-  onConfirmPendingNavigation,
+  pendingNavigationAction: _pendingNavigationAction,
+  onCancelPendingNavigation: _onCancelPendingNavigation,
+  onConfirmPendingNavigation: _onConfirmPendingNavigation,
   isCloseConfirmOpen = false,
   onCancelCloseConfirm,
   onConfirmClose,
+  onSaveAndExitCloseConfirm,
   importModalData,
   onCloseImportResult,
   isHelpGuideOpen = false,
@@ -159,21 +161,13 @@ export const AppModals = memo(function AppModals({
         </Suspense>
       </ErrorBoundary>
 
-      {/* UNSAVED CHANGES NAVIGATION GUARD MODAL */}
-      <Suspense fallback={null}>
-        <UnsavedChangesModal
-          isOpen={Boolean(pendingNavigationAction)}
-          onCancel={onCancelPendingNavigation}
-          onConfirm={onConfirmPendingNavigation}
-        />
-      </Suspense>
-
       {/* UNSAVED CHANGES CLOSE MODAL */}
       <Suspense fallback={null}>
         <UnsavedChangesModal
           isOpen={isCloseConfirmOpen}
           onCancel={onCancelCloseConfirm || (() => {})}
           onConfirm={onConfirmClose || (() => {})}
+          onSaveAndExit={onSaveAndExitCloseConfirm}
           title={t('unsavedCloseTitle', 'Cambios sin guardar')}
           message={t(
             'unsavedCloseMessage',
@@ -181,6 +175,7 @@ export const AppModals = memo(function AppModals({
           )}
           cancelText={t('keepEditing', 'Permanecer aquí')}
           confirmText={t('discardAndExit', 'Descartar y Salir')}
+          saveAndExitText={t('saveAndExit', 'Guardar y Salir')}
         />
       </Suspense>
 

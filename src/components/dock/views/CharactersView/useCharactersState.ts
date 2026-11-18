@@ -48,9 +48,7 @@ export function useCharactersState({
   };
 
   const handleUpdateActiveChar = (charId: string, updates: Partial<CharacterItem>) => {
-    if (saveMode === 'auto') {
-      onChange(characters.map((c) => (c.id === charId ? { ...c, ...updates } : c)));
-    }
+    onChange(characters.map((c) => (c.id === charId ? { ...c, ...updates } : c)));
   };
 
   const handleAdd = () => {

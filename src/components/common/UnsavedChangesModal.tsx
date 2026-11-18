@@ -1,14 +1,16 @@
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Save } from 'lucide-react';
 import { useTranslation } from '../../i18n/translations';
 
 export interface UnsavedChangesModalProps {
   isOpen: boolean;
   onCancel: () => void;
   onConfirm: () => void;
+  onSaveAndExit?: () => void;
   title?: string;
   message?: string;
   cancelText?: string;
   confirmText?: string;
+  saveAndExitText?: string;
 }
 
 /**
@@ -20,10 +22,12 @@ export default function UnsavedChangesModal({
   isOpen,
   onCancel,
   onConfirm,
+  onSaveAndExit,
   title,
   message,
   cancelText,
   confirmText,
+  saveAndExitText,
 }: UnsavedChangesModalProps) {
   const { t } = useTranslation();
 
@@ -57,10 +61,20 @@ export default function UnsavedChangesModal({
           <button
             type="button"
             onClick={onConfirm}
-            className="px-3.5 py-1.5 rounded-sm text-xs font-medium bg-rose-600 hover:bg-rose-500 text-white shadow-xs transition cursor-pointer"
+            className="px-3.5 py-1.5 rounded-sm text-xs font-medium bg-rose-600/90 hover:bg-rose-600 text-white shadow-xs transition cursor-pointer"
           >
-            {confirmText || t('discardAndSwitch')}
+            {confirmText || t('discardAndExit')}
           </button>
+          {onSaveAndExit && (
+            <button
+              type="button"
+              onClick={onSaveAndExit}
+              className="px-3.5 py-1.5 rounded-sm text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition cursor-pointer flex items-center gap-1.5"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{saveAndExitText || t('saveAndExit')}</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

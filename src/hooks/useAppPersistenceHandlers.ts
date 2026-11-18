@@ -18,10 +18,10 @@ export interface UseAppPersistenceHandlersOptions {
 }
 
 export function useAppPersistenceHandlers({
-  currentFilePath,
+  currentFilePath: _currentFilePath,
   saveProject,
   saveProjectAs,
-  saveSilently,
+  saveSilently: _saveSilently,
   newProject,
   loadProject,
   setActiveChapterId,
@@ -34,12 +34,13 @@ export function useAppPersistenceHandlers({
 
   const handleEditorStatusChange = useCallback(
     (status: SaveStatus) => {
-      setEditorSaveStatus(status);
-      if (status === 'saved' && currentFilePath) {
-        saveSilently();
+      // The editor's internal debounce does not mean the project is saved to disk.
+      // Only set 'unsaved' or 'saving'; 'saved' is reserved for real disk writes.
+      if (status === 'unsaved') {
+        setEditorSaveStatus('unsaved');
       }
     },
-    [currentFilePath, saveSilently]
+    []
   );
 
   const handleManualSave = useCallback(async () => {
