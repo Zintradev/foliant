@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { TextNode } from '../../../../types/project';
+import { AppColorSettings } from '../../../../types/settings';
 import { TreeStatItem } from './types';
 import { ProjectStatsTableRow } from './ProjectStatsTableRow';
 import { useTranslation } from '../../../../i18n/translations';
@@ -10,6 +11,8 @@ interface ProjectStatsTableProps {
   activeChapterId: string;
   collapsedFolderIds: Set<string>;
   searchQuery: string;
+  customStatuses?: string[];
+  colorSettings?: AppColorSettings;
   onSelectChapter: (id: string) => void;
   onToggleFolder: (id: string) => void;
   onUpdateChapter?: (id: string, updates: Partial<TextNode>) => void;
@@ -21,6 +24,8 @@ function ProjectStatsTableComponent({
   activeChapterId,
   collapsedFolderIds,
   searchQuery,
+  customStatuses,
+  colorSettings,
   onSelectChapter,
   onToggleFolder,
   onUpdateChapter,
@@ -90,6 +95,8 @@ function ProjectStatsTableComponent({
                   isExpanded={isExpanded}
                   isActive={item.node.type !== 'folder' && item.node.id === activeChapterId}
                   isCollapsed={item.node.type === 'folder' && collapsedFolderIds.has(item.node.id)}
+                  customStatuses={customStatuses}
+                  colorSettings={colorSettings}
                   onSelectChapter={onSelectChapter}
                   onToggleFolder={onToggleFolder}
                   onUpdateChapter={onUpdateChapter}

@@ -1,5 +1,6 @@
 import { TextNode } from '../../../../types/project';
 import { CharacterItem, WorldItem, StorylineItem } from '../../../../types/dock';
+import { AppColorSettings } from '../../../../types/settings';
 
 export interface SceneInspectorProps {
   activeNodeId: string;
@@ -8,6 +9,8 @@ export interface SceneInspectorProps {
   characters?: CharacterItem[];
   worldItems?: WorldItem[];
   storylines?: StorylineItem[];
+  customStatuses?: string[];
+  colorSettings?: AppColorSettings;
   onUpdateNode: (id: string, updates: Partial<TextNode>) => void;
   onSelectChapter?: (id: string) => void;
 }

@@ -8,12 +8,14 @@ import {
   WorldItem,
 } from './dock';
 
-export type ChapterStatus =
+export type ChapterStatusDefault =
   | 'Not Started'
   | 'In Progress'
   | 'First Draft'
   | 'Revised'
   | 'Completed';
+
+export type ChapterStatus = ChapterStatusDefault | (string & {});
 
 export type PlotStatus = 'Active' | 'Dormant' | 'Resolved';
 
@@ -86,6 +88,7 @@ export interface FoliantProject {
   synopsis?: string;
   cover?: string;
   coverFileName?: string;
+  customStatuses?: string[];
 }
 
 export interface ProjectVisualItem {
@@ -122,5 +125,6 @@ export function createEmptyProject(
     synopsis: '',
     cover: undefined,
     coverFileName: undefined,
+    customStatuses: [],
   };
 }

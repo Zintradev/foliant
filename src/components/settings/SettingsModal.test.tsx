@@ -877,6 +877,94 @@ describe('SettingsModal Component', () => {
     expect(mockOnUpdateSettings).toHaveBeenCalled();
   });
 
+  it('manages workflow statuses in Taxonomy tab: adds, edits, updates color, and deletes custom status', () => {
+    const mockUpdateCustomStatuses = vi.fn();
+    const mockRenameCustomStatus = vi.fn();
+
+    render(
+      <SettingsModal
+        isOpen={true}
+        onClose={mockOnClose}
+        settings={mockSettings}
+        onUpdateSettings={mockOnUpdateSettings}
+        project={{
+          id: 'test-project',
+          title: 'Test',
+          lastModified: Date.now(),
+          chapters: [],
+          storylines: [],
+          characters: [],
+          relationships: [],
+          junctions: [],
+          worldItems: [],
+          contextBlocks: [],
+          customStatuses: ['Beta Reader Review'],
+        }}
+        onUpdateCustomStatuses={mockUpdateCustomStatuses}
+        onRenameCustomStatus={mockRenameCustomStatus}
+      />
+    );
+
+    fireEvent.click(screen.getByText(dict.en.categoryTaxonomy));
+    const statusesTabButton = screen.getByRole('button', { name: dict.en.workflowStatuses });
+    fireEvent.click(statusesTabButton);
+
+    // Default statuses must be displayed
+    expect(screen.getByText(dict.en.statusNotStarted)).toBeInTheDocument();
+    expect(screen.getByText(dict.en.statusInProgress)).toBeInTheDocument();
+    expect(screen.getByText(dict.en.statusFirstDraft)).toBeInTheDocument();
+    expect(screen.getByText(dict.en.statusRevised)).toBeInTheDocument();
+    expect(screen.getAllByText(dict.en.statusDone).length).toBeGreaterThanOrEqual(1);
+
+    // Initial custom status
+    expect(screen.getByText('Beta Reader Review')).toBeInTheDocument();
+
+    // Add a new custom status
+    const statusInput = screen.getByPlaceholderText(dict.en.statusNamePlaceholder);
+    fireEvent.change(statusInput, { target: { value: 'Needs Fact-Checking' } });
+
+    const addButtons = screen.getAllByRole('button', { name: new RegExp(dict.en.add, 'i') });
+    fireEvent.click(addButtons[0]);
+
+    expect(mockUpdateCustomStatuses).toHaveBeenCalledWith(
+      expect.arrayContaining(['Beta Reader Review', 'Needs Fact-Checking'])
+    );
+    expect(mockOnUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statuses: expect.objectContaining({
+          'Needs Fact-Checking': 'blue',
+        }),
+      })
+    );
+
+    // Update status color
+    const selects = screen.getAllByRole('combobox');
+    fireEvent.change(selects[selects.length - 1], { target: { value: 'amber' } });
+    expect(mockOnUpdateSettings).toHaveBeenCalled();
+
+    // Edit custom status name
+    const editBtn = screen.getAllByTitle(dict.en.editCustomStatus)[0];
+    fireEvent.click(editBtn);
+
+    const renameInput = screen.getByDisplayValue('Beta Reader Review');
+    fireEvent.change(renameInput, { target: { value: 'Beta Review Round 2' } });
+
+    const saveBtn = screen.getByTitle(dict.en.saveStatusName);
+    fireEvent.click(saveBtn);
+
+    expect(mockRenameCustomStatus).toHaveBeenCalledWith('Beta Reader Review', 'Beta Review Round 2');
+    expect(mockUpdateCustomStatuses).toHaveBeenCalledWith(
+      expect.arrayContaining(['Beta Review Round 2'])
+    );
+
+    // Delete custom status
+    const deleteBtn = screen.getAllByTitle(dict.en.deleteCustomStatus)[0];
+    fireEvent.click(deleteBtn);
+
+    expect(mockUpdateCustomStatuses).toHaveBeenCalled();
+    expect(mockOnUpdateSettings).toHaveBeenCalled();
+  });
+
   it('edits custom theme colors using DarkColorPicker popup in Appearance tab', () => {
     const customSettings: AppSettings = {
       ...mockSettings,

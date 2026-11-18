@@ -21,6 +21,13 @@ export function getPresetSettings(
           cyan: 'zinc',
         },
         categories: { Location: 'zinc', Faction: 'zinc', Lore: 'zinc', Artifact: 'zinc' },
+        statuses: {
+          'Not Started': 'zinc',
+          'In Progress': 'zinc',
+          'First Draft': 'zinc',
+          'Revised': 'zinc',
+          'Completed': 'zinc',
+        },
       };
     case 'warm':
       return {
@@ -36,6 +43,13 @@ export function getPresetSettings(
           cyan: 'orange',
         },
         categories: { Location: 'orange', Faction: 'amber', Lore: 'rose', Artifact: 'amber' },
+        statuses: {
+          'Not Started': 'zinc',
+          'In Progress': 'amber',
+          'First Draft': 'orange',
+          'Revised': 'rose',
+          'Completed': 'emerald',
+        },
       };
     case 'cyber':
       return {
@@ -51,6 +65,13 @@ export function getPresetSettings(
           cyan: 'emerald',
         },
         categories: { Location: 'blue', Faction: 'purple', Lore: 'cyan', Artifact: 'rose' },
+        statuses: {
+          'Not Started': 'zinc',
+          'In Progress': 'cyan',
+          'First Draft': 'purple',
+          'Revised': 'rose',
+          'Completed': 'emerald',
+        },
       };
     case 'default':
     default:

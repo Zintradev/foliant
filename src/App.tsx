@@ -508,6 +508,8 @@ export default function App() {
           onCloseSettings={handleCloseSettings}
           appSettings={appSettings}
           onUpdateSettings={setAppSettings}
+          onUpdateCustomStatuses={mutations.handleUpdateCustomStatuses}
+          onRenameCustomStatus={mutations.handleRenameCustomStatus}
           pendingNavigationAction={nav.pendingNavigationAction}
           onCancelPendingNavigation={nav.handleCancelPendingNavigation}
           onConfirmPendingNavigation={nav.handleConfirmPendingNavigation}

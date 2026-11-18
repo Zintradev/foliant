@@ -539,4 +539,50 @@ describe('useProjectMutations Hook', () => {
     });
     expect(project.contextBlocks?.length).toBe(2);
   });
+
+  it('handleUpdateCustomStatuses updates the array of custom status strings per project', () => {
+    const { result } = renderHook(() =>
+      useProjectMutations({
+        project,
+        setProject,
+        activeChapterId,
+        setActiveChapterId,
+      })
+    );
+
+    act(() => {
+      result.current.handleUpdateCustomStatuses(['Needs Fact-Checking', 'Beta Review']);
+    });
+    expect(project.customStatuses).toEqual(['Needs Fact-Checking', 'Beta Review']);
+  });
+
+  it('handleRenameCustomStatus renames custom status and propagates new status to affected chapters', () => {
+    const { result } = renderHook(() =>
+      useProjectMutations({
+        project,
+        setProject,
+        activeChapterId,
+        setActiveChapterId,
+      })
+    );
+
+    // Initial custom statuses
+    act(() => {
+      result.current.handleUpdateCustomStatuses(['Beta Reader Review', 'Final Polish']);
+    });
+
+    // Assign custom status to a chapter
+    act(() => {
+      result.current.handleUpdateChapter('scene-1', { status: 'Beta Reader Review' });
+    });
+    expect(project.chapters.find((c) => c.id === 'scene-1')?.status).toBe('Beta Reader Review');
+
+    // Rename the custom status
+    act(() => {
+      result.current.handleRenameCustomStatus('Beta Reader Review', 'Beta Feedback');
+    });
+
+    expect(project.customStatuses).toEqual(['Beta Feedback', 'Final Polish']);
+    expect(project.chapters.find((c) => c.id === 'scene-1')?.status).toBe('Beta Feedback');
+  });
 });

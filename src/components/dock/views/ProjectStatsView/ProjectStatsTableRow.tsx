@@ -1,8 +1,14 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { ChevronDown, ChevronRight, FileText, Folder, FolderOpen } from 'lucide-react';
 import { TextNode, ChapterStatus } from '../../../../types/project';
+import { AppColorSettings } from '../../../../types/settings';
 import { TreeStatItem } from './types';
-import { getProgressStatus, getStatusBadgeStyle, getStatusLabel, STATUS_OPTIONS } from './statUtils';
+import {
+  getProgressStatus,
+  getStatusBadgeProps,
+  getStatusLabel,
+  getAllStatusOptions,
+} from './statUtils';
 import { useTranslation } from '../../../../i18n/translations';
 
 interface ProjectStatsTableRowProps {
@@ -10,6 +16,8 @@ interface ProjectStatsTableRowProps {
   isExpanded: boolean;
   isActive: boolean;
   isCollapsed: boolean;
+  customStatuses?: string[];
+  colorSettings?: AppColorSettings;
   onSelectChapter: (id: string) => void;
   onToggleFolder: (id: string) => void;
   onUpdateChapter?: (id: string, updates: Partial<TextNode>) => void;
@@ -20,6 +28,8 @@ function ProjectStatsTableRowComponent({
   isExpanded,
   isActive,
   isCollapsed,
+  customStatuses,
+  colorSettings,
   onSelectChapter,
   onToggleFolder,
   onUpdateChapter,
@@ -30,6 +40,11 @@ function ProjectStatsTableRowComponent({
   const status = getProgressStatus(currentWords, targetWords);
   const hasTarget = targetWords > 0;
   const nodeStatus: ChapterStatus = node.status || 'In Progress';
+  const statusOptions = useMemo(
+    () => getAllStatusOptions(customStatuses, nodeStatus),
+    [customStatuses, nodeStatus]
+  );
+  const badge = getStatusBadgeProps(nodeStatus, colorSettings);
 
 
   return (
@@ -166,11 +181,10 @@ function ProjectStatsTableRowComponent({
                 });
               }}
               onClick={(e) => e.stopPropagation()}
-              className={`min-w-[115px] px-2 py-0.5 text-[10px] font-mono rounded-xs border uppercase tracking-wider bg-zinc-950 focus:outline-none focus:border-zinc-500 cursor-pointer transition ${getStatusBadgeStyle(
-                nodeStatus
-              )}`}
+              className={`min-w-[115px] px-2 py-0.5 text-[10px] font-mono rounded-xs border uppercase tracking-wider focus:outline-none focus:border-zinc-500 cursor-pointer transition ${badge.className}`}
+              style={badge.style}
             >
-              {STATUS_OPTIONS.map((opt) => (
+              {statusOptions.map((opt) => (
                 <option key={opt} value={opt} className="bg-zinc-950 text-zinc-200">
                   {getStatusLabel(opt, t)}
                 </option>
@@ -220,11 +234,10 @@ function ProjectStatsTableRowComponent({
                 });
               }}
               onClick={(e) => e.stopPropagation()}
-              className={`min-w-[110px] px-1.5 py-0.5 text-[9px] font-mono rounded-xs border uppercase tracking-wider bg-zinc-950 focus:outline-none focus:border-zinc-500 cursor-pointer transition ${getStatusBadgeStyle(
-                nodeStatus
-              )}`}
+              className={`min-w-[110px] px-1.5 py-0.5 text-[9px] font-mono rounded-xs border uppercase tracking-wider focus:outline-none focus:border-zinc-500 cursor-pointer transition ${badge.className}`}
+              style={badge.style}
             >
-              {STATUS_OPTIONS.map((opt) => (
+              {statusOptions.map((opt) => (
                 <option key={opt} value={opt} className="bg-zinc-950 text-zinc-200">
                   {getStatusLabel(opt, t)}
                 </option>

@@ -3,6 +3,7 @@ import { TaxonomySubTab, ActiveColorPickerState, PresetType } from './types';
 import { SettingsTaxonomyRolesTab } from './SettingsTaxonomyRolesTab';
 import { SettingsTaxonomyStorylinesTab } from './SettingsTaxonomyStorylinesTab';
 import { SettingsTaxonomyCategoriesTab } from './SettingsTaxonomyCategoriesTab';
+import { SettingsTaxonomyStatusesTab } from './SettingsTaxonomyStatusesTab';
 import { SettingsTaxonomyPresetsTab } from './SettingsTaxonomyPresetsTab';
 
 interface SettingsTaxonomySectionProps {
@@ -32,6 +33,21 @@ interface SettingsTaxonomySectionProps {
   onCategoryColorChange: (category: string, color: string) => void;
   onAddCategory: (e: React.FormEvent) => void;
   onRemoveCategory: (key: string) => void;
+  statuses: Record<string, string>;
+  customStatuses: string[];
+  newStatusName: string;
+  onNewStatusNameChange: (val: string) => void;
+  newStatusColor: string;
+  onNewStatusColorChange: (val: string) => void;
+  onStatusColorChange: (status: string, color: string) => void;
+  onAddStatus: (e: React.FormEvent) => void;
+  onRemoveStatus: (status: string) => void;
+  editingStatusOriginalName: string | null;
+  editingStatusDraftName: string;
+  onEditingStatusDraftNameChange: (val: string) => void;
+  onStartEditStatus: (status: string) => void;
+  onCancelEditStatus: () => void;
+  onSaveEditStatus: (originalName: string) => void;
   activePreset: string | undefined;
   onApplyPreset: (preset: PresetType) => void;
   onOpenColorPicker: (state: ActiveColorPickerState) => void;
@@ -65,6 +81,21 @@ export const SettingsTaxonomySection = React.memo(function SettingsTaxonomySecti
   onCategoryColorChange,
   onAddCategory,
   onRemoveCategory,
+  statuses,
+  customStatuses,
+  newStatusName,
+  onNewStatusNameChange,
+  newStatusColor,
+  onNewStatusColorChange,
+  onStatusColorChange,
+  onAddStatus,
+  onRemoveStatus,
+  editingStatusOriginalName,
+  editingStatusDraftName,
+  onEditingStatusDraftNameChange,
+  onStartEditStatus,
+  onCancelEditStatus,
+  onSaveEditStatus,
   activePreset,
   onApplyPreset,
   onOpenColorPicker,
@@ -102,6 +133,14 @@ export const SettingsTaxonomySection = React.memo(function SettingsTaxonomySecti
             }`}
           >
             {t('worldLore')}
+          </button>
+          <button
+            onClick={() => onTabChange('statuses')}
+            className={`px-2.5 py-1 text-xs font-medium rounded-md transition cursor-pointer ${
+              taxonomyTab === 'statuses' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            {t('workflowStatuses', 'Statuses')}
           </button>
           <button
             onClick={() => onTabChange('presets')}
@@ -154,6 +193,28 @@ export const SettingsTaxonomySection = React.memo(function SettingsTaxonomySecti
           onCategoryColorChange={onCategoryColorChange}
           onAddCategory={onAddCategory}
           onRemoveCategory={onRemoveCategory}
+          onOpenColorPicker={onOpenColorPicker}
+          t={t}
+        />
+      )}
+
+      {taxonomyTab === 'statuses' && (
+        <SettingsTaxonomyStatusesTab
+          statuses={statuses}
+          customStatuses={customStatuses}
+          newStatusName={newStatusName}
+          onNewStatusNameChange={onNewStatusNameChange}
+          newStatusColor={newStatusColor}
+          onNewStatusColorChange={onNewStatusColorChange}
+          onStatusColorChange={onStatusColorChange}
+          onAddStatus={onAddStatus}
+          onRemoveStatus={onRemoveStatus}
+          editingStatusOriginalName={editingStatusOriginalName}
+          editingStatusDraftName={editingStatusDraftName}
+          onEditingStatusDraftNameChange={onEditingStatusDraftNameChange}
+          onStartEditStatus={onStartEditStatus}
+          onCancelEditStatus={onCancelEditStatus}
+          onSaveEditStatus={onSaveEditStatus}
           onOpenColorPicker={onOpenColorPicker}
           t={t}
         />

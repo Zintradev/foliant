@@ -51,6 +51,7 @@ export function normalizeLoadedProject(data: unknown): FoliantProject {
     synopsis: typeof raw.synopsis === 'string' ? raw.synopsis : '',
     cover: typeof raw.cover === 'string' ? raw.cover : undefined,
     coverFileName: typeof raw.coverFileName === 'string' ? raw.coverFileName : undefined,
+    customStatuses: Array.isArray(raw.customStatuses) ? raw.customStatuses : [],
   };
 }
 

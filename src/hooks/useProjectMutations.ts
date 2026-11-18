@@ -58,6 +58,8 @@ export interface UseProjectMutationsReturn {
       | ContextBlock[]
       | ((prev: ContextBlock[]) => ContextBlock[])
   ) => void;
+  handleUpdateCustomStatuses: (statuses: string[]) => void;
+  handleRenameCustomStatus: (oldName: string, newName: string) => void;
 }
 
 /**
@@ -243,6 +245,35 @@ export function useProjectMutations({
     [setProject]
   );
 
+  const handleUpdateCustomStatuses = useCallback(
+    (statuses: string[]) => {
+      setProject((prev) => ({
+        ...prev,
+        lastModified: Date.now(),
+        customStatuses: statuses,
+      }));
+    },
+    [setProject]
+  );
+
+  const handleRenameCustomStatus = useCallback(
+    (oldName: string, newName: string) => {
+      setProject((prev) => {
+        const nextStatuses = (prev.customStatuses || []).map((s) => (s === oldName ? newName : s));
+        const nextChapters = prev.chapters.map((ch) =>
+          ch.status === oldName ? { ...ch, status: newName as any } : ch
+        );
+        return {
+          ...prev,
+          lastModified: Date.now(),
+          customStatuses: nextStatuses,
+          chapters: nextChapters,
+        };
+      });
+    },
+    [setProject]
+  );
+
   return {
     handleContentChange,
     handleAddChapter,
@@ -256,5 +287,7 @@ export function useProjectMutations({
     handleUpdateCharacterPositions,
     handleUpdateWorldItems,
     handleUpdateContextBlocks,
+    handleUpdateCustomStatuses,
+    handleRenameCustomStatus,
   };
 }

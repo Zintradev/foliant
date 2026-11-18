@@ -34,6 +34,8 @@ export interface AppModalsProps {
   onCloseSettings: () => void;
   appSettings: AppSettings;
   onUpdateSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
+  onUpdateCustomStatuses?: (statuses: string[]) => void;
+  onRenameCustomStatus?: (oldName: string, newName: string) => void;
 
   // Unsaved Navigation
   pendingNavigationAction: (() => void) | null;
@@ -85,6 +87,8 @@ export const AppModals = memo(function AppModals({
   onCloseSettings,
   appSettings,
   onUpdateSettings,
+  onUpdateCustomStatuses,
+  onRenameCustomStatus,
   pendingNavigationAction,
   onCancelPendingNavigation,
   onConfirmPendingNavigation,
@@ -147,6 +151,9 @@ export const AppModals = memo(function AppModals({
               onClose={onCloseSettings}
               settings={appSettings}
               onUpdateSettings={onUpdateSettings}
+              project={project}
+              onUpdateCustomStatuses={onUpdateCustomStatuses}
+              onRenameCustomStatus={onRenameCustomStatus}
             />
           )}
         </Suspense>
