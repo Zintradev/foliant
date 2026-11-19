@@ -51,6 +51,7 @@ function EditorToolbar({
   return (
     <div
       data-testid="editor-toolbar"
+      data-tour-id="editor-toolbar"
       aria-label="Editor Formatting Toolbar"
       className={
         className ||

@@ -161,6 +161,7 @@ export const StorylineAddDrawer = React.memo(function StorylineAddDrawer({
         <button
           onClick={onAdd}
           disabled={!newTitle.trim()}
+          data-tour-id="storylines-submit-btn"
           className="px-3 py-1 rounded-sm text-xs font-medium bg-zinc-100 hover:bg-white text-zinc-950 disabled:opacity-50 transition cursor-pointer"
         >
           {t('addStoryline')}

@@ -467,7 +467,7 @@ function ContextPanelComponent({
   );
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950 select-none">
+    <div data-tour-id="context-panel" className="flex flex-col h-full bg-zinc-950 select-none">
       {/* Header bar with layout column mode selector */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/60 shrink-0">
         <div className="flex items-center gap-2">

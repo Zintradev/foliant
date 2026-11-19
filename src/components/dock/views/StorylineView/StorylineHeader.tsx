@@ -52,6 +52,7 @@ export const StorylineHeader = memo(function StorylineHeader({
       <button
         onClick={onToggleAdd}
         title={t('addStoryline')}
+        data-tour-id="storylines-add-btn"
         className="p-1 hover:bg-zinc-800 rounded-sm text-zinc-400 hover:text-white transition cursor-pointer"
         aria-label={t('addStoryline')}
       >

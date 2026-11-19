@@ -36,7 +36,7 @@ export interface GuidedTourProps {
 
 export interface TourStep {
   id: string;
-  targetView: MainViewId;
+  targetView?: MainViewId;
   targetSelector?: string;
   icon: React.ComponentType<{ className?: string }>;
   titleEs: string;
@@ -92,15 +92,16 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'plots-tag-scene',
     targetView: 'storyline',
+    targetSelector: '[data-tour-id="storylines-add-btn"]',
     icon: Layers,
     titleEs: '04 • Tramas: Asocia personajes o capítulos',
     titleEn: '04 • Plots: Link characters or chapters',
     descEs:
-      'Accede a la pestaña de Tramas en la barra lateral. Asocia un personaje o un capítulo a una trama para seguir el curso de la historia.',
+      'Accede a la pestaña de Tramas en la barra lateral. Pulsa el botón «+» iluminado para crear tu trama y utiliza el selector iluminado para vincular un capítulo o personaje.',
     descEn:
-      'Access the Plots tab in the side bar. Associate a character or a chapter to a storyline to track your narrative threads.',
-    tipEs: 'Asocia un personaje o una escena a una trama para desbloquear el siguiente paso.',
-    tipEn: 'Associate a character or a scene to a plot to unlock the next step.',
+      'Access the Plots tab in the side bar. Click the illuminated «+» button to create your storyline and use the illuminated selector to link a chapter or character.',
+    tipEs: 'Crea una trama con el botón «+» y vincúlala a un capítulo o personaje para desbloquear el siguiente paso.',
+    tipEn: 'Create a storyline using the «+» button and link it to a chapter or character to unlock the next step.',
   },
   {
     id: 'timeline-demo-choice',
@@ -117,15 +118,14 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     id: 'settings-save-config',
-    targetView: 'write',
     targetSelector: '[data-tour-id="activity-bar-settings-btn"]',
     icon: Sliders,
     titleEs: '06 • Ajustes: Configuración de Guardado',
     titleEn: '06 • Settings: Save Configuration',
     descEs:
-      'Abre el menú de Ajustes para revisar la «Configuración de Guardado». Puedes elegir entre guardado automático silencioso o guardado manual con Ctrl+S según tu flujo de trabajo.',
+      'Abre el menú de la barra lateral y accede a «Ajustes» para revisar la «Configuración de Guardado». Puedes elegir entre guardado automático silencioso o guardado manual con Ctrl+S según tu flujo de trabajo.',
     descEn:
-      'Open Studio Settings to review your «Save Configuration». You can choose between background auto-save or manual saving with Ctrl+S according to your workflow.',
+      'Open the sidebar menu and access «Settings» to review your «Save Configuration». You can choose between background auto-save or manual saving with Ctrl+S according to your workflow.',
     tipEs: 'Revisa el intervalo de guardado y los modos de apariencia antes de comenzar a escribir.',
     tipEn: 'Review the save interval and appearance presets before starting your novel.',
   },
@@ -174,7 +174,7 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
   const isLastStep = currentStepIndex === totalSteps - 1;
 
   // Determine if user is currently on the expected view for this step
-  const isOnTargetView = activeMainView === currentStep.targetView;
+  const isOnTargetView = !currentStep.targetView || activeMainView === currentStep.targetView;
 
   // Notify parent of view highlighting
   useEffect(() => {
@@ -183,7 +183,7 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
       return;
     }
     const target = currentStep.targetView;
-    if (activeMainView !== target) {
+    if (target && activeMainView !== target) {
       onHighlightViewChange?.(target);
     } else {
       onHighlightViewChange?.(null);
@@ -279,6 +279,12 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
     let highlightedElements: HTMLElement[] = [];
 
     const applyHighlight = () => {
+      // Remove pulse classes from elements no longer highlighted
+      highlightedElements.forEach((el) => {
+        el.classList.remove('ring-2', 'ring-emerald-400', 'ring-offset-1', 'ring-offset-zinc-950', 'animate-pulse');
+      });
+      highlightedElements = [];
+
       if (currentStepIndex === 0) {
         const btn1 = document.querySelector('[data-tour-id="outline-create-scene-btn"]') as HTMLElement;
         const btn2 = document.querySelector('[data-tour-id="outline-create-scene-btn-footer"]') as HTMLElement;
@@ -300,7 +306,20 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
           };
           charBtn.addEventListener('click', handleClick, { once: true });
         }
+      } else if (currentStepIndex === 3) {
+        // Step 4: Plots - Highlight add storyline button, submit button in drawer, and link chapter/character selectors
+        const addBtn = document.querySelector('[data-tour-id="storylines-add-btn"]') as HTMLElement;
+        const submitBtn = document.querySelector('[data-tour-id="storylines-submit-btn"]') as HTMLElement;
+        const linkChapterSelect = document.querySelector('[data-tour-id="storylines-link-chapter-select"]') as HTMLElement;
+        const linkCharacterSelect = document.querySelector('[data-tour-id="storylines-link-character-select"]') as HTMLElement;
+        [addBtn, submitBtn, linkChapterSelect, linkCharacterSelect].forEach((el) => {
+          if (el) {
+            el.classList.add('ring-2', 'ring-emerald-400', 'ring-offset-1', 'ring-offset-zinc-950', 'animate-pulse');
+            highlightedElements.push(el);
+          }
+        });
       } else if (currentStepIndex === 5 && !isSettingsOpen) {
+        // Step 6: Settings - Highlight the File Menu / Options button and settings item
         const settingsBtn = document.querySelector('[data-tour-id="activity-bar-settings-btn"]') as HTMLElement;
         const fileMenuBtn = document.querySelector('[data-tour-id="activity-bar-file-menu"]') as HTMLElement;
         [settingsBtn, fileMenuBtn].forEach((el) => {
@@ -313,10 +332,10 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
     };
 
     applyHighlight();
-    const timer = setTimeout(applyHighlight, 250);
+    const interval = setInterval(applyHighlight, 300);
 
     return () => {
-      clearTimeout(timer);
+      clearInterval(interval);
       highlightedElements.forEach((el) => {
         el.classList.remove('ring-2', 'ring-emerald-400', 'ring-offset-1', 'ring-offset-zinc-950', 'animate-pulse');
       });
@@ -441,7 +460,7 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
           {/* Body */}
           <div className="p-4 flex flex-col gap-3">
             {/* View navigation alert when not on target tab */}
-            {!isOnTargetView && (
+            {!isOnTargetView && currentStep.targetView && (
               <div className="bg-emerald-950/40 border border-emerald-600/40 rounded-lg p-2.5 flex items-center justify-between gap-2 text-xs text-emerald-300">
                 <div className="flex items-center gap-2">
                   <ArrowRight className="w-4 h-4 text-emerald-400 animate-bounce-x" />

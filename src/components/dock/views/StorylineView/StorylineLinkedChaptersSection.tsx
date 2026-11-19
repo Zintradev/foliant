@@ -78,6 +78,7 @@ export const StorylineLinkedChaptersSection = React.memo(
             <div className="relative flex-1">
               <select
                 value=""
+                data-tour-id="storylines-link-chapter-select"
                 onChange={(e) => {
                   if (e.target.value) {
                     onLinkChapter(storylineId, e.target.value);
