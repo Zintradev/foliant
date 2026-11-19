@@ -34,6 +34,7 @@ export default defineConfig(({ mode }) => {
     test: {
       globals: true,
       environment: "jsdom",
+      setupFiles: ["./src/i18n/testSetup.ts"],
     },
 
     // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
