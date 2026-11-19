@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   HelpCircle,
   Coffee,
+  BookMarked,
 } from 'lucide-react';
 import { openKofiUrl } from '../help/KofiButton';
 import { isWebPlatform } from '../../utils/platform';
@@ -22,6 +23,7 @@ export interface FileMenuDropdownProps {
   onOpenProject?: () => void;
   onSaveProject?: () => void;
   onSaveProjectAs?: () => void;
+  onOpenProjectDetails?: () => void;
   onImportManuskript?: () => void;
   onExportEpub?: () => void;
   onOpenSearch?: () => void;
@@ -37,6 +39,7 @@ export default function FileMenuDropdown({
   onOpenProject,
   onSaveProject,
   onSaveProjectAs,
+  onOpenProjectDetails,
   onImportManuskript,
   onExportEpub,
   onOpenSearch,
@@ -117,6 +120,25 @@ export default function FileMenuDropdown({
         </button>
       )}
 
+      {(onOpenProjectDetails || onExportEpub) && (
+        <button
+          onClick={() => {
+            onClose();
+            if (onOpenProjectDetails) {
+              onOpenProjectDetails();
+            } else if (onExportEpub) {
+              onExportEpub();
+            }
+          }}
+          className="w-full flex items-center justify-between px-3 py-2 md:py-1.5 min-h-[34px] md:min-h-0 touch-manipulation hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
+        >
+          <span className="flex items-center gap-2">
+            <BookMarked className="w-3.5 h-3.5 text-zinc-400" />
+            <span>{t('projectDetails', 'Project Details...')}</span>
+          </span>
+        </button>
+      )}
+
       <div className="my-1.5 h-[1px] bg-zinc-800/80" />
 
       <div className="px-3 py-1 text-[10px] font-mono tracking-wider text-zinc-500 uppercase border-b border-zinc-800/80 mb-1">
@@ -140,6 +162,7 @@ export default function FileMenuDropdown({
 
       {onExportEpub && (
         <button
+          data-tour-id="file-menu-export-epub"
           onClick={() => {
             onClose();
             onExportEpub();
@@ -155,8 +178,13 @@ export default function FileMenuDropdown({
 
       <div className="my-1.5 h-[1px] bg-zinc-800/80" />
 
+      <div className="px-3 py-1 text-[10px] font-mono tracking-wider text-zinc-500 uppercase border-b border-zinc-800/80 mb-1">
+        {t('menuOthers', 'Others')}
+      </div>
+
       {onOpenSearch && (
         <button
+          data-tour-id="file-menu-search"
           onClick={() => {
             onClose();
             onOpenSearch();
@@ -173,6 +201,7 @@ export default function FileMenuDropdown({
 
       {onOpenSettings && (
         <button
+          data-tour-id="activity-bar-settings-btn"
           onClick={() => {
             onClose();
             onOpenSettings();
@@ -188,6 +217,7 @@ export default function FileMenuDropdown({
 
       {onOpenHelpGuide && (
         <button
+          data-tour-id="file-menu-help"
           onClick={() => {
             onClose();
             onOpenHelpGuide();

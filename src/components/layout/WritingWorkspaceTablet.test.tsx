@@ -163,7 +163,7 @@ describe('Tablet Responsive UI (WritingWorkspace and Header)', () => {
     const openLeftBtn = screen.getByLabelText('collapseLeftDock');
     const openRightBtn = screen.getByLabelText('collapseRightDock');
 
-    expect(openLeftBtn.className).toContain('text-emerald-400');
-    expect(openRightBtn.className).toContain('text-emerald-400');
+    expect(openLeftBtn.className).toContain('text-white');
+    expect(openRightBtn.className).toContain('text-white');
   });
 });

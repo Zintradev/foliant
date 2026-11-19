@@ -72,6 +72,7 @@ export const StorylineLinkedCharactersSection = React.memo(
             <div className="relative flex-1">
               <select
                 value=""
+                data-tour-id="storylines-link-character-select"
                 onChange={(e) => {
                   if (e.target.value) {
                     onLinkCharacter(storylineId, e.target.value);

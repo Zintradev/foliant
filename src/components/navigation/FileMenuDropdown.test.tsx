@@ -39,5 +39,29 @@ describe('FileMenuDropdown Component', () => {
 
     expect(screen.queryByText(/volver a la portada/i)).not.toBeInTheDocument();
   });
+
+  it('renders "Others" section header and allows editing project metadata and EPUB options', () => {
+    const onExportEpub = vi.fn();
+    const onClose = vi.fn();
+
+    render(
+      <FileMenuDropdown
+        onClose={onClose}
+        onExportEpub={onExportEpub}
+        onOpenSearch={vi.fn()}
+        language="es"
+      />
+    );
+
+    // "Otros" section header
+    expect(screen.getByText('Otros')).toBeInTheDocument();
+
+    // Project details button
+    const metadataBtn = screen.getByRole('button', { name: /detalles del proyecto/i });
+    expect(metadataBtn).toBeInTheDocument();
+    fireEvent.click(metadataBtn);
+    expect(onExportEpub).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });
 

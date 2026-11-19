@@ -172,6 +172,7 @@ export const ActivityBar = memo(function ActivityBar({
 
   return (
     <aside
+      data-tour-id="activity-bar"
       className={`w-14 shrink-0 bg-zinc-950 border-r border-zinc-800 flex flex-col justify-between items-center py-2.5 select-none relative ${
         isFileMenuOpen ? 'z-[70]' : 'z-40'
       }`}
@@ -180,6 +181,7 @@ export const ActivityBar = memo(function ActivityBar({
       <div className="flex flex-col items-center gap-2.5 w-full relative">
         <div ref={menuRef} className="relative">
           <button
+            data-tour-id="activity-bar-file-menu"
             onClick={() => setIsFileMenuOpen((prev) => !prev)}
             title="File Menu"
             aria-label="File Menu"

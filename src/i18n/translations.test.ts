@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { detectDynamicLanguage } from './translations';
+import { detectDynamicLanguage, dict } from './translations';
 import { loadSettings } from '../types/settings';
 
 describe('detectDynamicLanguage & Dynamic i18n Autodetection', () => {
@@ -93,5 +93,17 @@ describe('detectDynamicLanguage & Dynamic i18n Autodetection', () => {
     const settingsEn = loadSettings();
     expect(settingsEn.preferences.language).toBe('en');
     expect(setItemSpy).not.toHaveBeenCalled();
+  });
+
+  it('guarantees 1:1 parity between English and Spanish translation dictionaries', () => {
+    const enKeys = Object.keys(dict.en).sort();
+    const esKeys = Object.keys(dict.es).sort();
+
+    const missingInEs = enKeys.filter((k) => !(k in dict.es));
+    const missingInEn = esKeys.filter((k) => !(k in dict.en));
+
+    expect(missingInEs).toEqual([]);
+    expect(missingInEn).toEqual([]);
+    expect(enKeys.length).toBe(esKeys.length);
   });
 });

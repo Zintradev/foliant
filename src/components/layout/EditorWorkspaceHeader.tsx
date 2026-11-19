@@ -53,7 +53,7 @@ export const EditorWorkspaceHeader = memo(function EditorWorkspaceHeader({
           aria-label={leftOpen ? t('collapseLeftDock') : t('expandLeftDock')}
           className={`p-1.5 md:p-1 rounded-sm transition cursor-pointer flex items-center justify-center touch-manipulation min-w-[32px] min-h-[32px] md:min-w-0 md:min-h-0 ${
             leftOpen
-              ? 'bg-zinc-800 text-emerald-400 border border-zinc-700/60 shadow-xs'
+              ? 'bg-zinc-800 text-white border border-zinc-700/60 shadow-xs'
               : 'hover:bg-zinc-800 text-zinc-400 hover:text-white border border-transparent'
           }`}
         >
@@ -100,7 +100,7 @@ export const EditorWorkspaceHeader = memo(function EditorWorkspaceHeader({
           aria-label={rightOpen ? t('collapseRightDock') : t('expandRightDock')}
           className={`p-1.5 md:p-1 rounded-sm transition cursor-pointer flex items-center justify-center touch-manipulation min-w-[32px] min-h-[32px] md:min-w-0 md:min-h-0 ${
             rightOpen
-              ? 'bg-zinc-800 text-emerald-400 border border-zinc-700/60 shadow-xs'
+              ? 'bg-zinc-800 text-white border border-zinc-700/60 shadow-xs'
               : 'hover:bg-zinc-800 text-zinc-400 hover:text-white border border-transparent'
           }`}
         >

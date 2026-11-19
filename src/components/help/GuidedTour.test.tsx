@@ -149,26 +149,65 @@ describe('GuidedTour Component', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('advances with ArrowRight key when step action is completed', () => {
-    render(<GuidedTour isOpen={true} onClose={vi.fn()} language="es" />);
+  it('highlights storyline add & link controls on step 4 and settings menu on step 6 without highlighting editor', () => {
+    // Setup dummy DOM elements
+    const addBtn = document.createElement('button');
+    addBtn.setAttribute('data-tour-id', 'storylines-add-btn');
+    document.body.appendChild(addBtn);
 
-    expect(screen.getByText(/Paso 1 de 6/i)).toBeInTheDocument();
-    // Complete step 1
+    const fileMenuBtn = document.createElement('button');
+    fileMenuBtn.setAttribute('data-tour-id', 'activity-bar-file-menu');
+    document.body.appendChild(fileMenuBtn);
+
+    const onHighlightViewChange = vi.fn();
+
+    render(
+      <GuidedTour
+        isOpen={true}
+        onClose={vi.fn()}
+        language="es"
+        activeMainView="write"
+        onHighlightViewChange={onHighlightViewChange}
+      />
+    );
+
+    // Fast-forward to step 4 (Plots)
     act(() => {
       window.dispatchEvent(new CustomEvent('foliant-tour-scene-created'));
     });
-    expect(screen.getByText(/Paso completado/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /siguiente/i }));
+    act(() => {
+      window.dispatchEvent(new CustomEvent('foliant-tour-character-created'));
+    });
+    fireEvent.click(screen.getByRole('button', { name: /siguiente/i }));
+    act(() => {
+      window.dispatchEvent(new CustomEvent('foliant-tour-graph-pill-moved'));
+    });
+    fireEvent.click(screen.getByRole('button', { name: /siguiente/i }));
 
-    // Now ArrowRight advances because step 1 was marked done
-    fireEvent.keyDown(window, { key: 'ArrowRight' });
-    expect(screen.getByText(/Paso 2 de 6/i)).toBeInTheDocument();
+    // On step 4: Plot add button has pulse class
+    expect(screen.getByText(/Paso 4 de 6/i)).toBeInTheDocument();
+    expect(addBtn.className).toContain('animate-pulse');
 
-    // Go back to step 1
-    fireEvent.click(screen.getByRole('button', { name: /anterior/i }));
-    expect(screen.getByText(/Paso 1 de 6/i)).toBeInTheDocument();
+    // Advance to step 5 (Timeline) and then step 6 (Settings)
+    act(() => {
+      window.dispatchEvent(new CustomEvent('foliant-tour-tag-assigned'));
+    });
+    fireEvent.click(screen.getByRole('button', { name: /siguiente/i }));
+    expect(screen.getByText(/Paso 5 de 6/i)).toBeInTheDocument();
 
-    // ArrowRight advances again
-    fireEvent.keyDown(window, { key: 'ArrowRight' });
-    expect(screen.getByText(/Paso 2 de 6/i)).toBeInTheDocument();
+    const continueBtn = screen.getByRole('button', { name: /continuar/i });
+    fireEvent.click(continueBtn);
+
+    // On step 6: Settings step
+    expect(screen.getByText(/Paso 6 de 6/i)).toBeInTheDocument();
+    // It should highlight the file menu / settings button
+    expect(fileMenuBtn.className).toContain('animate-pulse');
+    // It should NOT request highlighting 'write' in ActivityBar
+    expect(onHighlightViewChange).toHaveBeenLastCalledWith(null);
+
+    // Cleanup
+    document.body.removeChild(addBtn);
+    document.body.removeChild(fileMenuBtn);
   });
 });

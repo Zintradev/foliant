@@ -40,7 +40,7 @@ describe('HelpGuideModal Component', () => {
     expect(kofiLink).toHaveAttribute('href', KOFI_URL);
   });
 
-  it('navigates between Documentation, Controls, and Settings tabs and displays graph controls & layout tip', () => {
+  it('renders Controls and Shortcuts as the exclusive section with white titles without icons', () => {
     render(
       <HelpGuideModal
         isOpen={true}
@@ -50,32 +50,40 @@ describe('HelpGuideModal Component', () => {
       />
     );
 
-    // Default tab: Documentation
-    expect(screen.getByText(/01 • Editor Inmersivo/i)).toBeInTheDocument();
-    expect(screen.getByText(/Grafo de Personajes & Flechas Curvables/i)).toBeInTheDocument();
-    expect(screen.getByText(/07 • Guardado y Tiempo de Autoguardado/i)).toBeInTheDocument();
-    expect(screen.getByText(/colapsar un lado \(izquierdo o derecho\) y agrandar el panel opuesto/i)).toBeInTheDocument();
+    // No documentation or settings tabs
+    expect(screen.queryByRole('button', { name: /documentación/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /guía de ajustes/i })).not.toBeInTheDocument();
 
-    // Switch to Controls & Shortcuts tab
-    const controlsTabBtn = screen.getByRole('button', { name: /controles y atajos/i });
-    fireEvent.click(controlsTabBtn);
-    expect(screen.getByText(/Controles del Grafo de Personajes/i)).toBeInTheDocument();
+    // Section headings are present and have text-white
+    const graphHeading = screen.getByText(/Controles del Grafo de Personajes/i);
+    expect(graphHeading).toBeInTheDocument();
+    expect(graphHeading).toHaveClass('text-white');
+
+    const projectHeading = screen.getByText(/Atajos Generales del Proyecto & Búsqueda/i);
+    expect(projectHeading).toBeInTheDocument();
+    expect(projectHeading).toHaveClass('text-white');
+
+    const editorHeading = screen.getByText(/Atajos de Redacción en Editor & Símbolos/i);
+    expect(editorHeading).toBeInTheDocument();
+    expect(editorHeading).toHaveClass('text-white');
+
+    // Controls items
     expect(screen.getByText(/Doblar flecha y mover enlace/i)).toBeInTheDocument();
-    expect(screen.getByText(/Clic izquierdo y arrastrar etiqueta/i)).toBeInTheDocument();
+    expect(screen.getByText(/Clic izquierdo \+ Arrastrar etiqueta/i)).toBeInTheDocument();
     expect(screen.getByText(/Mover etiqueta a lo largo del enlace/i)).toBeInTheDocument();
-    expect(screen.getByText(/Clic derecho mantenido sobre etiqueta/i)).toBeInTheDocument();
+    expect(screen.getByText(/Clic derecho mantenido \+ Arrastrar/i)).toBeInTheDocument();
     expect(screen.getByText(/Restablecer curvatura/i)).toBeInTheDocument();
     expect(screen.getByText(/Deshacer en el grafo/i)).toBeInTheDocument();
     expect(screen.getByText(/Configurar tiempo de autoguardado/i)).toBeInTheDocument();
-    expect(screen.getByText('Ctrl + S')).toBeInTheDocument();
+    expect(screen.getAllByText('Ctrl + S').length).toBeGreaterThan(0);
     expect(screen.getByText('F1')).toBeInTheDocument();
 
-    // Switch to Settings Guide tab
-    const settingsTabBtn = screen.getByRole('button', { name: /guía de ajustes/i });
-    fireEvent.click(settingsTabBtn);
-    expect(screen.getByText(/Ajustes Generales/i)).toBeInTheDocument();
-    expect(screen.getByText(/tiempo de espera del autoguardado/i)).toBeInTheDocument();
-    expect(screen.getByText(/Tipografía y Confort de Lectura/i)).toBeInTheDocument();
+    // Notes shortcut
+    expect(screen.getByText(/Guardar y finalizar edición de nota/i)).toBeInTheDocument();
+    expect(screen.getByText('Ctrl + Enter')).toBeInTheDocument();
+
+    // Layout tip
+    expect(screen.getByText(/colapsar un lado \(izquierdo o derecho\) y agrandar el panel opuesto/i)).toBeInTheDocument();
   });
 
   it('closes modal when clicking close button', () => {
