@@ -60,7 +60,7 @@ export default function FileMenuDropdown({
             onClose();
             onNewProject();
           }}
-          className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
+          className="w-full flex items-center justify-between px-3 py-2 md:py-1.5 min-h-[34px] md:min-h-0 touch-manipulation hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
         >
           <span className="flex items-center gap-2">
             <FilePlus className="w-3.5 h-3.5 text-zinc-400" />
@@ -75,7 +75,7 @@ export default function FileMenuDropdown({
             onClose();
             onOpenProject();
           }}
-          className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
+          className="w-full flex items-center justify-between px-3 py-2 md:py-1.5 min-h-[34px] md:min-h-0 touch-manipulation hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
         >
           <span className="flex items-center gap-2">
             <FolderOpen className="w-3.5 h-3.5 text-zinc-400" />
@@ -91,7 +91,7 @@ export default function FileMenuDropdown({
             onClose();
             onSaveProject();
           }}
-          className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
+          className="w-full flex items-center justify-between px-3 py-2 md:py-1.5 min-h-[34px] md:min-h-0 touch-manipulation hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
         >
           <span className="flex items-center gap-2">
             <Save className="w-3.5 h-3.5 text-zinc-400" />
@@ -107,7 +107,7 @@ export default function FileMenuDropdown({
             onClose();
             onSaveProjectAs();
           }}
-          className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
+          className="w-full flex items-center justify-between px-3 py-2 md:py-1.5 min-h-[34px] md:min-h-0 touch-manipulation hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
         >
           <span className="flex items-center gap-2">
             <FileText className="w-3.5 h-3.5 text-zinc-400" />
@@ -129,7 +129,7 @@ export default function FileMenuDropdown({
             onClose();
             onImportManuskript();
           }}
-          className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
+          className="w-full flex items-center justify-between px-3 py-2 md:py-1.5 min-h-[34px] md:min-h-0 touch-manipulation hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
         >
           <span className="flex items-center gap-2">
             <FolderInput className="w-3.5 h-3.5 text-zinc-400" />
@@ -144,7 +144,7 @@ export default function FileMenuDropdown({
             onClose();
             onExportEpub();
           }}
-          className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
+          className="w-full flex items-center justify-between px-3 py-2 md:py-1.5 min-h-[34px] md:min-h-0 touch-manipulation hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
         >
           <span className="flex items-center gap-2">
             <BookUp className="w-3.5 h-3.5 text-zinc-400" />
@@ -161,7 +161,7 @@ export default function FileMenuDropdown({
             onClose();
             onOpenSearch();
           }}
-          className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
+          className="w-full flex items-center justify-between px-3 py-2 md:py-1.5 min-h-[34px] md:min-h-0 touch-manipulation hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
         >
           <span className="flex items-center gap-2">
             <Search className="w-3.5 h-3.5 text-zinc-400" />
@@ -177,7 +177,7 @@ export default function FileMenuDropdown({
             onClose();
             onOpenSettings();
           }}
-          className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
+          className="w-full flex items-center justify-between px-3 py-2 md:py-1.5 min-h-[34px] md:min-h-0 touch-manipulation hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
         >
           <span className="flex items-center gap-2">
             <Settings className="w-3.5 h-3.5 text-zinc-400" />
@@ -207,7 +207,7 @@ export default function FileMenuDropdown({
           onClose();
           openKofiUrl(e);
         }}
-        className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer group text-zinc-300 whitespace-nowrap"
+        className="w-full flex items-center justify-between px-3 py-2 md:py-1.5 min-h-[34px] md:min-h-0 touch-manipulation hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer group text-zinc-300 whitespace-nowrap"
         title={t('supportKofi', 'Apoyar en Ko-fi')}
       >
         <span className="flex items-center gap-2">
@@ -222,7 +222,7 @@ export default function FileMenuDropdown({
           <div className="my-1.5 h-[1px] bg-zinc-800/80" />
           <a
             href="../"
-            className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer group text-zinc-300 no-underline whitespace-nowrap"
+            className="w-full flex items-center justify-between px-3 py-2 md:py-1.5 min-h-[34px] md:min-h-0 touch-manipulation hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer group text-zinc-300 no-underline whitespace-nowrap"
             title={t('backToLanding', 'Volver a la portada')}
           >
             <span className="flex items-center gap-2">

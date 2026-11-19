@@ -1265,6 +1265,55 @@ describe('RelationshipGraphView', () => {
       const updatedPositions = handleUpdatePositions.mock.calls[0][0];
       expect(updatedPositions.length).toBe(2);
     });
+
+    it('supports touch pan and node drag with touch pointer events', () => {
+      const handleUpdatePositions = vi.fn();
+      render(
+        <RelationshipGraphView
+          characters={mockCharacters}
+          relationships={mockRelationships}
+          onUpdateCharacterPositions={handleUpdatePositions}
+        />
+      );
+
+      const board = screen.getByTestId('relationship-board');
+      // Touch pan on board
+      fireEvent.pointerDown(board, { pointerId: 1, pointerType: 'touch', clientX: 200, clientY: 200 });
+      expect(board).toHaveClass('cursor-grabbing');
+      fireEvent.pointerMove(window, { pointerId: 1, pointerType: 'touch', clientX: 250, clientY: 280 });
+      fireEvent.pointerUp(window, { pointerId: 1, pointerType: 'touch' });
+      expect(board).toHaveClass('cursor-grab');
+
+      // Touch drag node
+      const card1 = screen.getByTestId('character-card-char-1');
+      expect(card1).toHaveClass('touch-none');
+      fireEvent.pointerDown(card1, { pointerId: 2, pointerType: 'touch', button: 0, clientX: 100, clientY: 100 });
+      fireEvent.pointerMove(card1, { pointerId: 2, pointerType: 'touch', clientX: 150, clientY: 130 });
+      fireEvent.pointerUp(card1, { pointerId: 2, pointerType: 'touch' });
+      expect(handleUpdatePositions).toHaveBeenCalled();
+    });
+
+    it('supports multi-touch pinch to zoom on board canvas', () => {
+      render(
+        <RelationshipGraphView
+          characters={mockCharacters}
+          relationships={[]}
+        />
+      );
+
+      const board = screen.getByTestId('relationship-board');
+      // Two touch pointers down
+      fireEvent.pointerDown(board, { pointerId: 1, pointerType: 'touch', clientX: 100, clientY: 100 });
+      fireEvent.pointerDown(board, { pointerId: 2, pointerType: 'touch', clientX: 200, clientY: 200 });
+
+      // Pinch apart (zoom in)
+      fireEvent.pointerMove(window, { pointerId: 1, pointerType: 'touch', clientX: 50, clientY: 50 });
+      fireEvent.pointerMove(window, { pointerId: 2, pointerType: 'touch', clientX: 300, clientY: 300 });
+
+      fireEvent.pointerUp(window, { pointerId: 1, pointerType: 'touch' });
+      fireEvent.pointerUp(window, { pointerId: 2, pointerType: 'touch' });
+      expect(board).toHaveClass('cursor-grab');
+    });
   });
 });
 

@@ -64,9 +64,28 @@ export function MoodboardBlockComponent({
     handleImageDropOnImage,
     handleImageDragEnd,
     handleSectionDrop,
+    handleTouchImageDragStart,
+    handleTouchImageDragMove,
+    handleTouchImageDragEnd,
+    handleTouchImageDragCancel,
   } = useMoodboardDragDrop({ images, commitImages, uploadFile, visualsDropMode });
 
   const registerCard = useFlipAnimation(Boolean(draggedImageId), draggedImageId);
+
+  const handleMoveImage = useCallback(
+    (id: string, direction: 'prev' | 'next') => {
+      const idx = images.findIndex((img) => img.id === id);
+      if (idx === -1) return;
+      const targetIdx = direction === 'prev' ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= images.length) return;
+      const next = [...images];
+      const temp = next[idx];
+      next[idx] = next[targetIdx];
+      next[targetIdx] = temp;
+      commitImages(next);
+    },
+    [images, commitImages]
+  );
 
   const getSectionLabel = useCallback(
     (sec?: MoodboardSection): string => {
@@ -264,6 +283,7 @@ export function MoodboardBlockComponent({
                       onSectionDragOver={onSectionDragOver}
                       onSectionDragLeave={onSectionDragLeave}
                       registerCard={registerCard}
+                      onMoveImage={handleMoveImage}
                       onPreview={setActiveLightbox}
                       onDeleteImage={requestDeleteImage}
                       onImageDragStart={handleImageDragStart}
@@ -272,6 +292,10 @@ export function MoodboardBlockComponent({
                       onImageDragLeave={handleImageDragLeave}
                       onImageDropOnImage={handleImageDropOnImage}
                       onImageDragEnd={handleImageDragEnd}
+                      onTouchImageDragStart={handleTouchImageDragStart}
+                      onTouchImageDragMove={handleTouchImageDragMove}
+                      onTouchImageDragEnd={handleTouchImageDragEnd}
+                      onTouchImageDragCancel={handleTouchImageDragCancel}
                     />
                   );
                 })}

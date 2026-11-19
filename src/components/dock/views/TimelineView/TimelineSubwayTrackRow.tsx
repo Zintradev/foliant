@@ -1,9 +1,10 @@
 import React, { memo } from 'react';
-import { ChevronDown, ChevronRight, GripVertical, Check, Circle } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronRight, GripVertical, Check, Circle } from 'lucide-react';
 import { StorylineItem } from '../../../../types/dock';
 import { PlotStatus } from '../../../../types/project';
 import { TimelineColumnItem } from './types';
 import { STORYLINE_COLOR_MAP } from './constants';
+import { useTouchLongPressReorder } from '../../../common/useTouchLongPressReorder';
 
 interface TimelineSubwayTrackRowProps {
   storyline: StorylineItem;
@@ -31,10 +32,16 @@ interface TimelineSubwayTrackRowProps {
   onDragOver: (e: React.DragEvent, id: string, index?: number) => void;
   onDrop: (e: React.DragEvent, index?: number, id?: string) => void;
   onDragEnd: () => void;
+  onTouchDragStart?: (id: string, index: number) => void;
+  onTouchDragMove?: (clientY: number, clientX: number) => void;
+  onTouchDragEnd?: () => void;
+  onTouchDragCancel?: () => void;
+  onMoveStoryline?: (id: string, direction: 'up' | 'down') => void;
+  isLastStoryline?: boolean;
   onResizeStart: (e: React.PointerEvent, id: string) => void;
   onOpenEntityPopover: (e: React.MouseEvent, type: 'storyline' | 'character', id: string, sceneId: string) => void;
-  registerTrack: (id: string, el: HTMLElement | null) => void;
   rowTranslateY?: number;
+  sourceIndex?: number;
 }
 
 function TimelineSubwayTrackRowComponent({
@@ -47,7 +54,7 @@ function TimelineSubwayTrackRowComponent({
   storylineSpanMap,
   draggedStorylineId,
   dragOverPlotId,
-  shiftTargetIndex,
+  shiftTargetIndex: _shiftTargetIndex,
   timelineDropMode,
   getSceneWidth,
   manualSceneWidths,
@@ -58,17 +65,33 @@ function TimelineSubwayTrackRowComponent({
   onDragOver,
   onDrop,
   onDragEnd,
+  onTouchDragStart,
+  onTouchDragMove,
+  onTouchDragEnd,
+  onTouchDragCancel,
+  onMoveStoryline,
+  isLastStoryline = false,
   onResizeStart,
   onOpenEntityPopover,
-  registerTrack,
   rowTranslateY = 0,
+  sourceIndex: _sourceIndex = -1,
 }: TimelineSubwayTrackRowProps) {
+  const { isTouchDragging, isHolding, touchDragProps } = useTouchLongPressReorder({
+    id: storyline.id,
+    index,
+    onStart: (id, idx) => onTouchDragStart?.(id, idx),
+    onMove: (clientY, clientX) => onTouchDragMove?.(clientY, clientX),
+    onEnd: () => onTouchDragEnd?.(),
+    onCancel: () => onTouchDragCancel?.(),
+    delayMs: 500,
+    moveThreshold: 10,
+  });
+
   const theme = STORYLINE_COLOR_MAP[storyline.color] || STORYLINE_COLOR_MAP.emerald;
   const isDragging = draggedStorylineId === storyline.id;
   const isDraggingAny = draggedStorylineId !== null;
   const isShiftMode = timelineDropMode === 'shift';
   const isDropTarget = timelineDropMode === 'swap' && dragOverPlotId === storyline.id && !isDragging;
-  const isShiftIndicator = isShiftMode && shiftTargetIndex === index;
   const span = storylineSpanMap.get(storyline.id);
   const rowHeightStyle = isCollapsed
     ? '34px'
@@ -78,13 +101,14 @@ function TimelineSubwayTrackRowComponent({
 
   return (
     <div
-      ref={(el) => registerTrack(storyline.id, el)}
       key={storyline.id}
       style={{
         height: rowHeightStyle,
         transform: rowTranslateY ? `translate3d(0, ${rowTranslateY}px, 0)` : undefined,
         transition:
-          isDraggingAny && isShiftMode
+          isDragging && isShiftMode
+            ? undefined
+            : isDraggingAny && isShiftMode
             ? 'transform 220ms cubic-bezier(0.2, 0.9, 0.25, 1)'
             : undefined,
         willChange: isDraggingAny && isShiftMode ? 'transform' : undefined,
@@ -92,22 +116,33 @@ function TimelineSubwayTrackRowComponent({
       onDragEnter={(e) => onDragEnter(e, index, storyline.id)}
       onDragOver={(e) => onDragOver(e, storyline.id, index)}
       onDrop={(e) => onDrop(e, index, storyline.id)}
-      className={`flex items-stretch border-b border-zinc-800/90 shadow-[0_1px_0_0_rgba(255,255,255,0.03)] relative group transition-colors ${
-        isDragging ? 'opacity-30 bg-zinc-900/60 z-30' : 'hover:bg-zinc-900/20'
-      } ${isDropTarget ? 'ring-2 ring-emerald-500 bg-emerald-950/20 z-30' : ''}`}
+      className={`flex items-stretch border-b border-zinc-800/90 shadow-[0_1px_0_0_rgba(255,255,255,0.03)] relative group transition-colors select-none ${
+        isDraggingAny ? '[&_*]:pointer-events-none' : ''
+      } ${
+        isHolding
+          ? 'scale-[1.01] shadow-xl border-zinc-650 ring-1 ring-zinc-500/30'
+          : (isDragging || isTouchDragging)
+          ? 'opacity-40 bg-zinc-900/40 border-dashed border-zinc-700/80 z-30 touch-none'
+          : !isShiftMode && isDropTarget
+          ? 'border-2 border-cyan-500 bg-cyan-950/30 ring-2 ring-cyan-500/50 shadow-md shadow-black/50 z-20'
+          : 'hover:bg-zinc-900/20'
+      }`}
     >
-      {isShiftIndicator && (
-        <div className="absolute top-0 inset-x-0 h-0.5 bg-blue-500 z-50 pointer-events-none shadow-xs" />
-      )}
-
       {/* Sticky Track Label Header (Draggable) */}
       <div
         draggable={true}
         onDragStart={(e) => onDragStart(e, index, storyline.id)}
         onDragEnd={onDragEnd}
+        {...touchDragProps}
         style={{ height: rowHeightStyle }}
-        className={`w-64 min-w-[16rem] sticky left-0 z-30 bg-zinc-950/95 backdrop-blur-md border-r border-zinc-800/90 border-b border-zinc-800/90 p-2.5 flex flex-col justify-between shrink-0 shadow-xs cursor-grab active:cursor-grabbing select-none transition-transform duration-150 ease-out ${
-          isDragging ? 'opacity-20' : ''
+        className={`w-64 min-w-[16rem] sticky left-0 z-30 bg-zinc-950/95 backdrop-blur-md border-r border-zinc-800/90 border-b border-zinc-800/90 p-2.5 flex flex-col justify-between shrink-0 shadow-xs cursor-grab active:cursor-grabbing select-none transition-all duration-150 ease-out ${
+          isHolding
+            ? 'scale-[1.02] shadow-xl border-zinc-650'
+            : (isDragging || isTouchDragging)
+            ? 'opacity-40 bg-zinc-900/50 border-dashed border-zinc-700/80'
+            : !isShiftMode && isDropTarget
+            ? 'border-2 border-cyan-500 bg-cyan-950/30 ring-2 ring-cyan-500/50 shadow-md shadow-black/50'
+            : ''
         }`}
       >
         <div className="flex items-center justify-between gap-1.5 min-w-0 pointer-events-none">
@@ -139,9 +174,36 @@ function TimelineSubwayTrackRowComponent({
               {storyline.title}
             </h4>
           </div>
-          <span className="text-[9px] font-mono text-zinc-500 shrink-0 pointer-events-none">
-            {span?.count || 0} {(span?.count || 0) === 1 ? 'stop' : 'stops'}
-          </span>
+          <div className="flex items-center gap-1 shrink-0">
+            {onMoveStoryline && (
+              <div
+                className="flex items-center gap-0.5 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 hover:!opacity-100 transition-opacity pointer-events-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  disabled={index === 0}
+                  onClick={() => onMoveStoryline(storyline.id, 'up')}
+                  className="p-0.5 hover:bg-zinc-800 rounded text-zinc-400 hover:text-zinc-100 disabled:opacity-20 transition touch-manipulation cursor-pointer"
+                  title="Mover arriba"
+                >
+                  <ChevronUp className="w-3 h-3 pointer-events-none" />
+                </button>
+                <button
+                  type="button"
+                  disabled={isLastStoryline}
+                  onClick={() => onMoveStoryline(storyline.id, 'down')}
+                  className="p-0.5 hover:bg-zinc-800 rounded text-zinc-400 hover:text-zinc-100 disabled:opacity-20 transition touch-manipulation cursor-pointer"
+                  title="Mover abajo"
+                >
+                  <ChevronDown className="w-3 h-3 pointer-events-none" />
+                </button>
+              </div>
+            )}
+            <span className="text-[9px] font-mono text-zinc-500 shrink-0 pointer-events-none">
+              {span?.count || 0} {(span?.count || 0) === 1 ? 'stop' : 'stops'}
+            </span>
+          </div>
         </div>
 
         {!isCollapsed && storyline.description && (

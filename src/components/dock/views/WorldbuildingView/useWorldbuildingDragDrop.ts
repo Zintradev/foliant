@@ -154,6 +154,93 @@ export function useWorldbuildingDragDrop({
     setShiftTargetIndex(null);
   };
 
+  const handleTouchStart = (id: string, index: number) => {
+    setDraggedItemId(id);
+    setShiftTargetIndex(index);
+  };
+
+  const handleTouchMove = (clientY: number) => {
+    if (!draggedItemId || !listContainerRef.current) return;
+    const containerRect = listContainerRef.current.getBoundingClientRect();
+    if (containerRect.height === 0) return;
+
+    const relativeY =
+      clientY - containerRect.top + listContainerRef.current.scrollTop;
+
+    let accumulatedY = 0;
+    let targetSlot = filteredItems.length - 1;
+    for (let i = 0; i < filteredItems.length; i++) {
+      const itemEl = itemRefs.current.get(filteredItems[i].id);
+      const h = itemEl?.offsetHeight || 58;
+      if (relativeY < accumulatedY + h / 2) {
+        targetSlot = i;
+        break;
+      }
+      accumulatedY += h;
+    }
+
+    targetSlot = Math.max(0, Math.min(filteredItems.length - 1, targetSlot));
+    if (worldDropMode === 'swap') {
+      const target = filteredItems[targetSlot];
+      if (target && target.id !== draggedItemId) {
+        if (dragOverItemId !== target.id) {
+          setDragOverItemId(target.id);
+        }
+      } else if (target && target.id === draggedItemId && dragOverItemId !== null) {
+        setDragOverItemId(null);
+      }
+    } else {
+      if (shiftTargetIndex !== targetSlot) {
+        setShiftTargetIndex(targetSlot);
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    const sourceId = draggedItemId;
+    if (sourceId) {
+      const sourceIdx = items.findIndex((i) => i.id === sourceId);
+      if (sourceIdx !== -1) {
+        if (worldDropMode === 'swap') {
+          if (dragOverItemId && dragOverItemId !== sourceId) {
+            const targetIdx = items.findIndex((i) => i.id === dragOverItemId);
+            if (targetIdx !== -1 && sourceIdx !== targetIdx) {
+              const next = [...items];
+              const temp = next[sourceIdx];
+              next[sourceIdx] = next[targetIdx];
+              next[targetIdx] = temp;
+              onChange(next);
+            }
+          }
+        } else {
+          const effectiveTargetSlot = shiftTargetIndex !== null ? shiftTargetIndex : -1;
+          if (effectiveTargetSlot >= 0 && effectiveTargetSlot < filteredItems.length) {
+            const targetItem = filteredItems[effectiveTargetSlot];
+            if (targetItem) {
+              const finalTargetIdx = items.findIndex((i) => i.id === targetItem.id);
+              if (finalTargetIdx !== -1 && sourceIdx !== finalTargetIdx) {
+                const next = [...items];
+                const [moved] = next.splice(sourceIdx, 1);
+                next.splice(finalTargetIdx, 0, moved);
+                onChange(next);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    setDraggedItemId(null);
+    setDragOverItemId(null);
+    setShiftTargetIndex(null);
+  };
+
+  const handleTouchCancel = () => {
+    setDraggedItemId(null);
+    setDragOverItemId(null);
+    setShiftTargetIndex(null);
+  };
+
   return {
     isShiftMode,
     draggedItemId,
@@ -167,5 +254,9 @@ export function useWorldbuildingDragDrop({
     handleItemDragOver,
     handleDrop,
     handleDragEnd,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    handleTouchCancel,
   };
 }

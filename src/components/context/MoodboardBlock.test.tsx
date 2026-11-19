@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import MoodboardBlock from './MoodboardBlock';
@@ -295,6 +295,327 @@ describe('MoodboardBlock Component', () => {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       expect(key).not.toMatch(/^foliant_moodboard/);
+    }
+  });
+
+  it('reads image as data URL in web mode and stores base64 for card rendering', async () => {
+    delete (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
+    const handleUpdate = vi.fn();
+    const originalFileReader = window.FileReader;
+    class MockFileReader {
+      result: string | null = null;
+      onload: (() => void) | null = null;
+      readAsDataURL() {
+        this.result = 'data:image/jpeg;base64,mockJpegBase64Data';
+        setTimeout(() => {
+          if (this.onload) this.onload();
+        }, 10);
+      }
+    }
+    window.FileReader = MockFileReader as any;
+
+    try {
+      render(
+        <MoodboardBlock
+          title="Moodboard"
+          projectId="web-proj"
+          initialVisuals={[]}
+          onUpdateVisuals={handleUpdate}
+        />
+      );
+
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      expect(input).toBeInTheDocument();
+
+      const mockFile = new File(['mock content'], 'photo.jpg', { type: 'image/jpeg' });
+      fireEvent.change(input, { target: { files: [mockFile] } });
+
+      await waitFor(() => {
+        expect(handleUpdate).toHaveBeenCalled();
+      });
+
+      const savedVisuals = handleUpdate.mock.calls[0][0];
+      expect(savedVisuals.length).toBe(1);
+      expect(savedVisuals[0].name).toBe('photo.jpg');
+      expect(savedVisuals[0].base64).toBeDefined();
+    } finally {
+      window.FileReader = originalFileReader;
+    }
+  });
+
+  it('allows reordering images using discrete prev/next buttons', async () => {
+    const handleUpdate = vi.fn();
+    render(
+      <MoodboardBlock
+        title="Moodboard"
+        projectId="reorder-proj"
+        initialVisuals={defaultVisuals}
+        onUpdateVisuals={handleUpdate}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('landscape.jpg')).toBeInTheDocument();
+      expect(screen.getByText('forest.png')).toBeInTheDocument();
+    });
+
+    const nextButtons = screen.getAllByTitle('Mover después');
+    expect(nextButtons.length).toBeGreaterThan(0);
+    fireEvent.click(nextButtons[0]);
+
+    expect(handleUpdate).toHaveBeenCalled();
+    const updated = handleUpdate.mock.calls[0][0];
+    expect(updated[0].name).toBe('forest.png');
+    expect(updated[1].name).toBe('landscape.jpg');
+  });
+
+  it('supports touch long-press drag & drop on tablet to reorder visual cards', async () => {
+    const handleUpdate = vi.fn();
+    render(
+      <MoodboardBlock
+        title="Moodboard"
+        projectId="touch-proj"
+        initialVisuals={defaultVisuals}
+        onUpdateVisuals={handleUpdate}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('landscape.jpg')).toBeInTheDocument();
+      expect(screen.getByText('forest.png')).toBeInTheDocument();
+    });
+
+    const card1 = document.querySelector('[data-image-id="1"]') as HTMLElement;
+    const card2 = document.querySelector('[data-image-id="2"]') as HTMLElement;
+    expect(card1).toBeInTheDocument();
+    expect(card2).toBeInTheDocument();
+
+    // Mock elementsFromPoint so touch drag move detects card2
+    document.elementsFromPoint = vi.fn().mockReturnValue([card2]);
+
+    vi.useFakeTimers();
+    try {
+      // Touch start on card 1
+      fireEvent.pointerDown(card1, {
+        pointerType: 'touch',
+        button: 0,
+        clientX: 100,
+        clientY: 100,
+        pointerId: 10,
+      });
+
+      // Advance by 550ms to activate touch drag
+      act(() => {
+        vi.advanceTimersByTime(550);
+      });
+
+      // Card 1 in-flow slot should now be the placeholder while floating clone is dragged
+      expect(card1.className).toContain('border-dashed');
+
+      // Dispatch window touchmove over card2
+      const touchMoveEv = new Event('touchmove', { cancelable: true }) as any;
+      touchMoveEv.touches = [{ clientX: 100, clientY: 300 }];
+      act(() => {
+        window.dispatchEvent(touchMoveEv);
+      });
+
+      // Release finger
+      act(() => {
+        window.dispatchEvent(new Event('touchend'));
+      });
+
+      expect(handleUpdate).toHaveBeenCalled();
+      const updated = handleUpdate.mock.calls[0][0];
+      expect(updated[0].id).toBe('2');
+      expect(updated[1].id).toBe('1');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('supports touch dragging an image across folders to change its section', async () => {
+    const handleUpdate = vi.fn();
+    render(
+      <MoodboardBlock
+        title="Moodboard"
+        projectId="touch-folder-proj"
+        initialVisuals={defaultVisuals}
+        onUpdateVisuals={handleUpdate}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('landscape.jpg')).toBeInTheDocument();
+      expect(screen.getByText('Characters')).toBeInTheDocument();
+    });
+
+    const card1 = document.querySelector('[data-image-id="1"]') as HTMLElement;
+    expect(card1).toBeInTheDocument();
+
+    const charactersFolder = document.querySelector('[data-section-id="characters"]') as HTMLElement;
+    expect(charactersFolder).toBeInTheDocument();
+
+    document.elementsFromPoint = vi.fn().mockReturnValue([charactersFolder]);
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.pointerDown(card1, {
+        pointerType: 'touch',
+        button: 0,
+        clientX: 100,
+        clientY: 100,
+        pointerId: 11,
+      });
+
+      act(() => {
+        vi.advanceTimersByTime(550);
+      });
+
+      const touchMoveEv = new Event('touchmove', { cancelable: true }) as any;
+      touchMoveEv.touches = [{ clientX: 100, clientY: 500 }];
+      act(() => {
+        window.dispatchEvent(touchMoveEv);
+      });
+
+      act(() => {
+        window.dispatchEvent(new Event('touchend'));
+      });
+
+      expect(handleUpdate).toHaveBeenCalled();
+      const updated = handleUpdate.mock.calls[0][0];
+      const moved = updated.find((img: any) => img.id === '1');
+      expect(moved.sectionId).toBe('characters');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('supports touch dragging in swap mode on tablet', async () => {
+    localStorage.setItem(
+      'foliant_settings',
+      JSON.stringify({ preferences: { visualsDropMode: 'swap' } })
+    );
+
+    const handleUpdate = vi.fn();
+    render(
+      <MoodboardBlock
+        title="Moodboard"
+        projectId="touch-swap-proj"
+        initialVisuals={defaultVisuals}
+        onUpdateVisuals={handleUpdate}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('landscape.jpg')).toBeInTheDocument();
+      expect(screen.getByText('forest.png')).toBeInTheDocument();
+    });
+
+    const card1 = document.querySelector('[data-image-id="1"]') as HTMLElement;
+    const card2 = document.querySelector('[data-image-id="2"]') as HTMLElement;
+
+    document.elementsFromPoint = vi.fn().mockReturnValue([card2]);
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.pointerDown(card1, {
+        pointerType: 'touch',
+        button: 0,
+        clientX: 100,
+        clientY: 100,
+        pointerId: 12,
+      });
+
+      act(() => {
+        vi.advanceTimersByTime(550);
+      });
+
+      const touchMoveEv = new Event('touchmove', { cancelable: true }) as any;
+      touchMoveEv.touches = [{ clientX: 100, clientY: 300 }];
+      act(() => {
+        window.dispatchEvent(touchMoveEv);
+      });
+
+      act(() => {
+        window.dispatchEvent(new Event('touchend'));
+      });
+
+      expect(handleUpdate).toHaveBeenCalled();
+      const updated = handleUpdate.mock.calls[0][0];
+      expect(updated[0].id).toBe('2');
+      expect(updated[1].id).toBe('1');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('supports swapping images across different folders on tablet without getting stuck', async () => {
+    localStorage.setItem(
+      'foliant_settings',
+      JSON.stringify({ preferences: { visualsDropMode: 'swap' } })
+    );
+
+    const crossFolderVisuals: ProjectVisualItem[] = [
+      { id: '1', name: 'landscape.jpg', path: 'visuals/landscape.jpg', sectionId: 'general' },
+      { id: '2', name: 'forest.png', path: 'visuals/forest.png', sectionId: 'locations' },
+    ];
+
+    const handleUpdate = vi.fn();
+    render(
+      <MoodboardBlock
+        title="Moodboard"
+        projectId="touch-cross-folder-swap"
+        visualsDropMode="swap"
+        initialVisuals={crossFolderVisuals}
+        onUpdateVisuals={handleUpdate}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('landscape.jpg')).toBeInTheDocument();
+      expect(screen.getByText('forest.png')).toBeInTheDocument();
+    });
+
+    const card1 = document.querySelector('[data-image-id="1"]') as HTMLElement;
+    const card2 = document.querySelector('[data-image-id="2"]') as HTMLElement;
+    const folderLocations = document.querySelector('[data-section-id="locations"]') as HTMLElement;
+
+    document.elementsFromPoint = vi.fn().mockReturnValue([card2, folderLocations]);
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.pointerDown(card1, {
+        pointerType: 'touch',
+        button: 0,
+        clientX: 100,
+        clientY: 100,
+        pointerId: 14,
+      });
+
+      act(() => {
+        vi.advanceTimersByTime(550);
+      });
+
+      const touchMoveEv = new Event('touchmove', { cancelable: true }) as any;
+      touchMoveEv.touches = [{ clientX: 100, clientY: 400 }];
+      act(() => {
+        window.dispatchEvent(touchMoveEv);
+      });
+
+      act(() => {
+        window.dispatchEvent(new Event('touchend'));
+      });
+
+      expect(handleUpdate).toHaveBeenCalled();
+      const updated = handleUpdate.mock.calls[0][0];
+      const img1 = updated.find((img: ProjectVisualItem) => img.id === '1');
+      const img2 = updated.find((img: ProjectVisualItem) => img.id === '2');
+
+      // Both images must have swapped sections cleanly
+      expect(img1?.sectionId).toBe('locations');
+      expect(img2?.sectionId).toBe('general');
+    } finally {
+      vi.useRealTimers();
     }
   });
 });

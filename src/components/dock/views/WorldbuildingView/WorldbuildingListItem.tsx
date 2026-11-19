@@ -1,8 +1,9 @@
 import React, { memo } from 'react';
-import { GripVertical, Trash2 } from 'lucide-react';
+import { GripVertical, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { WorldItem } from './types';
 import { getCategoryConfig } from './constants';
 import { useTranslation } from '../../../../i18n/translations';
+import { useTouchLongPressReorder } from '../../../common/useTouchLongPressReorder';
 
 interface WorldbuildingListItemProps {
   item: WorldItem;
@@ -15,6 +16,9 @@ interface WorldbuildingListItemProps {
   shiftTargetIndex: number | null;
   sourceIndex: number;
   rowTranslateY: number;
+  isFirst?: boolean;
+  isLast?: boolean;
+  onMoveItem?: (id: string, direction: 'up' | 'down') => void;
   setElementRef: (el: HTMLDivElement | null) => void;
   onSelect: (id: string) => void;
   onDelete: (id: string, e?: React.MouseEvent) => void;
@@ -23,6 +27,10 @@ interface WorldbuildingListItemProps {
   onDragOver: (e: React.DragEvent, id: string, index: number) => void;
   onDrop: (e: React.DragEvent, id: string, index: number) => void;
   onDragEnd: () => void;
+  onTouchDragStart?: (id: string, index: number) => void;
+  onTouchDragMove?: (clientY: number, clientX: number) => void;
+  onTouchDragEnd?: () => void;
+  onTouchDragCancel?: () => void;
 }
 
 function WorldbuildingListItemComponent({
@@ -36,6 +44,9 @@ function WorldbuildingListItemComponent({
   shiftTargetIndex,
   sourceIndex,
   rowTranslateY,
+  isFirst,
+  isLast,
+  onMoveItem,
   setElementRef,
   onSelect,
   onDelete,
@@ -44,9 +55,24 @@ function WorldbuildingListItemComponent({
   onDragOver,
   onDrop,
   onDragEnd,
+  onTouchDragStart,
+  onTouchDragMove,
+  onTouchDragEnd,
+  onTouchDragCancel,
 }: WorldbuildingListItemProps) {
   const { t } = useTranslation();
   const config = getCategoryConfig(item.category);
+
+  const { isTouchDragging, isHolding, touchDragProps } = useTouchLongPressReorder({
+    id: item.id,
+    index,
+    onStart: (id, idx) => onTouchDragStart?.(id, idx),
+    onMove: (clientY, clientX) => onTouchDragMove?.(clientY, clientX),
+    onEnd: () => onTouchDragEnd?.(),
+    onCancel: () => onTouchDragCancel?.(),
+    delayMs: 500,
+    moveThreshold: 10,
+  });
 
   const getCategoryLabel = (category: string): string => {
     switch (category) {
@@ -72,11 +98,14 @@ function WorldbuildingListItemComponent({
       onDragOver={(e) => onDragOver(e, item.id, index)}
       onDrop={(e) => onDrop(e, item.id, index)}
       onDragEnd={onDragEnd}
+      {...touchDragProps}
       onClick={() => onSelect(item.id)}
       style={{
         transform: rowTranslateY ? `translate3d(0, ${rowTranslateY}px, 0)` : undefined,
         transition:
-          isDraggingAny && isShiftMode
+          isDraggingThis && isShiftMode
+            ? undefined
+            : rowTranslateY !== undefined
             ? 'transform 220ms cubic-bezier(0.2, 0.9, 0.25, 1)'
             : undefined,
         willChange: isDraggingAny && isShiftMode ? 'transform' : undefined,
@@ -84,8 +113,10 @@ function WorldbuildingListItemComponent({
       className={`group px-3 py-2.5 rounded-sm cursor-pointer transition-colors duration-150 flex flex-col gap-1 border select-none ${
         isDraggingAny ? '[&_*]:pointer-events-none' : ''
       } ${
-        isDraggingThis
-          ? 'opacity-40 bg-zinc-900/40 border-dashed border-zinc-700/80 z-30'
+        isHolding
+          ? 'scale-[1.02] shadow-xl border-zinc-650 ring-1 ring-zinc-500/30'
+          : (isDraggingThis || isTouchDragging)
+          ? 'opacity-40 bg-zinc-900/40 border-dashed border-zinc-700/80 z-30 touch-none'
           : !isShiftMode && isDragOverThis
           ? 'border-2 border-cyan-500 bg-cyan-950/30 shadow-md shadow-black/50 z-20'
           : isShiftMode && isDraggingThis && shiftTargetIndex !== null && shiftTargetIndex !== sourceIndex
@@ -120,6 +151,31 @@ function WorldbuildingListItemComponent({
           >
             {getCategoryLabel(item.category)}
           </span>
+          {onMoveItem && (
+            <div
+              className="flex items-center gap-0.5 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 hover:!opacity-100 transition-opacity"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                disabled={isFirst}
+                onClick={() => onMoveItem(item.id, 'up')}
+                title="Mover arriba"
+                className="p-0.5 hover:bg-zinc-800 rounded-xs text-zinc-400 hover:text-zinc-100 disabled:opacity-20 transition touch-manipulation cursor-pointer"
+              >
+                <ChevronUp className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                disabled={isLast}
+                onClick={() => onMoveItem(item.id, 'down')}
+                title="Mover abajo"
+                className="p-0.5 hover:bg-zinc-800 rounded-xs text-zinc-400 hover:text-zinc-100 disabled:opacity-20 transition touch-manipulation cursor-pointer"
+              >
+                <ChevronDown className="w-3 h-3" />
+              </button>
+            </div>
+          )}
           <button
             type="button"
             onClick={(e) => onDelete(item.id, e)}

@@ -39,6 +39,7 @@ interface RelationshipBoardCanvasProps {
   isSpacePressed: boolean;
   justDraggedRelRef: React.MutableRefObject<boolean>;
   getNodeInfo: (id: string) => NodeInfo | null;
+  onCanvasPointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void;
   onCanvasMouseDown: (e: React.MouseEvent) => void;
   onCanvasPointerMove: (e: React.PointerEvent<HTMLDivElement>) => void;
   onCanvasPointerUp?: (e: React.PointerEvent<HTMLDivElement>) => void;
@@ -90,6 +91,7 @@ function RelationshipBoardCanvasComponent({
   isSpacePressed,
   justDraggedRelRef,
   getNodeInfo,
+  onCanvasPointerDown,
   onCanvasMouseDown,
   onCanvasPointerMove,
   onCanvasPointerUp,
@@ -122,6 +124,7 @@ function RelationshipBoardCanvasComponent({
     <div
       ref={boardRef}
       data-testid="relationship-board"
+      onPointerDown={onCanvasPointerDown}
       onMouseDown={onCanvasMouseDown}
       onPointerMove={onCanvasPointerMove}
       onPointerUp={onCanvasPointerUp}

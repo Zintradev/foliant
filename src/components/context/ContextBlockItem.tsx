@@ -19,6 +19,7 @@ import {
 import { ContextBlock } from '../../types/project';
 import { StorylineItem, CharacterItem, WorldItem } from '../../types/dock';
 import { useTranslation } from '../../i18n/translations';
+import { useTouchLongPressReorder } from '../common/useTouchLongPressReorder';
 
 export interface ContextBlockItemProps {
   block: ContextBlock;
@@ -32,6 +33,11 @@ export interface ContextBlockItemProps {
   onDragOver?: (e: React.DragEvent) => void;
   onDrop?: (e: React.DragEvent) => void;
   onDragEnd?: () => void;
+  onTouchDragStart?: (id: string, index: number) => void;
+  onTouchDragMove?: (clientY: number, clientX: number) => void;
+  onTouchDragEnd?: () => void;
+  onTouchDragCancel?: () => void;
+  index?: number;
   onStartEditing?: () => void;
   storylines?: StorylineItem[];
   characters?: CharacterItem[];
@@ -66,6 +72,11 @@ function ContextBlockItemComponent({
   onDragOver,
   onDrop,
   onDragEnd,
+  onTouchDragStart,
+  onTouchDragMove,
+  onTouchDragEnd,
+  onTouchDragCancel,
+  index = 0,
   onStartEditing,
   storylines = [],
   characters = [],
@@ -79,6 +90,18 @@ function ContextBlockItemComponent({
   setElementRef,
 }: ContextBlockItemProps) {
   const { t } = useTranslation();
+
+  const { isTouchDragging, isHolding, touchDragProps } = useTouchLongPressReorder({
+    id: block.id,
+    index,
+    onStart: (id, idx) => onTouchDragStart?.(id, idx),
+    onMove: (clientY, clientX) => onTouchDragMove?.(clientY, clientX),
+    onEnd: () => onTouchDragEnd?.(),
+    onCancel: () => onTouchDragCancel?.(),
+    delayMs: 500,
+    moveThreshold: 10,
+  });
+
   const [collapsed, setCollapsed] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [isEditingContent, setIsEditingContent] = useState(isNewBlock);
@@ -277,8 +300,10 @@ function ContextBlockItemComponent({
       className={`border rounded-sm overflow-visible bg-zinc-950 transition-all duration-200 shadow-xs w-full select-none ${
         isDraggingAny ? '[&_*]:pointer-events-none' : ''
       } ${
-        isDragging
-          ? 'opacity-35 bg-zinc-900/40 border-dashed border-zinc-750 z-30'
+        isHolding
+          ? 'scale-[1.01] shadow-xl border-zinc-650 ring-1 ring-zinc-500/30'
+          : (isDragging || isTouchDragging)
+          ? 'opacity-35 bg-zinc-900/40 border-dashed border-zinc-750 z-30 touch-none'
           : !isShiftMode && isDragOver
           ? 'border-2 border-emerald-500 bg-emerald-950/25 ring-2 ring-emerald-500/50 scale-[1.01] shadow-md shadow-black/50 z-20'
           : isShiftMode && isDragOver
@@ -297,6 +322,7 @@ function ContextBlockItemComponent({
           onDragStart?.();
         }}
         onDragEnd={onDragEnd}
+        {...touchDragProps}
         className="flex items-center gap-1.5 px-2.5 py-1.5 bg-zinc-900/75 border-b border-zinc-800/80 group select-none transition"
       >
         <GripVertical className="w-3.5 h-3.5 text-zinc-600 group-hover:text-zinc-300 transition shrink-0 cursor-grab active:cursor-grabbing" />

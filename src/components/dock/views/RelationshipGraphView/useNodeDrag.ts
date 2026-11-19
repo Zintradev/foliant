@@ -56,7 +56,7 @@ export function useNodeDrag({
     e: React.PointerEvent<HTMLDivElement>,
     nodeId: string
   ) => {
-    if (e.button !== 0) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
 
     if (connectingSourceId) {
       if (connectingSourceId !== nodeId) {

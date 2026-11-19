@@ -407,7 +407,7 @@ describe('useProjectPersistence (Single .foliant Bundle Architecture)', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it('in web mode (no Tauri IPC), saveProject updates memory state and does not persist core data to sessionStorage', async () => {
+  it('in web mode (no Tauri IPC), saveProject downloads the file locally and updates memory state without sessionStorage', async () => {
     delete (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
     sessionStorage.clear();
 
@@ -425,6 +425,7 @@ describe('useProjectPersistence (Single .foliant Bundle Architecture)', () => {
 
     expect(success).toBe(true);
     expect(result.current.saveStatus).toBe('saved');
+    expect(result.current.currentFilePath).toContain('.foliant');
     expect(sessionStorage.getItem('foliant_session_project')).toBeNull();
     expect(onProjectLoaded).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'The Cipher Mystery' })

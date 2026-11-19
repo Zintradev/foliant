@@ -50,18 +50,18 @@ export default function UnsavedChangesModal({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-zinc-800/80">
+        <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-zinc-800/80 flex-wrap">
           <button
             type="button"
             onClick={onCancel}
-            className="px-3.5 py-1.5 rounded-sm text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition cursor-pointer"
+            className="px-3.5 py-2 md:py-1.5 rounded-sm text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition cursor-pointer touch-manipulation min-h-[36px] md:min-h-0 flex items-center justify-center"
           >
             {cancelText || t('keepEditing')}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="px-3.5 py-1.5 rounded-sm text-xs font-medium bg-rose-600/90 hover:bg-rose-600 text-white shadow-xs transition cursor-pointer"
+            className="px-3.5 py-2 md:py-1.5 rounded-sm text-xs font-medium bg-rose-600/90 hover:bg-rose-600 text-white shadow-xs transition cursor-pointer touch-manipulation min-h-[36px] md:min-h-0 flex items-center justify-center"
           >
             {confirmText || t('discardAndExit')}
           </button>
@@ -69,7 +69,7 @@ export default function UnsavedChangesModal({
             <button
               type="button"
               onClick={onSaveAndExit}
-              className="px-3.5 py-1.5 rounded-sm text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition cursor-pointer flex items-center gap-1.5"
+              className="px-3.5 py-2 md:py-1.5 rounded-sm text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5 touch-manipulation min-h-[36px] md:min-h-0"
             >
               <Save className="w-3.5 h-3.5" />
               <span>{saveAndExitText || t('saveAndExit')}</span>

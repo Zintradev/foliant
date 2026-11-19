@@ -61,7 +61,7 @@ export function toReferenceImage(
   base64?: string
 ): ReferenceImage {
   const normalized = normalizeAssetPath(absolutePath);
-  const displaySrc = isTauriApp() && normalized ? convertFileSrc(normalized) : normalized;
+  const displaySrc = isTauriApp() && normalized ? convertFileSrc(normalized) : (base64 || normalized);
 
   return {
     id: generateStableImageId(absolutePath),

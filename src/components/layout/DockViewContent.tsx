@@ -33,6 +33,7 @@ export interface DockViewContentProps {
   handleAddChapter: (type?: 'folder' | 'scene', parentId?: string | null) => void;
   handleDeleteChapter: (id: string) => Promise<void>;
   handleUpdateChapter: (id: string, updates: Partial<FoliantChapter>) => void;
+  handleReorderChapters?: (sourceId: string, direction: 'up' | 'down') => void;
   handleUpdateStorylines: (storylines: FoliantProject['storylines']) => void;
   handleUpdateCharacters: (characters: FoliantProject['characters']) => void;
   handleAddCharacter: (char: FoliantProject['characters'][0]) => void;
@@ -63,6 +64,7 @@ export const DockViewContent = memo(function DockViewContent({
   handleAddChapter,
   handleDeleteChapter,
   handleUpdateChapter,
+  handleReorderChapters,
   handleUpdateStorylines,
   handleUpdateCharacters,
   handleAddCharacter,
@@ -114,6 +116,7 @@ export const DockViewContent = memo(function DockViewContent({
           onAddChapter={handleAddChapter}
           onDeleteChapter={handleDeleteChapter}
           onUpdateChapter={handleUpdateChapter}
+          onReorderChapter={handleReorderChapters}
           isExpanded={isExpanded}
           storylines={project.storylines}
           onDirtyChange={setIsDirty}

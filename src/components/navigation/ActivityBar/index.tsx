@@ -56,7 +56,7 @@ const ActivityBarNavList = memo(function ActivityBarNavList({
             data-testid={`activity-bar-${item.id}`}
             onClick={() => onSelectView(item.id)}
             title={itemTooltip}
-            className={`relative group flex flex-col items-center justify-center w-full py-2 rounded-sm transition text-[10px] font-medium cursor-pointer ${
+            className={`relative group flex flex-col items-center justify-center w-full py-2 rounded-sm transition text-[10px] font-medium cursor-pointer touch-manipulation min-h-[42px] ${
               isHighlighted
                 ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-zinc-950 animate-pulse bg-emerald-950/40 text-emerald-200'
                 : isActive
@@ -183,7 +183,7 @@ export const ActivityBar = memo(function ActivityBar({
             onClick={() => setIsFileMenuOpen((prev) => !prev)}
             title="File Menu"
             aria-label="File Menu"
-            className={`p-1.5 rounded-sm transition cursor-pointer ${
+            className={`p-1.5 rounded-sm transition cursor-pointer touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center ${
               isFileMenuOpen
                 ? 'bg-zinc-800 text-zinc-100 shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900'

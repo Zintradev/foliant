@@ -56,7 +56,7 @@ export const MoodboardHeader = memo(function MoodboardHeader({
         ref={fileInputRef}
         type="file"
         multiple
-        accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml,image/avif"
+        accept="image/*,image/png,image/jpeg,image/gif,image/webp,image/svg+xml,image/avif"
         className="hidden"
         onChange={handleFileInputChange}
       />

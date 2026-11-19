@@ -181,9 +181,20 @@ export const WritingWorkspace = memo(function WritingWorkspace({
 
   return (
     <div className={`flex-1 flex min-w-0 h-full ${isVisible ? 'flex' : 'hidden'}`}>
+      {/* Backdrop for Left Drawer on tablet */}
+      {showLeftDock && (
+        <div
+          data-testid="left-dock-backdrop"
+          className="tablet-backdrop fixed inset-0 bg-black/60 backdrop-blur-xs z-35 animate-in fade-in duration-150 cursor-pointer"
+          onClick={handleCloseLeft}
+          aria-label={t('closeLeftDock', 'Cerrar panel')}
+        />
+      )}
+
       {/* Left Dock Panel */}
       <DockContainer
         side="left"
+        className="tablet-drawer-left"
         isOpen={showLeftDock}
         onToggleOpen={handleCloseLeft}
         tabs={layout.leftTabs}
@@ -198,7 +209,11 @@ export const WritingWorkspace = memo(function WritingWorkspace({
         onRequestTabChange={layout.handleSelectLeftTab}
       />
 
-      {showLeftDock && <Splitter onResize={layout.handleResizeLeft} onReset={noop} label="Resize left panel" />}
+      {showLeftDock && (
+        <div className="tablet-splitter shrink-0 flex">
+          <Splitter onResize={layout.handleResizeLeft} onReset={noop} label="Resize left panel" />
+        </div>
+      )}
 
       {/* Main Canvas Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative" style={{ backgroundColor: containerBg }}>
@@ -219,13 +234,13 @@ export const WritingWorkspace = memo(function WritingWorkspace({
 
         {/* Formatting Toolbar directly below Chapter Title / Header (outside the paper background) */}
         {showToolbar && (
-          <div className="bg-zinc-900 border-b border-zinc-800 px-4 py-1.5 flex items-center justify-center shrink-0 z-20">
+          <div className="bg-zinc-900 border-b border-zinc-800 px-3 py-1.5 flex items-center justify-start sm:justify-center shrink-0 z-20 overflow-x-auto no-scrollbar touch-pan-x">
             <EditorToolbar
               editor={activeEditor}
               currentFont={activeFontFamily}
               onFontChange={setActiveFontFamily}
               onOpenSymbols={() => setIsSymbolsModalOpen(true)}
-              className="relative z-10 w-full flex items-center justify-center flex-wrap sm:flex-nowrap gap-1 select-none overflow-visible text-zinc-300"
+              className="relative z-10 flex items-center justify-start sm:justify-center flex-nowrap gap-1 select-none text-zinc-300 shrink-0 min-w-max"
             />
           </div>
         )}
@@ -364,11 +379,26 @@ export const WritingWorkspace = memo(function WritingWorkspace({
         </Suspense>
       </main>
 
-      {showRightDock && <Splitter onResize={layout.handleResizeRight} onReset={noop} label="Resize right panel" />}
+      {showRightDock && (
+        <div className="tablet-splitter shrink-0 flex">
+          <Splitter onResize={layout.handleResizeRight} onReset={noop} label="Resize right panel" />
+        </div>
+      )}
+
+      {/* Backdrop for Right Drawer on tablet */}
+      {showRightDock && (
+        <div
+          data-testid="right-dock-backdrop"
+          className="tablet-backdrop fixed inset-0 bg-black/60 backdrop-blur-xs z-35 animate-in fade-in duration-150 cursor-pointer"
+          onClick={handleCloseRight}
+          aria-label={t('closeRightDock', 'Cerrar panel')}
+        />
+      )}
 
       {/* Right Dock Panel */}
       <DockContainer
         side="right"
+        className="tablet-drawer-right"
         isOpen={showRightDock}
         onToggleOpen={handleCloseRight}
         tabs={layout.rightTabs}

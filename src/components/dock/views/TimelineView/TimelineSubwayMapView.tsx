@@ -46,7 +46,11 @@ interface TimelineSubwayMapViewProps {
   onStorylineDragLeave: (e: React.DragEvent) => void;
   onStorylineDrop: (e: React.DragEvent, index?: number, id?: string) => void;
   onStorylineDragEnd: () => void;
-  registerTrack: (id: string, el: HTMLElement | null) => void;
+  onTouchStorylineDragStart?: (id: string, index: number) => void;
+  onTouchStorylineDragMove?: (clientY: number, clientX: number) => void;
+  onTouchStorylineDragEnd?: () => void;
+  onTouchStorylineDragCancel?: () => void;
+  onMoveStoryline?: (id: string, direction: 'up' | 'down') => void;
   sceneHeaderHeight?: number;
   onSceneHeaderResizeStart?: (e: React.PointerEvent) => void;
 }
@@ -61,7 +65,9 @@ function TimelineSubwayMapViewComponent(props: TimelineSubwayMapViewProps) {
     onAddMarker, onOpenMarkerModal, onOpenEntityPopover, onToggleAttachDropdown, onAttachStoryline,
     onAttachCharacter, onStorylineDragStart, onStorylineDragEnter,
     onSwimlanesDragOver, onStorylineDragOver, onStorylineDragLeave, onStorylineDrop,
-    onStorylineDragEnd, registerTrack, sceneHeaderHeight = 140, onSceneHeaderResizeStart,
+    onStorylineDragEnd, onTouchStorylineDragStart, onTouchStorylineDragMove,
+    onTouchStorylineDragEnd, onTouchStorylineDragCancel,
+    onMoveStoryline, sceneHeaderHeight = 140, onSceneHeaderResizeStart,
   } = props;
   const { t } = useTranslation();
 
@@ -142,7 +148,7 @@ function TimelineSubwayMapViewComponent(props: TimelineSubwayMapViewProps) {
           onDragLeave={onStorylineDragLeave}
           onDrop={(e) => onStorylineDrop(e)}
           onDragEnd={onStorylineDragEnd}
-          className="relative divide-y divide-zinc-850/40"
+          className={`relative divide-y divide-zinc-850/40 ${draggedStorylineId !== null ? 'touch-none' : ''}`}
         >
           {storylines.length === 0 ? (
             <div className="p-8 text-center text-zinc-500 text-xs italic">
@@ -208,10 +214,16 @@ function TimelineSubwayMapViewComponent(props: TimelineSubwayMapViewProps) {
                     onDragOver={onStorylineDragOver}
                     onDrop={onStorylineDrop}
                     onDragEnd={onStorylineDragEnd}
+                    onTouchDragStart={onTouchStorylineDragStart}
+                    onTouchDragMove={onTouchStorylineDragMove}
+                    onTouchDragEnd={onTouchStorylineDragEnd}
+                    onTouchDragCancel={onTouchStorylineDragCancel}
+                    onMoveStoryline={onMoveStoryline}
+                    isLastStoryline={idx === storylines.length - 1}
                     onResizeStart={onPlotResizeStart}
                     onOpenEntityPopover={onOpenEntityPopover}
-                    registerTrack={registerTrack}
                     rowTranslateY={rowTranslateY}
+                    sourceIndex={sourceIndex}
                   />
                 );
               });

@@ -21,7 +21,7 @@ function ToolbarButton({
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`p-1.5 rounded-xs transition flex items-center justify-center cursor-pointer select-none text-current ${
+      className={`p-1.5 min-w-[28px] min-h-[28px] md:min-w-[30px] md:min-h-[30px] rounded-xs transition flex items-center justify-center cursor-pointer select-none text-current touch-manipulation ${
         disabled
           ? 'opacity-30 cursor-not-allowed'
           : isActive

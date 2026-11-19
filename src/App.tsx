@@ -434,6 +434,7 @@ export default function App() {
         handleAddChapter={mutations.handleAddChapter}
         handleDeleteChapter={mutations.handleDeleteChapter}
         handleUpdateChapter={mutations.handleUpdateChapter}
+        handleReorderChapters={mutations.handleReorderChapters}
         handleUpdateStorylines={mutations.handleUpdateStorylines}
         handleUpdateCharacters={mutations.handleUpdateCharacters}
         handleAddCharacter={mutations.handleAddCharacter}

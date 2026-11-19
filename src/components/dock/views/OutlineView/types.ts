@@ -13,6 +13,7 @@ export interface OutlineViewProps {
   onAddFolder?: (parentId?: string | null) => void;
   onDeleteChapter?: (id: string) => void;
   onUpdateChapter?: (id: string, updates: Partial<TextNode>) => void;
+  onReorderChapter?: (id: string, direction: 'up' | 'down') => void;
   isExpanded?: boolean;
   storylines?: StorylineItem[];
   onDirtyChange?: (isDirty: boolean) => void;

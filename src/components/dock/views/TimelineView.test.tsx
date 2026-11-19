@@ -672,6 +672,84 @@ describe('TimelineView', () => {
     // Change zoomX
     fireEvent.change(zoomXSlider, { target: { value: '1.5' } });
   });
+
+  it('allows moving storylines up and down via discrete buttons', () => {
+    const handleUpdateStorylines = vi.fn();
+    const twoStorylines: StorylineItem[] = [
+      ...mockStorylines,
+      {
+        id: 'story-2',
+        title: 'Secondary Plot',
+        color: 'blue',
+        description: '',
+        linkedChapterIds: [],
+      },
+    ];
+    render(
+      <TimelineView
+        chapters={mockChapters}
+        storylines={twoStorylines}
+        characters={mockCharacters}
+        activeChapterId="scene-1"
+        onSelectChapter={vi.fn()}
+        onUpdateStorylines={handleUpdateStorylines}
+      />
+    );
+
+    const downButtons = screen.getAllByTitle('Mover abajo');
+    expect(downButtons.length).toBeGreaterThan(0);
+    fireEvent.click(downButtons[0]);
+
+    expect(handleUpdateStorylines).toHaveBeenCalled();
+  });
+
+  it('unifies visual feedback on dragged timeline track with dashed border and cyan indicator in shift mode', () => {
+    const handleUpdate = vi.fn();
+    const twoStorylines: StorylineItem[] = [
+      {
+        id: 'story-1',
+        title: 'Main Plot',
+        color: 'emerald',
+        description: '',
+        linkedChapterIds: [],
+      },
+      {
+        id: 'story-2',
+        title: 'Sub Plot',
+        color: 'blue',
+        description: '',
+        linkedChapterIds: [],
+      },
+    ];
+
+    render(
+      <TimelineView
+        chapters={mockChapters}
+        storylines={twoStorylines}
+        characters={mockCharacters}
+        activeChapterId="scene-1"
+        onSelectChapter={vi.fn()}
+        onUpdateStorylines={handleUpdate}
+        timelineDropMode="shift"
+      />
+    );
+
+    const mainPlotHeader = screen.getByRole('heading', { name: 'Main Plot' });
+    const draggableHeader = mainPlotHeader.closest('[draggable="true"]');
+    expect(draggableHeader).toBeTruthy();
+
+    const trackRow = draggableHeader?.closest('.group');
+    expect(trackRow).toBeTruthy();
+
+    // Start drag
+    fireEvent.dragStart(draggableHeader!, {
+      dataTransfer: { setData: vi.fn(), effectAllowed: 'move' },
+    });
+
+    // When dragged, the row should show unified dashed border style matching Mundo and Notas
+    expect(trackRow).toHaveClass('border-dashed');
+    expect(trackRow).toHaveClass('opacity-40');
+  });
 });
 
 

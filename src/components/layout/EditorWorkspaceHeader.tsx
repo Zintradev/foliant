@@ -45,33 +45,38 @@ export const EditorWorkspaceHeader = memo(function EditorWorkspaceHeader({
   t,
 }: EditorWorkspaceHeaderProps) {
   return (
-    <header className="h-9 border-b border-zinc-800 flex items-center justify-between px-3 bg-zinc-900 select-none shrink-0 z-30">
-      <div className="flex items-center gap-2">
+    <header className="h-9 border-b border-zinc-800 flex items-center justify-between px-2 sm:px-3 bg-zinc-900 select-none shrink-0 z-30 overflow-hidden">
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
         <button
           onClick={onToggleLeft}
           title={leftOpen ? t('collapseLeftDock') : t('expandLeftDock')}
-          className="p-1 hover:bg-zinc-800 rounded-sm text-zinc-400 hover:text-white transition cursor-pointer"
+          aria-label={leftOpen ? t('collapseLeftDock') : t('expandLeftDock')}
+          className={`p-1.5 md:p-1 rounded-sm transition cursor-pointer flex items-center justify-center touch-manipulation min-w-[32px] min-h-[32px] md:min-w-0 md:min-h-0 ${
+            leftOpen
+              ? 'bg-zinc-800 text-emerald-400 border border-zinc-700/60 shadow-xs'
+              : 'hover:bg-zinc-800 text-zinc-400 hover:text-white border border-transparent'
+          }`}
         >
           {leftOpen ? (
-            <PanelLeftClose className="w-3.5 h-3.5" />
+            <PanelLeftClose className="w-4 h-4 md:w-3.5 md:h-3.5" />
           ) : (
-            <PanelLeft className="w-3.5 h-3.5" />
+            <PanelLeft className="w-4 h-4 md:w-3.5 md:h-3.5" />
           )}
         </button>
 
-        <div className="flex items-center gap-1.5 text-zinc-400">
-          <Feather className="w-3.5 h-3.5 text-zinc-300" />
-          <span className="text-xs font-medium text-zinc-200 truncate max-w-xs">
+        <div className="flex items-center gap-1.5 text-zinc-400 min-w-0">
+          <Feather className="w-3.5 h-3.5 text-zinc-300 shrink-0" />
+          <span className="text-xs font-medium text-zinc-200 truncate max-w-[120px] sm:max-w-xs md:max-w-sm">
             {activeChapterTitle}
           </span>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 text-xs text-zinc-400">
-        <span>
+      <div className="flex items-center gap-2 sm:gap-3 text-xs text-zinc-400 shrink-0">
+        <span className="whitespace-nowrap">
           {t('words')}: <strong className="text-zinc-200 font-mono">{wordCount}</strong>
         </span>
-        <span>
+        <span className="whitespace-nowrap hidden sm:inline">
           {t('target')}:{' '}
           <strong className="text-zinc-200 font-mono">
             {targetWords.toLocaleString()}
@@ -82,22 +87,27 @@ export const EditorWorkspaceHeader = memo(function EditorWorkspaceHeader({
           <button
             onClick={onToggleFocus}
             title={isFocusMode ? t('exitFocusMode', 'Salir de Concentración') : t('focusMode', 'Concentración')}
-            className="flex items-center gap-1 px-2 py-0.5 rounded-xs text-[11px] font-medium bg-zinc-800 hover:bg-zinc-750 text-zinc-300 hover:text-white border border-zinc-700 transition cursor-pointer"
+            className="flex items-center gap-1 px-2 py-1 md:py-0.5 rounded-xs text-[11px] font-medium bg-zinc-800 hover:bg-zinc-750 text-zinc-300 hover:text-white border border-zinc-700 transition cursor-pointer touch-manipulation"
           >
-            <SquareInsideSquareIcon className="w-3 h-3 text-zinc-300" />
-            <span>{isFocusMode ? t('exitFocusMode', 'Exit Focus') : t('focusMode', 'Focus')}</span>
+            <SquareInsideSquareIcon className="w-3 h-3 text-zinc-300 shrink-0" />
+            <span className="hidden sm:inline">{isFocusMode ? t('exitFocusMode', 'Exit Focus') : t('focusMode', 'Focus')}</span>
           </button>
         )}
 
         <button
           onClick={onToggleRight}
           title={rightOpen ? t('collapseRightDock') : t('expandRightDock')}
-          className="p-1 hover:bg-zinc-800 rounded-sm text-zinc-400 hover:text-white transition cursor-pointer"
+          aria-label={rightOpen ? t('collapseRightDock') : t('expandRightDock')}
+          className={`p-1.5 md:p-1 rounded-sm transition cursor-pointer flex items-center justify-center touch-manipulation min-w-[32px] min-h-[32px] md:min-w-0 md:min-h-0 ${
+            rightOpen
+              ? 'bg-zinc-800 text-emerald-400 border border-zinc-700/60 shadow-xs'
+              : 'hover:bg-zinc-800 text-zinc-400 hover:text-white border border-transparent'
+          }`}
         >
           {rightOpen ? (
-            <PanelRightClose className="w-3.5 h-3.5" />
+            <PanelRightClose className="w-4 h-4 md:w-3.5 md:h-3.5" />
           ) : (
-            <PanelRight className="w-3.5 h-3.5" />
+            <PanelRight className="w-4 h-4 md:w-3.5 md:h-3.5" />
           )}
         </button>
       </div>

@@ -47,7 +47,7 @@ export const FirstRunPromptModal: React.FC<FirstRunPromptModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label={t('close', 'Close')}
-            className="absolute top-4 right-4 p-1 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/80 transition cursor-pointer"
+            className="absolute top-4 right-4 p-2 md:p-1 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/80 transition cursor-pointer touch-manipulation min-w-[36px] min-h-[36px] md:min-w-0 md:min-h-0 flex items-center justify-center"
           >
             <X className="w-4 h-4" />
           </button>

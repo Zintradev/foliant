@@ -112,7 +112,7 @@ export const SettingsModal = React.memo(function SettingsModal({
           <button
             onClick={onClose}
             title={t('closeSettings')}
-            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition cursor-pointer"
+            className="p-2 md:p-1.5 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition cursor-pointer touch-manipulation min-w-[36px] min-h-[36px] md:min-w-0 md:min-h-0 flex items-center justify-center"
           >
             <X className="w-4 h-4" />
           </button>
@@ -226,7 +226,7 @@ export const SettingsModal = React.memo(function SettingsModal({
         <div className="flex items-center justify-between px-6 py-3.5 border-t border-zinc-800 bg-zinc-900/60 shrink-0">
           <button
             onClick={handleResetToDefault}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-md transition cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-2 md:py-1.5 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-md transition cursor-pointer touch-manipulation min-h-[36px] md:min-h-0"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>{t('resetDefaults')}</span>
@@ -234,7 +234,7 @@ export const SettingsModal = React.memo(function SettingsModal({
 
           <button
             onClick={onClose}
-            className="px-4 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-md shadow-xs transition cursor-pointer"
+            className="px-4 py-2 md:py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-md shadow-xs transition cursor-pointer touch-manipulation min-h-[36px] md:min-h-0 flex items-center justify-center"
           >
             {t('done')}
           </button>
