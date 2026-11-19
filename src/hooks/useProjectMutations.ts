@@ -28,6 +28,7 @@ export interface UseProjectMutationsReturn {
   handleAddChapter: (type?: 'folder' | 'scene', parentId?: string | null) => void;
   handleDeleteChapter: (id: string) => Promise<void>;
   handleUpdateChapter: (id: string, updates: Partial<TextNode>) => void;
+  handleReorderChapters: (sourceId: string, direction: 'up' | 'down') => void;
   handleUpdateStorylines: (
     storylinesOrUpdater: StorylineItem[] | ((prev: StorylineItem[]) => StorylineItem[])
   ) => void;
@@ -137,6 +138,40 @@ export function useProjectMutations({
         lastModified: Date.now(),
         chapters: prev.chapters.map((ch) => (ch.id === id ? { ...ch, ...updates } : ch)),
       }));
+    },
+    [setProject]
+  );
+
+  const handleReorderChapters = useCallback(
+    (sourceId: string, direction: 'up' | 'down') => {
+      setProject((prev) => {
+        const source = prev.chapters.find((c) => c.id === sourceId);
+        if (!source) return prev;
+
+        const siblings = prev.chapters.filter(
+          (c) => (c.parentId ?? null) === (source.parentId ?? null)
+        );
+        const siblingIdx = siblings.findIndex((c) => c.id === sourceId);
+        if (siblingIdx === -1) return prev;
+
+        const targetSiblingIdx = direction === 'up' ? siblingIdx - 1 : siblingIdx + 1;
+        if (targetSiblingIdx < 0 || targetSiblingIdx >= siblings.length) return prev;
+
+        const target = siblings[targetSiblingIdx];
+        const sourceGlobalIdx = prev.chapters.findIndex((c) => c.id === source.id);
+
+        const nextChapters = [...prev.chapters];
+        const [removed] = nextChapters.splice(sourceGlobalIdx, 1);
+        const newTargetIdx = nextChapters.findIndex((c) => c.id === target.id);
+        const insertAt = direction === 'up' ? newTargetIdx : newTargetIdx + 1;
+        nextChapters.splice(insertAt, 0, removed);
+
+        return {
+          ...prev,
+          lastModified: Date.now(),
+          chapters: nextChapters,
+        };
+      });
     },
     [setProject]
   );
@@ -279,6 +314,7 @@ export function useProjectMutations({
     handleAddChapter,
     handleDeleteChapter,
     handleUpdateChapter,
+    handleReorderChapters,
     handleUpdateStorylines,
     handleUpdateCharacters,
     handleAddCharacter,

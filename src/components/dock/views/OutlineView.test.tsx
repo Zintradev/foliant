@@ -179,4 +179,29 @@ describe('OutlineView', () => {
     const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
     expect(saved).not.toContain('folder-1');
   });
+
+  it('renders move up and move down buttons and calls onReorderChapter', () => {
+    const handleReorder = vi.fn();
+    const twoScenes: TextNode[] = [
+      { id: 'sc-1', title: 'Scene One', content: '', type: 'scene', parentId: null },
+      { id: 'sc-2', title: 'Scene Two', content: '', type: 'scene', parentId: null },
+    ];
+
+    render(
+      <OutlineView
+        chapters={twoScenes}
+        activeChapterId="sc-1"
+        onSelectChapter={vi.fn()}
+        onAddChapter={vi.fn()}
+        onReorderChapter={handleReorder}
+        isExpanded={false}
+      />
+    );
+
+    const downButtons = screen.getAllByTitle('Mover abajo');
+    expect(downButtons.length).toBe(2);
+    // Click move down on scene 1
+    fireEvent.click(downButtons[0]);
+    expect(handleReorder).toHaveBeenCalledWith('sc-1', 'down');
+  });
 });

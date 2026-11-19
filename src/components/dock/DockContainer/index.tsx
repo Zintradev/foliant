@@ -25,6 +25,7 @@ export function DockContainerComponent({
   isDirty = false,
   language = 'en',
   onRequestTabChange,
+  className = '',
 }: DockContainerProps) {
   const { t } = useTranslation(language);
   const containerRef = useRef<HTMLElement | null>(null);
@@ -112,7 +113,7 @@ export function DockContainerComponent({
         style={width ? { width: `${width}px` } : undefined}
         className={`shrink-0 border-zinc-800 bg-zinc-950 flex flex-col overflow-hidden transition-[width] duration-75 select-none relative ${
           side === 'left' ? 'border-r' : 'border-l'
-        } data-[drag-over=true]:bg-zinc-900/95`}
+        } data-[drag-over=true]:bg-zinc-900/95 ${className}`}
       >
         {!isSplit ? (
           /* ================= SINGLE FULL STRIP MODE ================= */

@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { ChevronRight, ChevronDown, Folder, FolderOpen, FilePlus, FolderPlus, Trash2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, ChevronUp, Folder, FolderOpen, FilePlus, FolderPlus, Trash2 } from 'lucide-react';
 import { TextNode } from '../../../../types/project';
 
 interface OutlineFolderRowProps {
@@ -11,6 +11,9 @@ interface OutlineFolderRowProps {
   renameInputRef: React.RefObject<HTMLInputElement | null>;
   showMetrics: boolean;
   chaptersCount: number;
+  isFirst?: boolean;
+  isLast?: boolean;
+  onMove?: (direction: 'up' | 'down') => void;
   onToggleCollapse: () => void;
   onContextMenu: (e: React.MouseEvent) => void;
   onRenameChange: (val: string) => void;
@@ -30,6 +33,9 @@ export const OutlineFolderRow = memo(function OutlineFolderRow({
   renameInputRef,
   showMetrics,
   chaptersCount,
+  isFirst,
+  isLast,
+  onMove,
   onToggleCollapse,
   onContextMenu,
   onRenameChange,
@@ -133,6 +139,32 @@ export const OutlineFolderRow = memo(function OutlineFolderRow({
         >
           <FolderPlus className="w-3 h-3" />
         </button>
+
+        {onMove && (
+          <div
+            className="flex items-center gap-0.5 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 hover:!opacity-100 transition-opacity"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              disabled={isFirst}
+              onClick={() => onMove('up')}
+              title="Mover arriba"
+              className="p-0.5 hover:bg-zinc-800 rounded-xs text-zinc-400 hover:text-zinc-100 disabled:opacity-20 transition touch-manipulation cursor-pointer"
+            >
+              <ChevronUp className="w-3 h-3" />
+            </button>
+            <button
+              type="button"
+              disabled={isLast}
+              onClick={() => onMove('down')}
+              title="Mover abajo"
+              className="p-0.5 hover:bg-zinc-800 rounded-xs text-zinc-400 hover:text-zinc-100 disabled:opacity-20 transition touch-manipulation cursor-pointer"
+            >
+              <ChevronDown className="w-3 h-3" />
+            </button>
+          </div>
+        )}
 
         {onDelete && chaptersCount > 1 && (
           <button

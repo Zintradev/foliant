@@ -1,4 +1,4 @@
-import { useState, useMemo, memo } from 'react';
+import { useState, useMemo, useCallback, memo } from 'react';
 import { WorldbuildingViewProps, WorldItem } from './types';
 import { loadSettings } from '../../../../types/settings';
 import { DEFAULT_CATEGORIES } from './constants';
@@ -55,6 +55,21 @@ export function WorldbuildingViewComponent({
     });
   }, [items, selectedCategory, searchQuery]);
 
+  const handleMoveItem = useCallback(
+    (id: string, direction: 'up' | 'down') => {
+      const idx = items.findIndex((it) => it.id === id);
+      if (idx === -1) return;
+      const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= items.length) return;
+      const next = [...items];
+      const temp = next[idx];
+      next[idx] = next[targetIdx];
+      next[targetIdx] = temp;
+      onChange(next);
+    },
+    [items, onChange]
+  );
+
   const handleUpdateActive = (updates: Partial<WorldItem>) => {
     if (!activeItem) return;
     onChange(
@@ -93,6 +108,10 @@ export function WorldbuildingViewComponent({
     handleItemDragOver,
     handleDrop,
     handleDragEnd,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    handleTouchCancel,
   } = useWorldbuildingDragDrop({
     items,
     filteredItems,
@@ -158,12 +177,17 @@ export function WorldbuildingViewComponent({
           onSelect={setSelectedId}
           onDelete={handleDelete}
           onCreateNew={handleCreateNew}
+          onMoveItem={handleMoveItem}
           onDragStart={handleDragStart}
           onContainerDragEnter={handleContainerDragEnter}
           onContainerDragOver={handleContainerDragOver}
           onItemDragOver={handleItemDragOver}
           onDrop={handleDrop}
           onDragEnd={handleDragEnd}
+          onTouchDragStart={handleTouchStart}
+          onTouchDragMove={handleTouchMove}
+          onTouchDragEnd={handleTouchEnd}
+          onTouchDragCancel={handleTouchCancel}
         />
       </div>
 

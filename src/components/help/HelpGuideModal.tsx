@@ -74,7 +74,7 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({
             onClick={onClose}
             title={t('closeHelp', 'Close Help')}
             aria-label="Close Help"
-            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition cursor-pointer"
+            className="p-2 md:p-1.5 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition cursor-pointer touch-manipulation min-w-[36px] min-h-[36px] md:min-w-0 md:min-h-0 flex items-center justify-center"
           >
             <X className="w-4 h-4" />
           </button>

@@ -194,27 +194,7 @@ export function useProjectPersistence({
   const saveProject = useCallback(async (snapshot?: FoliantProject): Promise<boolean> => {
     const projectToSave = snapshot ?? project;
     if (!isTauriApp()) {
-      try {
-        setIsSaving(true);
-        setSyncStatus('saving');
-        setError(null);
-
-        const now = Date.now();
-        const cleanProject: FoliantProject = {
-          ...projectToSave,
-          lastModified: now,
-        };
-
-        setLastSavedAt(now);
-        setSyncStatus('saved');
-        setIsSaving(false);
-        onProjectLoadedRef.current(cleanProject);
-        return true;
-      } catch (err: unknown) {
-        setIsSaving(false);
-        setSyncStatus('unsaved');
-        return false;
-      }
+      return saveProjectAs(projectToSave);
     }
 
     const trimmedPath = currentFilePath?.trim();

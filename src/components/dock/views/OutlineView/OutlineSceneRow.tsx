@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { BookOpen, Target } from 'lucide-react';
+import { BookOpen, Target, ChevronUp, ChevronDown } from 'lucide-react';
 import { TextNode } from '../../../../types/project';
 
 interface OutlineSceneRowProps {
@@ -11,6 +11,9 @@ interface OutlineSceneRowProps {
   showMetrics: boolean;
   wordCount: number;
   chaptersCount?: number;
+  isFirst?: boolean;
+  isLast?: boolean;
+  onMove?: (direction: 'up' | 'down') => void;
   onSelect: () => void;
   onContextMenu: (e: React.MouseEvent) => void;
   onRenameChange: (val: string) => void;
@@ -28,6 +31,9 @@ export const OutlineSceneRow = memo(function OutlineSceneRow({
   showMetrics,
   wordCount,
   chaptersCount: _chaptersCount,
+  isFirst,
+  isLast,
+  onMove,
   onSelect,
   onContextMenu,
   onRenameChange,
@@ -109,7 +115,31 @@ export const OutlineSceneRow = memo(function OutlineSceneRow({
           </>
         )}
 
-        
+        {onMove && (
+          <div
+            className="flex items-center gap-0.5 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 hover:!opacity-100 transition-opacity"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              disabled={isFirst}
+              onClick={() => onMove('up')}
+              title="Mover arriba"
+              className="p-0.5 hover:bg-zinc-800 rounded-xs text-zinc-400 hover:text-zinc-100 disabled:opacity-20 transition touch-manipulation cursor-pointer"
+            >
+              <ChevronUp className="w-3 h-3" />
+            </button>
+            <button
+              type="button"
+              disabled={isLast}
+              onClick={() => onMove('down')}
+              title="Mover abajo"
+              className="p-0.5 hover:bg-zinc-800 rounded-xs text-zinc-400 hover:text-zinc-100 disabled:opacity-20 transition touch-manipulation cursor-pointer"
+            >
+              <ChevronDown className="w-3 h-3" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

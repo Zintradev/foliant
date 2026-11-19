@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, Folder, Trash2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Folder, Trash2 } from 'lucide-react';
 import { MoodboardSection, ReferenceImage } from './types';
 import { MoodboardThumbnailCard } from './MoodboardThumbnailCard';
 
@@ -30,6 +30,11 @@ interface MoodboardSectionFolderProps {
   onImageDragLeave: (e: React.DragEvent, targetImg: ReferenceImage) => void;
   onImageDropOnImage: (e: React.DragEvent, targetImg: ReferenceImage) => void;
   onImageDragEnd: () => void;
+  onTouchImageDragStart?: (id: string, index: number) => void;
+  onTouchImageDragMove?: (clientY: number, clientX: number) => void;
+  onTouchImageDragEnd?: () => void;
+  onTouchImageDragCancel?: () => void;
+  onMoveImage?: (id: string, direction: 'prev' | 'next') => void;
 }
 
 export const MoodboardSectionFolder = React.memo(function MoodboardSectionFolder({
@@ -59,9 +64,15 @@ export const MoodboardSectionFolder = React.memo(function MoodboardSectionFolder
   onImageDragLeave,
   onImageDropOnImage,
   onImageDragEnd,
+  onTouchImageDragStart,
+  onTouchImageDragMove,
+  onTouchImageDragEnd,
+  onTouchImageDragCancel,
+  onMoveImage,
 }: MoodboardSectionFolderProps) {
   return (
     <div
+      data-section-id={section.id}
       className="space-y-3"
       onDragEnter={(e) => {
         e.preventDefault();
@@ -142,7 +153,12 @@ export const MoodboardSectionFolder = React.memo(function MoodboardSectionFolder
       {/* Pinterest Masonry Grid when not collapsed */}
       {!isCollapsed && (
         <div
-          className="min-h-[48px] rounded-sm transition-all"
+          data-section-id={section.id}
+          className={`min-h-[48px] rounded-sm transition-colors duration-150 ${
+            isDragOver && draggedImageId
+              ? 'border-2 border-dashed border-zinc-650 bg-zinc-900/50 p-2'
+              : ''
+          }`}
           onDragEnter={(e) => {
             e.preventDefault();
             onSectionDragEnter(e, section.id);
@@ -154,7 +170,13 @@ export const MoodboardSectionFolder = React.memo(function MoodboardSectionFolder
           }}
           onDrop={(e) => onSectionDrop(e, section.id)}
         >
-          {images.length === 0 ? null : (
+          {images.length === 0 ? (
+            isDragOver && draggedImageId ? (
+              <div className="py-6 text-center text-xs text-zinc-400 font-mono">
+                {sectionLabel}
+              </div>
+            ) : null
+          ) : (
             <div
               className={
                 isExpanded
@@ -162,24 +184,58 @@ export const MoodboardSectionFolder = React.memo(function MoodboardSectionFolder
                   : 'columns-2 md:columns-4 gap-4 grid grid-cols-2 md:grid-cols-4 items-start'
               }
             >
-              {images.map((image) => (
-                <MoodboardThumbnailCard
-                  key={image.id || image.path}
-                  image={image}
-                  registerCard={registerCard}
-                  isDragging={draggedImageId === image.id}
-                  isDragOver={dragOverImageId === image.id && draggedImageId !== image.id}
-                  dragOverPosition={dragOverPosition}
-                  anyDragging={Boolean(draggedImageId)}
-                  onPreview={onPreview}
-                  onDelete={onDeleteImage}
-                  onDragStart={onImageDragStart}
-                  onDragEnter={onImageDragEnter}
-                  onDragOver={onImageDragOver}
-                  onDragLeave={onImageDragLeave}
-                  onDrop={onImageDropOnImage}
-                  onDragEnd={onImageDragEnd}
-                />
+              {images.map((image, idx) => (
+                <div key={image.id || image.path} className="relative group/mcard flex flex-col">
+                  <MoodboardThumbnailCard
+                    image={image}
+                    index={idx}
+                    registerCard={registerCard}
+                    isDragging={draggedImageId === image.id}
+                    isDragOver={dragOverImageId === image.id && draggedImageId !== image.id}
+                    dragOverPosition={dragOverPosition}
+                    anyDragging={Boolean(draggedImageId)}
+                    onPreview={onPreview}
+                    onDelete={onDeleteImage}
+                    onDragStart={onImageDragStart}
+                    onDragEnter={onImageDragEnter}
+                    onDragOver={onImageDragOver}
+                    onDragLeave={onImageDragLeave}
+                    onDrop={onImageDropOnImage}
+                    onDragEnd={onImageDragEnd}
+                    onTouchDragStart={onTouchImageDragStart}
+                    onTouchDragMove={onTouchImageDragMove}
+                    onTouchDragEnd={onTouchImageDragEnd}
+                    onTouchDragCancel={onTouchImageDragCancel}
+                  />
+                  {onMoveImage && images.length > 1 && (
+                    <div className="flex items-center justify-center gap-1 -mt-2 mb-3 opacity-60 sm:opacity-0 sm:group-hover/mcard:opacity-100 hover:!opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        disabled={idx === 0}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onMoveImage(image.id, 'prev');
+                        }}
+                        title="Mover antes"
+                        className="px-1.5 py-0.5 rounded-xs bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400 hover:text-zinc-100 disabled:opacity-20 transition touch-manipulation cursor-pointer"
+                      >
+                        <ChevronLeft className="w-3 h-3 inline" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={idx === images.length - 1}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onMoveImage(image.id, 'next');
+                        }}
+                        title="Mover después"
+                        className="px-1.5 py-0.5 rounded-xs bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400 hover:text-zinc-100 disabled:opacity-20 transition touch-manipulation cursor-pointer"
+                      >
+                        <ChevronRight className="w-3 h-3 inline" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           )}

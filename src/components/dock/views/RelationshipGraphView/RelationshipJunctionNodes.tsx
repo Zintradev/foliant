@@ -61,6 +61,7 @@ function RelationshipJunctionNodesComponent({
               position: 'absolute',
               left: `${pos.x}px`,
               top: `${pos.y}px`,
+              touchAction: 'none',
             }}
             onPointerDown={(e) => onPointerDown(e, junc.id)}
             onPointerMove={onPointerMove}
@@ -69,7 +70,7 @@ function RelationshipJunctionNodesComponent({
             onMouseEnter={() => onMouseEnter(junc.id)}
             onMouseLeave={onMouseLeave}
             onClick={(e) => onClick(e, junc.id)}
-            className={`junction-node w-7 h-7 rounded-full border flex items-center justify-center ${
+            className={`junction-node w-7 h-7 rounded-full border flex items-center justify-center touch-none ${
               isDrawingConnection
                 ? isConnectingSource
                   ? 'cursor-not-allowed'

@@ -21,6 +21,7 @@ export interface DockContainerProps {
   isDirty?: boolean;
   language?: Language;
   onRequestTabChange?: (tabId: TabId) => void;
+  className?: string;
 }
 
 export interface DragState {

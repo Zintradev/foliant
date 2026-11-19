@@ -154,6 +154,61 @@ export function useBoardCanvasProps({
     isSpacePressed,
     justDraggedRelRef: connectionsHook.justDraggedRelRef,
     getNodeInfo: positionsHook.getNodeInfo,
+    onCanvasPointerDown: (e: React.PointerEvent<HTMLDivElement>) => {
+      if (connectionsHook.connectingSourceId) {
+        connectionsHook.setConnectingSourceId(null);
+        connectionsHook.setElasticCursor(null);
+        return;
+      }
+      const target = e.target as HTMLElement;
+      if (target.closest('.character-card, .junction-node, .relationship-pill, button, select, input, textarea, .viewport-controls, .context-menu-box')) return;
+      selectionHook.setCanvasContextMenu(null);
+
+      const isTouchOrPen = e.pointerType === 'touch' || e.pointerType === 'pen';
+
+      if (e.button === 1 || isSpacePressed) {
+        startPan(e.clientX, e.clientY, e.pointerId);
+        return;
+      }
+
+      if (e.button === 0 || isTouchOrPen) {
+        if (!boardRef.current) return;
+        const rect = boardRef.current.getBoundingClientRect();
+        const worldX = (e.clientX - rect.left - pan.x) / zoom;
+        const worldY = (e.clientY - rect.top - pan.y) / zoom;
+
+        // Selección en cuadrado
+        if (!isTouchOrPen && (selectionHook.selectionTool === 'box' || e.shiftKey)) {
+          selectionHook.setSelectionBox({
+            startX: worldX,
+            startY: worldY,
+            currentX: worldX,
+            currentY: worldY,
+          });
+          if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+            selectionHook.clearSelection();
+          }
+          return;
+        }
+
+        // Selección a mano alzada
+        if (!isTouchOrPen && selectionHook.selectionTool === 'lasso') {
+          selectionHook.setSelectionLasso({
+            points: [{ x: worldX, y: worldY }],
+          });
+          if (!e.ctrlKey && !e.metaKey) {
+            selectionHook.clearSelection();
+          }
+          return;
+        }
+
+        // Modo pointer / paneo estándar
+        if (!e.ctrlKey && !e.metaKey) {
+          selectionHook.clearSelection();
+        }
+        startPan(e.clientX, e.clientY, e.pointerId);
+      }
+    },
     onCanvasMouseDown: (e: React.MouseEvent) => {
       if (connectionsHook.connectingSourceId) {
         connectionsHook.setConnectingSourceId(null);

@@ -62,18 +62,18 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800/80">
+        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800/80 flex-wrap">
           <button
             type="button"
             onClick={onCancel}
-            className="px-3.5 py-1.5 rounded-sm text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition cursor-pointer"
+            className="px-3.5 py-2 md:py-1.5 rounded-sm text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition cursor-pointer touch-manipulation min-h-[36px] md:min-h-0 flex items-center justify-center"
           >
             {cancelText || t('cancel')}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="px-3.5 py-1.5 rounded-sm text-xs font-medium bg-rose-600 hover:bg-rose-500 text-white shadow-xs transition cursor-pointer"
+            className="px-3.5 py-2 md:py-1.5 rounded-sm text-xs font-medium bg-rose-600 hover:bg-rose-500 text-white shadow-xs transition cursor-pointer touch-manipulation min-h-[36px] md:min-h-0 flex items-center justify-center"
           >
             {confirmText || t('delete')}
           </button>

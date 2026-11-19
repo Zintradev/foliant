@@ -585,4 +585,31 @@ describe('useProjectMutations Hook', () => {
     expect(project.customStatuses).toEqual(['Beta Feedback', 'Final Polish']);
     expect(project.chapters.find((c) => c.id === 'scene-1')?.status).toBe('Beta Feedback');
   });
+
+  it('handleReorderChapters moves chapters up and down among siblings', () => {
+    const { result } = renderHook(() =>
+      useProjectMutations({
+        project,
+        setProject,
+        activeChapterId,
+        setActiveChapterId,
+      })
+    );
+
+    act(() => {
+      result.current.handleReorderChapters('scene-1', 'down');
+    });
+
+    const scene1Idx = project.chapters.findIndex((c) => c.id === 'scene-1');
+    const scene2Idx = project.chapters.findIndex((c) => c.id === 'scene-2');
+    expect(scene1Idx).toBeGreaterThan(scene2Idx);
+
+    act(() => {
+      result.current.handleReorderChapters('scene-1', 'up');
+    });
+
+    const newScene1Idx = project.chapters.findIndex((c) => c.id === 'scene-1');
+    const newScene2Idx = project.chapters.findIndex((c) => c.id === 'scene-2');
+    expect(newScene1Idx).toBeLessThan(newScene2Idx);
+  });
 });

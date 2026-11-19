@@ -57,6 +57,7 @@ function RelationshipCharacterCardsComponent({
               top: `${pos.y}px`,
               width: '160px',
               height: '72px',
+              touchAction: 'none',
             }}
             onPointerDown={(e) => onPointerDown(e, char.id)}
             onPointerMove={onPointerMove}
@@ -66,7 +67,7 @@ function RelationshipCharacterCardsComponent({
             onContextMenu={(e) => onContextMenu(e, char.id)}
             onClick={(e) => onClick(e, char.id)}
             onDoubleClick={(e) => onDoubleClick(e, char.id)}
-            className={`character-card h-[72px] rounded-sm border p-2 bg-zinc-900/95 shadow-lg select-none transition-shadow ${
+            className={`character-card h-[72px] rounded-sm border p-2 bg-zinc-900/95 shadow-lg select-none transition-shadow touch-none ${
               isDrawingConnection
                 ? isConnectingSource
                   ? 'cursor-not-allowed'

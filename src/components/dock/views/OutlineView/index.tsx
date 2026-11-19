@@ -141,7 +141,7 @@ const OutlineHeader = memo(function OutlineHeader({
 
 interface OutlineSplitViewProps {
   tree: TreeItem[];
-  renderTreeNode: (item: TreeItem, showMetrics: boolean) => React.ReactNode;
+  renderTreeNode: (item: TreeItem, showMetrics: boolean, isFirst?: boolean, isLast?: boolean) => React.ReactNode;
   chapters: TextNode[];
   storylines?: any[];
   activeChapterId: string;
@@ -165,7 +165,7 @@ const OutlineSplitView = memo(function OutlineSplitView({
   return (
     <div className="flex-1 flex overflow-hidden">
       <div className="w-1/2 border-r border-zinc-800/80 overflow-y-auto p-4 space-y-1">
-        {tree.map((item) => renderTreeNode(item, true))}
+        {tree.map((item, idx) => renderTreeNode(item, true, idx === 0, idx === tree.length - 1))}
       </div>
       <div className="w-1/2 overflow-y-auto p-4 bg-zinc-950/40">
         <ProjectStatsView
@@ -196,6 +196,7 @@ export function OutlineViewComponent({
   onAddChapter,
   onDeleteChapter,
   onUpdateChapter,
+  onReorderChapter,
   onAddFolder,
   isExpanded = false,
   storylines = [],
@@ -303,7 +304,7 @@ export function OutlineViewComponent({
     [chapters, requestDeleteNode, onDeleteChapter]
   );
 
-  const renderTreeNode = useCallback((item: TreeItem, showMetrics: boolean) => (
+  const renderTreeNode = useCallback((item: TreeItem, showMetrics: boolean, isFirst?: boolean, isLast?: boolean) => (
     <OutlineTreeNode
       key={item.node.id}
       item={item}
@@ -314,6 +315,9 @@ export function OutlineViewComponent({
       renameInputRef={renameInputRef}
       showMetrics={showMetrics}
       chaptersCount={chapters.length}
+      isFirst={isFirst}
+      isLast={isLast}
+      onReorderChapter={onReorderChapter}
       onSelectChapter={onSelectChapter}
       onToggleFolder={handleToggleFolder}
       onNodeContextMenu={handleNodeContextMenu}
@@ -331,6 +335,7 @@ export function OutlineViewComponent({
     renameValue,
     renameInputRef,
     chapters.length,
+    onReorderChapter,
     onSelectChapter,
     handleToggleFolder,
     handleNodeContextMenu,
@@ -380,10 +385,10 @@ export function OutlineViewComponent({
           <div className="flex-1 overflow-y-auto p-6">
             <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
               <div className="space-y-1 p-3 rounded-sm border border-zinc-855/80 bg-zinc-900/20">
-                {leftRoots.map((item) => renderTreeNode(item, true))}
+                {leftRoots.map((item, idx) => renderTreeNode(item, true, idx === 0, idx === leftRoots.length - 1))}
               </div>
               <div className="space-y-1 p-3 rounded-sm border border-zinc-855/80 bg-zinc-900/20">
-                {rightRoots.map((item) => renderTreeNode(item, true))}
+                {rightRoots.map((item, idx) => renderTreeNode(item, true, idx === 0, idx === rightRoots.length - 1))}
               </div>
             </div>
           </div>
@@ -402,7 +407,7 @@ export function OutlineViewComponent({
         )
       ) : (
         <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
-          {tree.map((item) => renderTreeNode(item, false))}
+          {tree.map((item, idx) => renderTreeNode(item, false, idx === 0, idx === tree.length - 1))}
         </div>
       )}
 

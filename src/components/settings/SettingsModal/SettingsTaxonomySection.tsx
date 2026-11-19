@@ -103,13 +103,13 @@ export const SettingsTaxonomySection = React.memo(function SettingsTaxonomySecti
 }: SettingsTaxonomySectionProps) {
   return (
     <div className="space-y-6 animate-in fade-in duration-100">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="text-base font-semibold text-zinc-100">{t('categoryTaxonomy')}</h3>
         </div>
 
         {/* Sub-Tabs switcher */}
-        <div className="flex items-center gap-1 p-1 bg-zinc-900 rounded-lg border border-zinc-800">
+        <div className="flex items-center gap-1 p-1 bg-zinc-900 rounded-lg border border-zinc-800 overflow-x-auto no-scrollbar max-w-full">
           <button
             onClick={() => onTabChange('roles')}
             className={`px-2.5 py-1 text-xs font-medium rounded-md transition cursor-pointer ${

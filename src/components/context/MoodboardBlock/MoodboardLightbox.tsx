@@ -28,7 +28,7 @@ export const MoodboardLightbox = memo(function MoodboardLightbox({
   }, [onClose]);
 
   const normalizedPath = image.path ? normalizeAssetPath(image.path) : '';
-  const displaySrc = isTauriApp() && normalizedPath ? convertFileSrc(normalizedPath) : image.src || normalizedPath;
+  const displaySrc = isTauriApp() && normalizedPath ? convertFileSrc(normalizedPath) : (image.base64 || image.src || normalizedPath);
 
   return (
     <div

@@ -63,7 +63,7 @@ function EditorToolbar({
         <select
           value={currentFont}
           onChange={(e) => onFontChange(e.target.value as EditorFontFamily)}
-          className="h-6.5 bg-zinc-900 border border-zinc-800 text-[11px] rounded-xs px-1.5 py-0.5 text-zinc-300 hover:text-zinc-100 hover:border-zinc-700 focus:outline-none focus:border-zinc-600 cursor-pointer transition shrink-0"
+          className="h-7 md:h-6.5 bg-zinc-900 border border-zinc-800 text-[11px] rounded-xs px-1.5 py-0.5 text-zinc-300 hover:text-zinc-100 hover:border-zinc-700 focus:outline-none focus:border-zinc-600 cursor-pointer transition shrink-0 touch-manipulation"
           title="Font Family"
         >
           <option value="serif">Georgia</option>
@@ -80,7 +80,7 @@ function EditorToolbar({
         <select
           value={activeFontSize}
           onChange={(e) => handleFontSizeChange(e.target.value)}
-          className="h-6.5 bg-zinc-900 border border-zinc-800 text-[11px] rounded-xs px-1.5 py-0.5 text-zinc-300 hover:text-zinc-100 hover:border-zinc-700 focus:outline-none focus:border-zinc-600 cursor-pointer transition shrink-0"
+          className="h-7 md:h-6.5 bg-zinc-900 border border-zinc-800 text-[11px] rounded-xs px-1.5 py-0.5 text-zinc-300 hover:text-zinc-100 hover:border-zinc-700 focus:outline-none focus:border-zinc-600 cursor-pointer transition shrink-0 touch-manipulation"
           title="Font Size (px)"
         >
           <option value="12px">12</option>

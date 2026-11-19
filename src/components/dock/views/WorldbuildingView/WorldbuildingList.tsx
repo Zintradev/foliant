@@ -16,12 +16,17 @@ interface WorldbuildingListProps {
   onSelect: (id: string) => void;
   onDelete: (id: string, e?: React.MouseEvent) => void;
   onCreateNew: () => void;
+  onMoveItem?: (id: string, direction: 'up' | 'down') => void;
   onDragStart: (e: React.DragEvent, id: string, index: number) => void;
   onContainerDragEnter: (e: React.DragEvent) => void;
   onContainerDragOver: (e: React.DragEvent) => void;
   onItemDragOver: (e: React.DragEvent, id: string, index: number) => void;
   onDrop: (e: React.DragEvent, targetId?: string, targetIndex?: number) => void;
   onDragEnd: () => void;
+  onTouchDragStart?: (id: string, index: number) => void;
+  onTouchDragMove?: (clientY: number, clientX: number) => void;
+  onTouchDragEnd?: () => void;
+  onTouchDragCancel?: () => void;
 }
 
 function WorldbuildingListComponent({
@@ -36,12 +41,17 @@ function WorldbuildingListComponent({
   onSelect,
   onDelete,
   onCreateNew,
+  onMoveItem,
   onDragStart,
   onContainerDragEnter,
   onContainerDragOver,
   onItemDragOver,
   onDrop,
   onDragEnd,
+  onTouchDragStart,
+  onTouchDragMove,
+  onTouchDragEnd,
+  onTouchDragCancel,
 }: WorldbuildingListProps) {
   const { t } = useTranslation();
 
@@ -73,7 +83,7 @@ function WorldbuildingListComponent({
       onDragEnter={onContainerDragEnter}
       onDragOver={onContainerDragOver}
       onDrop={(e) => onDrop(e)}
-      className="flex-1 overflow-y-auto divide-y divide-zinc-800/60 p-1"
+      className={`flex-1 overflow-y-auto divide-y divide-zinc-800/60 p-1 ${isDraggingAny ? 'touch-none' : ''}`}
     >
       {filteredItems.length === 0 ? (
         <div className="py-12 px-4 text-center text-zinc-500 text-xs">
@@ -115,6 +125,9 @@ function WorldbuildingListComponent({
               shiftTargetIndex={shiftTargetIndex}
               sourceIndex={sourceIndex}
               rowTranslateY={rowTranslateY}
+              isFirst={index === 0}
+              isLast={index === filteredItems.length - 1}
+              onMoveItem={onMoveItem}
               setElementRef={(el) => {
                 if (el) itemRefs.current.set(item.id, el);
                 else itemRefs.current.delete(item.id);
@@ -134,6 +147,10 @@ function WorldbuildingListComponent({
                 onDrop(e, item.id, index);
               }}
               onDragEnd={onDragEnd}
+              onTouchDragStart={onTouchDragStart}
+              onTouchDragMove={onTouchDragMove}
+              onTouchDragEnd={onTouchDragEnd}
+              onTouchDragCancel={onTouchDragCancel}
             />
           );
         })

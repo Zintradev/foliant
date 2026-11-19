@@ -13,6 +13,9 @@ interface OutlineTreeNodeProps {
   renameInputRef: React.RefObject<HTMLInputElement | null>;
   showMetrics: boolean;
   chaptersCount: number;
+  isFirst?: boolean;
+  isLast?: boolean;
+  onReorderChapter?: (id: string, direction: 'up' | 'down') => void;
   onSelectChapter: (id: string) => void;
   onToggleFolder: (id: string) => void;
   onNodeContextMenu: (e: React.MouseEvent, node: TextNode) => void;
@@ -33,6 +36,9 @@ export const OutlineTreeNode = memo(function OutlineTreeNode({
   renameInputRef,
   showMetrics,
   chaptersCount,
+  isFirst,
+  isLast,
+  onReorderChapter,
   onSelectChapter,
   onToggleFolder,
   onNodeContextMenu,
@@ -61,6 +67,9 @@ export const OutlineTreeNode = memo(function OutlineTreeNode({
           renameInputRef={renameInputRef}
           showMetrics={showMetrics}
           chaptersCount={chaptersCount}
+          isFirst={isFirst}
+          isLast={isLast}
+          onMove={onReorderChapter ? (dir) => onReorderChapter(node.id, dir) : undefined}
           onToggleCollapse={() => onToggleFolder(node.id)}
           onContextMenu={(e) => onNodeContextMenu(e, node)}
           onRenameChange={onRenameChange}
@@ -81,6 +90,9 @@ export const OutlineTreeNode = memo(function OutlineTreeNode({
           showMetrics={showMetrics}
           wordCount={wordCount}
           chaptersCount={chaptersCount}
+          isFirst={isFirst}
+          isLast={isLast}
+          onMove={onReorderChapter ? (dir) => onReorderChapter(node.id, dir) : undefined}
           onSelect={() => onSelectChapter(node.id)}
           onContextMenu={(e) => onNodeContextMenu(e, node)}
           onRenameChange={onRenameChange}
@@ -92,7 +104,7 @@ export const OutlineTreeNode = memo(function OutlineTreeNode({
 
       {isFolder && !isCollapsed && children.length > 0 && (
         <div className="ml-3 pl-2.5 border-l border-zinc-800/80 space-y-0.5 mt-0.5">
-          {children.map((child) => (
+          {children.map((child, idx) => (
             <OutlineTreeNode
               key={child.node.id}
               item={child}
@@ -103,6 +115,9 @@ export const OutlineTreeNode = memo(function OutlineTreeNode({
               renameInputRef={renameInputRef}
               showMetrics={showMetrics}
               chaptersCount={chaptersCount}
+              isFirst={idx === 0}
+              isLast={idx === children.length - 1}
+              onReorderChapter={onReorderChapter}
               onSelectChapter={onSelectChapter}
               onToggleFolder={onToggleFolder}
               onNodeContextMenu={onNodeContextMenu}

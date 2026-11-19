@@ -44,6 +44,7 @@ function DockStripTabBar({
   onToggleSplit,
   onOpenModuleMenu,
   onContextMenuTab,
+  onToggleOpen,
 }: DockStripTabBarProps) {
   const { t } = useTranslation();
 
@@ -126,6 +127,18 @@ function DockStripTabBar({
         >
           <Menu className="w-3.5 h-3.5" />
         </button>
+
+        {/* Close Drawer Button on Tablet / Touch Screen */}
+        {onToggleOpen && strip === 'top' && (
+          <button
+            onClick={onToggleOpen}
+            title={t('collapsePanel', 'Close drawer')}
+            className="p-1 rounded-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition cursor-pointer lg:hidden touch-manipulation"
+            aria-label={t('collapsePanel', 'Close drawer')}
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
 
         {/* Close bottom subdivision strip if split */}
         {strip === 'bottom' && (

@@ -75,6 +75,7 @@ function TimelineViewComponent({
     storylines,
     timelineDropMode,
     getRowHeight: heightsHook.getRowHeight,
+    collapsedStorylines: heightsHook.collapsedStorylines,
     onUpdateStorylines,
     swimlanesContainerRef,
     timelineContainerRef,
@@ -173,7 +174,11 @@ function TimelineViewComponent({
           onStorylineDragLeave={dragDropHook.handleStorylineDragLeave}
           onStorylineDrop={dragDropHook.handleStorylineDrop}
           onStorylineDragEnd={dragDropHook.handleStorylineDragEnd}
-          registerTrack={dragDropHook.registerTrack}
+          onTouchStorylineDragStart={dragDropHook.handleTouchDragStart}
+          onTouchStorylineDragMove={dragDropHook.handleTouchDragMove}
+          onTouchStorylineDragEnd={dragDropHook.handleTouchDragEnd}
+          onTouchStorylineDragCancel={dragDropHook.handleTouchDragCancel}
+          onMoveStoryline={dragDropHook.handleMoveStoryline}
         />
       ) : (
         <TimelineLanesView

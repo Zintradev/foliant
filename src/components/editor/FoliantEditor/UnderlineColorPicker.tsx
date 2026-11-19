@@ -66,7 +66,7 @@ function UnderlineColorPicker({
             editor.chain().focus().setMark('underline', { color: underlineColor }).run();
           }
         }}
-        className={`h-7 px-1.5 rounded-l-xs transition flex flex-col items-center justify-center cursor-pointer select-none ${
+        className={`h-7 px-1.5 rounded-l-xs transition flex flex-col items-center justify-center cursor-pointer select-none touch-manipulation ${
           !isEditorReady
             ? 'opacity-30 cursor-not-allowed text-zinc-500'
             : isEditorReady && editor?.isActive('underline')

@@ -326,6 +326,79 @@ function ContextPanelComponent({
     resetDragState();
   };
 
+  const handleTouchStart = (id: string, index: number) => {
+    handleDragStart(id, index);
+  };
+
+  const handleTouchMove = (clientY: number, clientX: number) => {
+    if (!draggedBlockId || !listContainerRef.current) return;
+    const containerRect = listContainerRef.current.getBoundingClientRect();
+    if (containerRect.height === 0) return;
+
+    const relativeX = clientX - containerRect.left + listContainerRef.current.scrollLeft;
+    const relativeY = clientY - containerRect.top + listContainerRef.current.scrollTop;
+
+    if (notesDropMode === 'swap') {
+      let closestIdx = 0;
+      let minDistance = Infinity;
+      for (let i = 0; i < filteredBlocks.length; i++) {
+        const el = blockRefs.current.get(filteredBlocks[i].id);
+        if (el) {
+          const r = el.getBoundingClientRect();
+          const cx = r.left - containerRect.left + listContainerRef.current.scrollLeft + r.width / 2;
+          const cy = r.top - containerRect.top + listContainerRef.current.scrollTop + r.height / 2;
+          const dist = (cx - relativeX) ** 2 + (cy - relativeY) ** 2;
+          if (dist < minDistance) {
+            minDistance = dist;
+            closestIdx = i;
+          }
+        }
+      }
+      const targetId = filteredBlocks[closestIdx]?.id;
+      if (targetId && targetId !== draggedBlockId && dragOverBlockId !== targetId) {
+        setDragOverBlockId(targetId);
+      } else if (targetId === draggedBlockId && dragOverBlockId !== null) {
+        setDragOverBlockId(null);
+      }
+    } else {
+      if (initialRects.current.length > 0) {
+        let targetSlot = filteredBlocks.length - 1;
+        if (layoutCols === 1) {
+          for (let i = 0; i < initialRects.current.length; i++) {
+            if (relativeY < initialRects.current[i].centerY) {
+              targetSlot = i;
+              break;
+            }
+          }
+        } else {
+          let closestIdx = 0;
+          let minDistance = Infinity;
+          for (let i = 0; i < initialRects.current.length; i++) {
+            const r = initialRects.current[i];
+            const dist = (r.centerX - relativeX) ** 2 + (r.centerY - relativeY) ** 2;
+            if (dist < minDistance) {
+              minDistance = dist;
+              closestIdx = i;
+            }
+          }
+          targetSlot = closestIdx;
+        }
+        targetSlot = Math.max(0, Math.min(filteredBlocks.length - 1, targetSlot));
+        if (shiftTargetIndex !== targetSlot) {
+          setShiftTargetIndex(targetSlot);
+        }
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    handleDropBlock();
+  };
+
+  const handleTouchCancel = () => {
+    resetDragState();
+  };
+
   // Filter blocks by folder, search query, and tag
   const filteredBlocks = useMemo(() => {
     return blocks.filter((b) => {
@@ -587,7 +660,7 @@ function ContextPanelComponent({
         onDragEnter={handleContainerDragEnter}
         onDragOver={handleContainerDragOver}
         onDrop={(e) => handleDropBlock(e)}
-        className="flex-1 overflow-y-auto p-3"
+        className={`flex-1 overflow-y-auto p-3 ${draggedBlockId !== null ? 'touch-none' : ''}`}
       >
         {filteredBlocks.length === 0 ? (
           <div className="text-center mt-8 space-y-1">
@@ -713,6 +786,11 @@ function ContextPanelComponent({
                       handleDropBlock(e, block.id, index);
                     }}
                     onDragEnd={resetDragState}
+                    onTouchDragStart={handleTouchStart}
+                    onTouchDragMove={handleTouchMove}
+                    onTouchDragEnd={handleTouchEnd}
+                    onTouchDragCancel={handleTouchCancel}
+                    index={index}
                     onStartEditing={onStartEditing}
                     storylines={storylines}
                     characters={characters}

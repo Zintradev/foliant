@@ -24,11 +24,78 @@ function mapVisualsToReferenceImages(visuals?: ProjectVisualItem[]): ReferenceIm
     return {
       id,
       path: c.path,
-      src: isTauriApp() && normalized ? convertFileSrc(normalized) : c.src || normalized || '',
+      src: isTauriApp() && normalized ? convertFileSrc(normalized) : c.base64 || c.src || normalized || '',
       name: c.name || extractFileName(c.path),
       sectionId: c.sectionId || 'general',
       base64: c.base64,
     };
+  });
+}
+
+export async function processWebImage(file: File, maxWidth = 1200, quality = 0.85): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error);
+    reader.onload = () => {
+      const rawDataUrl = reader.result as string;
+      if (typeof window === 'undefined' || typeof Image === 'undefined') {
+        resolve(rawDataUrl);
+        return;
+      }
+      if (file.type === 'image/svg+xml') {
+        resolve(rawDataUrl);
+        return;
+      }
+
+      let resolved = false;
+      const finish = (result: string) => {
+        if (!resolved) {
+          resolved = true;
+          resolve(result);
+        }
+      };
+
+      const timer = setTimeout(() => {
+        finish(rawDataUrl);
+      }, 50);
+
+      const img = new Image();
+      img.onerror = () => {
+        clearTimeout(timer);
+        finish(rawDataUrl);
+      };
+      img.onload = () => {
+        clearTimeout(timer);
+        try {
+          if (img.width <= maxWidth) {
+            finish(rawDataUrl);
+            return;
+          }
+
+          const scale = maxWidth / img.width;
+          const targetWidth = maxWidth;
+          const targetHeight = Math.round(img.height * scale);
+
+          const canvas = document.createElement('canvas');
+          canvas.width = targetWidth;
+          canvas.height = targetHeight;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            finish(rawDataUrl);
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+          const mimeType = file.type === 'image/webp' ? 'image/webp' : 'image/jpeg';
+          const resizedDataUrl = canvas.toDataURL(mimeType, quality);
+          finish(resizedDataUrl);
+        } catch {
+          finish(rawDataUrl);
+        }
+      };
+      img.src = rawDataUrl;
+    };
+    reader.readAsDataURL(file);
   });
 }
 
@@ -243,16 +310,21 @@ export function useMoodboardStorage(
       setErrorMessage(null);
 
       try {
-        const base64Data = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            resolve(reader.result as string);
-          };
-          reader.onerror = () => {
-            reject(reader.error);
-          };
-          reader.readAsDataURL(file);
-        });
+        let base64Data: string;
+        if (!isTauriApp()) {
+          base64Data = await processWebImage(file);
+        } else {
+          base64Data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              resolve(reader.result as string);
+            };
+            reader.onerror = () => {
+              reject(reader.error);
+            };
+            reader.readAsDataURL(file);
+          });
+        }
 
         let savedPath: string = file.name;
         if (isTauriApp()) {
@@ -269,6 +341,9 @@ export function useMoodboardStorage(
         }
 
         const newImg = toReferenceImage(savedPath, targetSectionId, base64Data);
+        if (!isTauriApp()) {
+          newImg.src = base64Data;
+        }
 
         setImages((prev) => {
           if (
