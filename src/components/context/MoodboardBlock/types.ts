@@ -1,4 +1,5 @@
 import { ProjectVisualItem } from '../../../types/project';
+import { DropMode } from '../../../types/settings';
 
 export interface ReferenceImage {
   id: string;
@@ -31,6 +32,6 @@ export interface MoodboardBlockProps {
   projectId?: string;
   projectFilePath?: string | null;
   initialVisuals?: ProjectVisualItem[];
-  visualsDropMode?: 'shift' | 'swap';
+  visualsDropMode?: DropMode;
   onUpdateVisuals?: (visuals: Array<{ id: string; path: string; name: string; sectionId: string }>) => void;
 }

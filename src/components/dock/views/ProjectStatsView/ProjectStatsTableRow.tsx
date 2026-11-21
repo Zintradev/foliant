@@ -119,26 +119,7 @@ function ProjectStatsTableRowComponent({
               </span>
             )}
           </div>
-
-          {isActive && (
-            <span className="text-[8px] font-mono px-1 rounded-xs bg-zinc-800 text-zinc-200 border border-zinc-700 shrink-0">
-              {t('active')}
-            </span>
-          )}
         </div>
-      </td>
-
-      {/* 2. Type Badge */}
-      <td className="py-2 px-2 text-center">
-        <span
-          className={`text-[9px] font-mono px-1.5 py-0.5 rounded-xs border uppercase tracking-wider ${
-            isFolder
-              ? 'bg-amber-950/30 border-amber-800/40 text-amber-300'
-              : 'bg-zinc-950 border-zinc-800 text-zinc-400'
-          }`}
-        >
-          {node.type}
-        </span>
       </td>
 
       {isExpanded ? (

@@ -170,6 +170,17 @@ import { detectDynamicLanguage } from '../i18n/translations';
 export type Language = 'en' | 'es';
 export type ThemeMode = 'dark' | 'light' | 'custom';
 export type SceneScrollMode = 'remember' | 'bottom';
+export type UIStyle = 'modern' | 'editorial' | 'classic' | 'classic-clean';
+
+export type SceneInspectorAccordionKey = 'goal' | 'synopsis' | 'plots' | 'cast' | 'world';
+
+export const DEFAULT_INSPECTOR_SECTION_ORDER: SceneInspectorAccordionKey[] = [
+  'goal',
+  'synopsis',
+  'plots',
+  'cast',
+  'world',
+];
 
 export interface CustomThemeColors {
   background: string;
@@ -205,11 +216,15 @@ export const DEFAULT_DELETE_CONFIRMATIONS: DeleteConfirmationPreferences = {
   relationships: true,
 };
 
+export type DropMode = 'shift' | 'swap' | 'arrows';
+
 export interface AppPreferences {
-  timelineDropMode: 'shift' | 'swap';
-  worldDropMode?: 'shift' | 'swap';
-  notesDropMode?: 'shift' | 'swap';
-  visualsDropMode?: 'shift' | 'swap';
+  timelineDropMode: DropMode;
+  worldDropMode?: DropMode;
+  notesDropMode?: DropMode;
+  visualsDropMode?: DropMode;
+  storylinesDropMode?: DropMode;
+  charactersDropMode?: DropMode;
   persistViewFilters: boolean;
   preserveManualSceneWidth?: boolean;
   preserveManualPlotHeight?: boolean;
@@ -223,6 +238,7 @@ export interface AppPreferences {
   focusModeShowFormattingToolbar?: boolean;
   language?: Language;
   themeMode?: ThemeMode;
+  uiStyle?: UIStyle;
   customTheme?: CustomThemeColors;
   colorPreset?: 'default' | 'monochrome' | 'warm' | 'cyber' | 'custom';
   saveMode?: 'auto' | 'manual';
@@ -230,6 +246,9 @@ export interface AppPreferences {
   autoUpdateCheck?: boolean; // Toggle 'Buscar actualizaciones automáticamente' (default: false)
   confirmDelete?: DeleteConfirmationPreferences;
   sceneScrollMode?: SceneScrollMode;
+  inspectorSectionOrder?: SceneInspectorAccordionKey[];
+  showHeaderChapterInfo?: boolean;
+  hideBottomBarChapterInfo?: boolean;
 }
 
 export interface AppSettings extends AppColorSettings {
@@ -241,6 +260,8 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   worldDropMode: 'shift',
   notesDropMode: 'shift',
   visualsDropMode: 'shift',
+  storylinesDropMode: 'shift',
+  charactersDropMode: 'shift',
   persistViewFilters: false,
   preserveManualSceneWidth: false,
   preserveManualPlotHeight: false,
@@ -254,6 +275,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   focusModeShowFormattingToolbar: false,
   language: 'en',
   themeMode: 'dark',
+  uiStyle: 'modern',
   customTheme: DEFAULT_CUSTOM_THEME,
   colorPreset: 'default',
   saveMode: 'auto',
@@ -261,6 +283,9 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   autoUpdateCheck: false,
   confirmDelete: DEFAULT_DELETE_CONFIRMATIONS,
   sceneScrollMode: 'remember',
+  inspectorSectionOrder: DEFAULT_INSPECTOR_SECTION_ORDER,
+  showHeaderChapterInfo: false,
+  hideBottomBarChapterInfo: false,
 };
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
@@ -313,6 +338,20 @@ export function loadSettings(): AppSettings {
         ...DEFAULT_PREFERENCES,
         ...(parsed.preferences || {}),
         language: resolvedLang,
+        uiStyle: (['modern', 'editorial', 'classic', 'classic-clean'].includes(parsed.preferences?.uiStyle)
+          ? parsed.preferences.uiStyle
+          : 'modern') as UIStyle,
+        inspectorSectionOrder: (() => {
+          const raw = parsed.preferences?.inspectorSectionOrder;
+          if (Array.isArray(raw) && raw.length > 0) {
+            const valid = raw.filter((k: string) =>
+              DEFAULT_INSPECTOR_SECTION_ORDER.includes(k as SceneInspectorAccordionKey)
+            ) as SceneInspectorAccordionKey[];
+            const missing = DEFAULT_INSPECTOR_SECTION_ORDER.filter((k) => !valid.includes(k));
+            return [...valid, ...missing];
+          }
+          return DEFAULT_INSPECTOR_SECTION_ORDER;
+        })(),
         customTheme: {
           ...DEFAULT_CUSTOM_THEME,
           ...(parsed.preferences?.customTheme || {}),

@@ -1,11 +1,12 @@
 import { useState, useMemo, useRef } from 'react';
 import { ReferenceImage } from './types';
+import { DropMode } from '../../../types/settings';
 
 interface UseMoodboardDragDropOptions {
   images: ReferenceImage[];
   commitImages: (updated: ReferenceImage[]) => void;
   uploadFile: (file: File, targetSectionId: string) => Promise<void>;
-  visualsDropMode?: 'shift' | 'swap';
+  visualsDropMode?: DropMode;
 }
 
 export function useMoodboardDragDrop({

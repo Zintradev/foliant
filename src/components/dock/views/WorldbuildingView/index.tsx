@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, memo } from 'react';
+import Fuse from 'fuse.js';
 import { WorldbuildingViewProps, WorldItem } from './types';
 import { loadSettings } from '../../../../types/settings';
 import { DEFAULT_CATEGORIES } from './constants';
@@ -24,8 +25,24 @@ export function WorldbuildingViewComponent({
   const [selectedId, setSelectedId] = useState<string | null>(() => items[0]?.id ?? null);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isFuzzy, setIsFuzzy] = useState(false);
   const { t } = useTranslation();
   const [itemPendingDelete, setItemPendingDelete] = useState<WorldItem | null>(null);
+
+  const fuse = useMemo(() => {
+    if (!isFuzzy) return null;
+    return new Fuse(items, {
+      keys: ['title', 'summary', 'description', 'category'],
+      threshold: 0.4,
+      distance: 100,
+      ignoreLocation: true,
+    });
+  }, [items, isFuzzy]);
+
+  const matchingFuzzyIds = useMemo(() => {
+    if (!isFuzzy || !fuse || searchQuery.trim().length < 2) return null;
+    return new Set(fuse.search(searchQuery.trim()).map((res) => res.item.id));
+  }, [isFuzzy, fuse, searchQuery]);
 
   const allCategories = useMemo(() => {
     const set = new Set<string>(DEFAULT_CATEGORIES);
@@ -46,6 +63,10 @@ export function WorldbuildingViewComponent({
       if (!matchesCategory) return false;
       if (!searchQuery.trim()) return true;
 
+      if (matchingFuzzyIds) {
+        return matchingFuzzyIds.has(item.id);
+      }
+
       const q = searchQuery.toLowerCase();
       return (
         item.title.toLowerCase().includes(q) ||
@@ -53,7 +74,7 @@ export function WorldbuildingViewComponent({
         item.description.toLowerCase().includes(q)
       );
     });
-  }, [items, selectedCategory, searchQuery]);
+  }, [items, selectedCategory, searchQuery, matchingFuzzyIds]);
 
   const handleMoveItem = useCallback(
     (id: string, direction: 'up' | 'down') => {
@@ -164,6 +185,8 @@ export function WorldbuildingViewComponent({
           onSearchChange={setSearchQuery}
           allCategories={allCategories}
           items={items}
+          isFuzzy={isFuzzy}
+          onToggleFuzzy={setIsFuzzy}
         />
         <WorldbuildingList
           filteredItems={filteredItems}
@@ -178,6 +201,7 @@ export function WorldbuildingViewComponent({
           onDelete={handleDelete}
           onCreateNew={handleCreateNew}
           onMoveItem={handleMoveItem}
+          worldDropMode={worldDropMode}
           onDragStart={handleDragStart}
           onContainerDragEnter={handleContainerDragEnter}
           onContainerDragOver={handleContainerDragOver}

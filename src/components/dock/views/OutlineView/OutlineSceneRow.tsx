@@ -55,8 +55,9 @@ export const OutlineSceneRow = memo(function OutlineSceneRow({
       }`}
     >
       <div className="flex items-center gap-2 min-w-0 flex-1">
+        <span className="outline-scene-marker hidden font-serif text-[11px] text-zinc-500 select-none mr-0.5">•</span>
         <BookOpen
-          className={`w-3.5 h-3.5 shrink-0 ${
+          className={`outline-scene-icon ui-decorative-icon w-3.5 h-3.5 shrink-0 ${
             isActive ? 'text-zinc-100' : 'text-zinc-500 group-hover:text-zinc-400'
           }`}
         />
@@ -105,7 +106,7 @@ export const OutlineSceneRow = memo(function OutlineSceneRow({
           <>
             {targetWords > 0 && (
               <div className="hidden group-hover:flex items-center gap-1 text-[9px] text-zinc-500 font-mono">
-                <Target className="w-2.5 h-2.5 text-zinc-500" />
+                <Target className="w-2.5 h-2.5 text-zinc-500 ui-decorative-icon" />
                 <span>{Math.round(progress)}%</span>
               </div>
             )}

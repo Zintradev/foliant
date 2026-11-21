@@ -56,7 +56,7 @@ function TimelineHeaderComponent({
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
             }`}
           >
-            <Clock className="w-3 h-3" />
+            <Clock className="w-3 h-3 ui-decorative-icon" />
             <span>{t('subwayMap')}</span>
           </button>
           <button
@@ -69,7 +69,7 @@ function TimelineHeaderComponent({
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
             }`}
           >
-            <Columns className="w-3 h-3" />
+            <Columns className="w-3 h-3 ui-decorative-icon" />
             <span>{t('chapterLanes')}</span>
           </button>
         </div>
@@ -197,7 +197,7 @@ function TimelineHeaderComponent({
       {/* Filter Dropdowns for Isolating Plots and Characters */}
       <div className="flex items-center gap-1.5 shrink-0 relative z-50">
         <div className="flex items-center gap-0.5">
-          <GitMerge className="w-3 h-3 text-zinc-500" />
+          <GitMerge className="w-3 h-3 text-zinc-500 ui-decorative-icon" />
           <select
             value={selectedStorylineFilter}
             onChange={(e) => onStorylineFilterChange(e.target.value)}
@@ -213,7 +213,7 @@ function TimelineHeaderComponent({
         </div>
 
         <div className="flex items-center gap-0.5">
-          <Users className="w-3 h-3 text-zinc-500" />
+          <Users className="w-3 h-3 text-zinc-500 ui-decorative-icon" />
           <select
             value={selectedCharacterFilter}
             onChange={(e) => onCharacterFilterChange(e.target.value)}

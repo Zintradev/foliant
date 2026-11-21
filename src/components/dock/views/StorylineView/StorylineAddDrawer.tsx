@@ -153,16 +153,18 @@ export const StorylineAddDrawer = React.memo(function StorylineAddDrawer({
 
       <div className="flex items-center justify-end gap-2 pt-1">
         <button
+          type="button"
           onClick={onCancel}
-          className="px-2.5 py-1 rounded-sm text-xs text-zinc-400 hover:text-zinc-200 cursor-pointer"
+          className="px-2.5 py-1 rounded-sm text-xs font-medium text-zinc-200 hover:text-white bg-zinc-700/90 hover:bg-zinc-600 border border-zinc-600/80 transition cursor-pointer shadow-xs"
         >
           {t('cancel')}
         </button>
         <button
+          type="button"
           onClick={onAdd}
           disabled={!newTitle.trim()}
           data-tour-id="storylines-submit-btn"
-          className="px-3 py-1 rounded-sm text-xs font-medium bg-zinc-100 hover:bg-white text-zinc-950 disabled:opacity-50 transition cursor-pointer"
+          className="px-3 py-1 rounded-sm text-xs font-medium text-zinc-200 hover:text-white bg-zinc-700/90 hover:bg-zinc-600 border border-zinc-600/80 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer shadow-xs"
         >
           {t('addStoryline')}
         </button>

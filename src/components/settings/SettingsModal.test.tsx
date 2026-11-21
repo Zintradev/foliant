@@ -68,6 +68,33 @@ describe('SettingsModal Component', () => {
     expect(screen.getByText(dict.en.categoryTaxonomy)).toBeInTheDocument();
   });
 
+  it('reorders scene inspector sections with move down and move up buttons in General tab', () => {
+    render(
+      <SettingsModal
+        isOpen={true}
+        onClose={mockOnClose}
+        settings={mockSettings}
+        onUpdateSettings={mockOnUpdateSettings}
+      />
+    );
+
+    expect(screen.getByText(dict.en.inspectorSectionOrder)).toBeInTheDocument();
+    expect(screen.getByText(dict.en.inspectorSectionGoal)).toBeInTheDocument();
+
+    // Click Move Down on the first section (Goal)
+    const moveDownButtons = screen.getAllByTitle(dict.en.moveDown);
+    expect(moveDownButtons.length).toBeGreaterThan(0);
+    fireEvent.click(moveDownButtons[0]);
+
+    expect(mockOnUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({
+          inspectorSectionOrder: ['synopsis', 'goal', 'plots', 'cast', 'world'],
+        }),
+      })
+    );
+  });
+
   it('switches languages and triggers onUpdateSettings', () => {
     render(
       <SettingsModal
@@ -179,6 +206,56 @@ describe('SettingsModal Component', () => {
     expect(mockOnUpdateSettings).toHaveBeenCalledWith(
       expect.objectContaining({
         preferences: expect.objectContaining({ themeMode: 'dark' }),
+      })
+    );
+  });
+
+  it('switches interface style (uiStyle: modern, editorial, classic, classic-clean) in Appearance tab', () => {
+    render(
+      <SettingsModal
+        isOpen={true}
+        onClose={mockOnClose}
+        settings={mockSettings}
+        onUpdateSettings={mockOnUpdateSettings}
+      />
+    );
+
+    fireEvent.click(screen.getByText(dict.en.categoryAppearanceEditor));
+    expect(screen.getByText(dict.en.uiStyle)).toBeInTheDocument();
+    expect(screen.getByText(dict.en.uiStyleModern)).toBeInTheDocument();
+    expect(screen.getByText(dict.en.uiStyleEditorial)).toBeInTheDocument();
+    expect(screen.getByText(dict.en.uiStyleClassic)).toBeInTheDocument();
+    expect(screen.getByText(dict.en.uiStyleClassicClean)).toBeInTheDocument();
+
+    // Select Clean Editorial
+    fireEvent.click(screen.getByText(dict.en.uiStyleEditorial));
+    expect(mockOnUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({ uiStyle: 'editorial' }),
+      })
+    );
+
+    // Select Classic
+    fireEvent.click(screen.getByText(dict.en.uiStyleClassic));
+    expect(mockOnUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({ uiStyle: 'classic' }),
+      })
+    );
+
+    // Select Classic Clean
+    fireEvent.click(screen.getByText(dict.en.uiStyleClassicClean));
+    expect(mockOnUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({ uiStyle: 'classic-clean' }),
+      })
+    );
+
+    // Select Modern
+    fireEvent.click(screen.getByText(dict.en.uiStyleModern));
+    expect(mockOnUpdateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({ uiStyle: 'modern' }),
       })
     );
   });
@@ -1067,7 +1144,7 @@ describe('SettingsModal Component', () => {
 
     // Check version and title
     expect(screen.getByText('Foliant Studio')).toBeInTheDocument();
-    expect(screen.getAllByText('v0.1.0').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('v0.3.0').length).toBeGreaterThan(0);
     expect(screen.getByText(dict.en.appLocalFirstTitle)).toBeInTheDocument();
     expect(screen.getByText(dict.en.appLocalFirstDesc)).toBeInTheDocument();
     expect(screen.getByText('Tauri v2 (Rust Core)')).toBeInTheDocument();

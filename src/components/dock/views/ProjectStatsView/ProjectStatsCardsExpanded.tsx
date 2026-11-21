@@ -4,6 +4,7 @@ import { ChapterStatus } from '../../../../types/project';
 import { ProgressStatus } from './types';
 import { formatReadingTime } from './statUtils';
 import { useTranslation } from '../../../../i18n/translations';
+import { loadSettings } from '../../../../types/settings';
 
 interface ProjectStatsCardsExpandedProps {
   totalWords: number;
@@ -42,6 +43,51 @@ function ProjectStatsCardsExpandedComponent({
         return badgeText;
     }
   };
+
+  const isClean = ['editorial', 'classic-clean'].includes(loadSettings().preferences?.uiStyle || 'modern');
+
+  if (isClean) {
+    return (
+      <div className="p-3.5 rounded-sm border border-zinc-800 bg-zinc-900/40 shadow-xs">
+        {/* Main words & target progress */}
+        <div className="space-y-1.5">
+          <div className="flex items-baseline justify-between font-mono">
+            <span className="text-2xl font-bold text-zinc-100">
+              {totalWords.toLocaleString()}
+            </span>
+            <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+              <span>/</span>
+              <div className="flex items-center gap-1 bg-zinc-950 border border-zinc-800 rounded-xs px-1.5 py-0.5">
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={targetWordCount}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    const next = isNaN(val) ? 0 : Math.max(0, val);
+                    onTargetWordCountChange(next);
+                  }}
+                  title="Global Word Goal"
+                  className="w-20 bg-transparent text-xs font-mono font-bold text-zinc-200 focus:outline-none"
+                />
+                <span className="text-[10px] text-zinc-500 font-mono">w</span>
+              </div>
+              <span className="text-xs font-semibold text-zinc-300 ml-1">
+                ({globalStatus.percent.toFixed(1)}%)
+              </span>
+            </div>
+          </div>
+          <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${globalStatus.barColor}`}
+              style={{ width: `${Math.min(globalStatus.percent, 100)}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

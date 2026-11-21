@@ -3,7 +3,7 @@ import {
   CharacterTag,
   CharacterItem as DockCharacterItem,
 } from '../../../../types/dock';
-import { AppColorSettings } from '../../../../types/settings';
+import { AppColorSettings, DropMode } from '../../../../types/settings';
 
 /**
  * Character item extended with an optional color key for the name label.
@@ -20,6 +20,7 @@ export interface CharactersViewProps {
   colorSettings?: AppColorSettings;
   saveMode?: 'auto' | 'manual';
   onDirtyChange?: (isDirty: boolean) => void;
+  charactersDropMode?: DropMode;
 }
 
 export type { CharacterCustomField, CharacterTag };

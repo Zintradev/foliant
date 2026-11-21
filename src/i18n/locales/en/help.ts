@@ -102,4 +102,9 @@ export default {
   tourExpand: 'Expand Tour',
   tourMinimize: 'Minimize Tour',
   tourGoToView: 'Switch to view «{0}»',
+  tourToastTitle: 'First time in Foliant?',
+  tourToastDesc: 'Take a quick interactive tutorial to discover all tools.',
+  tourToastStart: 'Start tutorial',
+  tourToastDismiss: 'Later',
+  tourToastNever: "Don't show again",
 } as const;

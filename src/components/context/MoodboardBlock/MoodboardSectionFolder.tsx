@@ -35,6 +35,7 @@ interface MoodboardSectionFolderProps {
   onTouchImageDragEnd?: () => void;
   onTouchImageDragCancel?: () => void;
   onMoveImage?: (id: string, direction: 'prev' | 'next') => void;
+  visualsDropMode?: 'shift' | 'swap' | 'arrows';
 }
 
 export const MoodboardSectionFolder = React.memo(function MoodboardSectionFolder({
@@ -69,6 +70,7 @@ export const MoodboardSectionFolder = React.memo(function MoodboardSectionFolder
   onTouchImageDragEnd,
   onTouchImageDragCancel,
   onMoveImage,
+  visualsDropMode = 'shift',
 }: MoodboardSectionFolderProps) {
   return (
     <div
@@ -189,6 +191,7 @@ export const MoodboardSectionFolder = React.memo(function MoodboardSectionFolder
                   <MoodboardThumbnailCard
                     image={image}
                     index={idx}
+                    isArrowsMode={visualsDropMode === 'arrows'}
                     registerCard={registerCard}
                     isDragging={draggedImageId === image.id}
                     isDragOver={dragOverImageId === image.id && draggedImageId !== image.id}
@@ -207,7 +210,7 @@ export const MoodboardSectionFolder = React.memo(function MoodboardSectionFolder
                     onTouchDragEnd={onTouchImageDragEnd}
                     onTouchDragCancel={onTouchImageDragCancel}
                   />
-                  {onMoveImage && images.length > 1 && (
+                  {onMoveImage && visualsDropMode === 'arrows' && images.length > 1 && (
                     <div className="flex items-center justify-center gap-1 -mt-2 mb-3 opacity-60 sm:opacity-0 sm:group-hover/mcard:opacity-100 hover:!opacity-100 transition-opacity">
                       <button
                         type="button"

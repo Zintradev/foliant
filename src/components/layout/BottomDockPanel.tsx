@@ -94,7 +94,7 @@ export const BottomDockPanel = memo(function BottomDockPanel({
                       : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850'
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  <Icon className="w-3.5 h-3.5 bottom-dock-tab-icon ui-decorative-icon" />
                   <span>{tabLabel}</span>
                 </button>
               );
@@ -120,7 +120,7 @@ export const BottomDockPanel = memo(function BottomDockPanel({
         </div>
 
         {/* Bottom Panel Content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden pb-1">
           {children}
         </div>
       </div>
@@ -133,7 +133,7 @@ export const BottomDockPanel = memo(function BottomDockPanel({
               top: `${Math.min(contextMenu.y, window.innerHeight - 100)}px`,
               left: `${Math.min(contextMenu.x, window.innerWidth - 190)}px`,
             }}
-            className="fixed z-[99999] min-w-[180px] bg-zinc-950 border border-zinc-800 rounded-sm shadow-2xl py-1 text-xs text-zinc-300 font-sans animate-in fade-in zoom-in-95 duration-75 select-none"
+            className="dock-tab-context-menu fixed z-[99999] min-w-[180px] bg-zinc-950 border border-zinc-800 rounded-sm shadow-2xl py-1 text-xs text-zinc-300 font-sans animate-in fade-in zoom-in-95 duration-75 select-none"
           >
             <button
               type="button"

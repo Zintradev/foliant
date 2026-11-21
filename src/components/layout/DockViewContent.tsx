@@ -119,6 +119,9 @@ export const DockViewContent = memo(function DockViewContent({
           onReorderChapter={handleReorderChapters}
           isExpanded={isExpanded}
           storylines={project.storylines}
+          characters={project.characters}
+          worldItems={project.worldItems}
+          sectionOrder={appSettings.preferences?.inspectorSectionOrder}
           onDirtyChange={setIsDirty}
           projectTitle={project.title}
           projectAuthor={project.author}
@@ -143,6 +146,7 @@ export const DockViewContent = memo(function DockViewContent({
           colorSettings={appSettings}
           isExpanded={isExpanded}
           onDirtyChange={setIsDirty}
+          storylinesDropMode={appSettings.preferences?.storylinesDropMode || 'shift'}
         />
       );
     case 'timeline':
@@ -218,6 +222,7 @@ export const DockViewContent = memo(function DockViewContent({
           storylines={project.storylines}
           customStatuses={project.customStatuses}
           colorSettings={appSettings}
+          sectionOrder={appSettings.preferences?.inspectorSectionOrder}
           onUpdateNode={handleUpdateChapter}
           onSelectChapter={setActiveChapterId}
         />
@@ -277,6 +282,7 @@ export const DockViewContent = memo(function DockViewContent({
           onChange={handleUpdateCharacters}
           colorSettings={appSettings}
           isExpanded={isExpanded}
+          charactersDropMode={appSettings.preferences?.charactersDropMode || 'shift'}
         />
       );
     case 'worldbuilding':

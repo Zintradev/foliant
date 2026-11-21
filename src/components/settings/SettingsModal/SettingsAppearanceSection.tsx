@@ -1,11 +1,12 @@
 import React from 'react';
 import { Check } from 'lucide-react';
-import { CustomThemeColors, EditorFontFamily } from '../../../types/settings';
+import { CustomThemeColors, EditorFontFamily, UIStyle } from '../../../types/settings';
 import { PreferenceChangeHandler, CustomColorChangeHandler, ActiveColorPickerState } from './types';
 
 interface SettingsAppearanceSectionProps {
   themeMode: 'dark' | 'light' | 'custom';
   customTheme: CustomThemeColors;
+  uiStyle?: UIStyle;
   editorFontFamily?: EditorFontFamily;
   editorPaperColor?: 'paper' | 'white' | 'warm' | 'dark' | 'custom' | 'default';
   editorCustomBg?: string;
@@ -20,6 +21,7 @@ interface SettingsAppearanceSectionProps {
 export const SettingsAppearanceSection = React.memo(function SettingsAppearanceSection({
   themeMode,
   customTheme,
+  uiStyle = 'modern',
   editorFontFamily: _editorFontFamily = 'serif',
   editorPaperColor = 'paper',
   editorCustomBg = '#f6f1e8',
@@ -76,7 +78,7 @@ export const SettingsAppearanceSection = React.memo(function SettingsAppearanceS
             }`}
           >
             <div className="flex items-center justify-between">
-              <div className="w-5 h-5 rounded-full bg-white border border-zinc-300" />
+              <div className="w-5 h-5 rounded-full bg-[#f7f4ee] border border-[#d4cdc1]" />
               {themeMode === 'light' && <Check className="w-4 h-4 text-emerald-400" />}
             </div>
             <div className="text-xs font-semibold">{t('light', 'Light')}</div>
@@ -254,6 +256,96 @@ export const SettingsAppearanceSection = React.memo(function SettingsAppearanceS
           </div>
         </div>
       )}
+
+      {/* Interface Style Selector Card */}
+      <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3">
+        <div>
+          <label className="text-xs font-semibold text-zinc-200">
+            {t('uiStyle', 'Interface Style')}
+          </label>
+          <p className="text-[11px] text-zinc-400 mt-0.5">
+            {t('uiStyleDesc', 'Choose the structural personality and visual aesthetics of the application')}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+          {/* Modern Card */}
+          <button
+            type="button"
+            onClick={() => onPreferenceChange('uiStyle', 'modern')}
+            className={`p-3 rounded-md border text-left transition cursor-pointer flex flex-col justify-start min-h-[80px] ${
+              uiStyle === 'modern'
+                ? 'border-emerald-500 bg-emerald-950/20 ring-1 ring-emerald-500/40 text-zinc-100'
+                : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-850 text-zinc-300'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold">{t('uiStyleModern', 'Default')}</div>
+              {uiStyle === 'modern' && <Check className="w-4 h-4 text-emerald-400" />}
+            </div>
+            <p className="text-[10px] text-zinc-400 mt-1.5 leading-snug">
+              {t('uiStyleModernDesc', 'Modern and balanced design with all icons')}
+            </p>
+          </button>
+
+          {/* Clean Card */}
+          <button
+            type="button"
+            onClick={() => onPreferenceChange('uiStyle', 'editorial')}
+            className={`p-3 rounded-md border text-left transition cursor-pointer flex flex-col justify-start min-h-[80px] ${
+              uiStyle === 'editorial'
+                ? 'border-emerald-500 bg-emerald-950/20 ring-1 ring-emerald-500/40 text-zinc-100'
+                : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-850 text-zinc-300'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold">{t('uiStyleEditorial', 'Clean')}</div>
+              {uiStyle === 'editorial' && <Check className="w-4 h-4 text-emerald-400" />}
+            </div>
+            <p className="text-[10px] text-zinc-400 mt-1.5 leading-snug">
+              {t('uiStyleEditorialDesc', 'Subtle borders, refined typography, and minimal decoration')}
+            </p>
+          </button>
+
+          {/* Classic Card */}
+          <button
+            type="button"
+            onClick={() => onPreferenceChange('uiStyle', 'classic')}
+            className={`p-3 rounded-md border text-left transition cursor-pointer flex flex-col justify-start min-h-[80px] ${
+              uiStyle === 'classic'
+                ? 'border-emerald-500 bg-emerald-950/20 ring-1 ring-emerald-500/40 text-zinc-100'
+                : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-850 text-zinc-300'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold">{t('uiStyleClassic', 'Classic')}</div>
+              {uiStyle === 'classic' && <Check className="w-4 h-4 text-emerald-400" />}
+            </div>
+            <p className="text-[10px] text-zinc-400 mt-1.5 leading-snug">
+              {t('uiStyleClassicDesc', 'Classic literary desktop software, solid 1px panels, serif headings')}
+            </p>
+          </button>
+
+          {/* Classic Clean Card */}
+          <button
+            type="button"
+            onClick={() => onPreferenceChange('uiStyle', 'classic-clean')}
+            className={`p-3 rounded-md border text-left transition cursor-pointer flex flex-col justify-start min-h-[80px] ${
+              uiStyle === 'classic-clean'
+                ? 'border-emerald-500 bg-emerald-950/20 ring-1 ring-emerald-500/40 text-zinc-100'
+                : 'border-zinc-800 bg-zinc-900 hover:bg-zinc-850 text-zinc-300'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold">{t('uiStyleClassicClean', 'Classic Clean')}</div>
+              {uiStyle === 'classic-clean' && <Check className="w-4 h-4 text-emerald-400" />}
+            </div>
+            <p className="text-[10px] text-zinc-400 mt-1.5 leading-snug">
+              {t('uiStyleClassicCleanDesc', 'Traditional compact structure combined with a clean, icon-free look')}
+            </p>
+          </button>
+        </div>
+      </div>
 
       {/* Editor Paper Color Card */}
       <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3">

@@ -693,6 +693,7 @@ describe('TimelineView', () => {
         activeChapterId="scene-1"
         onSelectChapter={vi.fn()}
         onUpdateStorylines={handleUpdateStorylines}
+        timelineDropMode="arrows"
       />
     );
 

@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect, memo } from 'react';
 import {
   ChevronDown,
   ChevronRight,
+  ChevronUp,
   Trash2,
   GripVertical,
   Pencil,
@@ -13,8 +14,6 @@ import {
   User,
   GitMerge,
   Globe,
-  FileText,
-  List,
 } from 'lucide-react';
 import { ContextBlock } from '../../types/project';
 import { StorylineItem, CharacterItem, WorldItem } from '../../types/dock';
@@ -49,6 +48,9 @@ export interface ContextBlockItemProps {
   isDraggingAny?: boolean;
   rowTranslateY?: number;
   setElementRef?: (el: HTMLDivElement | null) => void;
+  notesDropMode?: 'shift' | 'swap' | 'arrows';
+  onMoveNote?: (index: number, direction: 'up' | 'down') => void;
+  totalNotes?: number;
 }
 
 const STORYLINE_COLOR_MAP: Record<string, { bg: string; text: string; border: string; dot: string }> = {
@@ -88,6 +90,9 @@ function ContextBlockItemComponent({
   isDraggingAny = false,
   rowTranslateY = 0,
   setElementRef,
+  notesDropMode = 'shift',
+  onMoveNote,
+  totalNotes,
 }: ContextBlockItemProps) {
   const { t } = useTranslation();
 
@@ -102,12 +107,59 @@ function ContextBlockItemComponent({
     moveThreshold: 10,
   });
 
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return false;
+    try {
+      const raw = localStorage.getItem(`foliant_note_collapsed_${block.id}`);
+      return raw !== null ? Boolean(JSON.parse(raw)) : false;
+    } catch {
+      return false;
+    }
+  });
   const [editingTitle, setEditingTitle] = useState(false);
   const [isEditingContent, setIsEditingContent] = useState(isNewBlock);
   const [localContent, setLocalContent] = useState(block.content);
   const [isTagPopoverOpen, setIsTagPopoverOpen] = useState(false);
   const [isFolderPopoverOpen, setIsFolderPopoverOpen] = useState(false);
+  const [isStorylinesOpen, setIsStorylinesOpen] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return false;
+    try {
+      const raw = localStorage.getItem(`foliant_note_storylines_open_${block.id}`);
+      return raw !== null ? Boolean(JSON.parse(raw)) : false;
+    } catch {
+      return false;
+    }
+  });
+  const [isWorldItemsOpen, setIsWorldItemsOpen] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return false;
+    try {
+      const raw = localStorage.getItem(`foliant_note_world_open_${block.id}`);
+      return raw !== null ? Boolean(JSON.parse(raw)) : false;
+    } catch {
+      return false;
+    }
+  });
+  const [isCharactersOpen, setIsCharactersOpen] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return false;
+    try {
+      const raw = localStorage.getItem(`foliant_note_characters_open_${block.id}`);
+      return raw !== null ? Boolean(JSON.parse(raw)) : false;
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
+    try {
+      localStorage.setItem(`foliant_note_collapsed_${block.id}`, JSON.stringify(collapsed));
+      localStorage.setItem(`foliant_note_storylines_open_${block.id}`, JSON.stringify(isStorylinesOpen));
+      localStorage.setItem(`foliant_note_world_open_${block.id}`, JSON.stringify(isWorldItemsOpen));
+      localStorage.setItem(`foliant_note_characters_open_${block.id}`, JSON.stringify(isCharactersOpen));
+    } catch {
+      // Non-fatal if localStorage write fails
+    }
+  }, [collapsed, isStorylinesOpen, isWorldItemsOpen, isCharactersOpen, block.id]);
   const [newCustomTagInput, setNewCustomTagInput] = useState('');
   const [newFolderInput, setNewFolderInput] = useState('');
 
@@ -298,6 +350,8 @@ function ContextBlockItemComponent({
         willChange: rowTranslateY !== undefined ? 'transform' : undefined,
       }}
       className={`border rounded-sm overflow-visible bg-zinc-950 transition-all duration-200 shadow-xs w-full select-none ${
+        isTagPopoverOpen || isFolderPopoverOpen ? 'z-50 relative' : 'relative z-10'
+      } ${
         isDraggingAny ? '[&_*]:pointer-events-none' : ''
       } ${
         isHolding
@@ -315,7 +369,7 @@ function ContextBlockItemComponent({
     >
       {/* Block header with Drag and Drop handle */}
       <div
-        draggable={!editingTitle}
+        draggable={!editingTitle && notesDropMode !== 'arrows'}
         onDragStart={(e) => {
           e.dataTransfer.setData('text/plain', block.id);
           e.dataTransfer.effectAllowed = 'move';
@@ -325,7 +379,9 @@ function ContextBlockItemComponent({
         {...touchDragProps}
         className="flex items-center gap-1.5 px-2.5 py-1.5 bg-zinc-900/75 border-b border-zinc-800/80 group select-none transition"
       >
-        <GripVertical className="w-3.5 h-3.5 text-zinc-600 group-hover:text-zinc-300 transition shrink-0 cursor-grab active:cursor-grabbing" />
+        {notesDropMode !== 'arrows' && (
+          <GripVertical className="w-3.5 h-3.5 text-zinc-600 group-hover:text-zinc-300 transition shrink-0 cursor-grab active:cursor-grabbing" />
+        )}
 
         {/* Collapse toggle */}
         <button
@@ -340,14 +396,31 @@ function ContextBlockItemComponent({
           {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
 
-        {/* Note Type Icon */}
-        <span className="text-zinc-500 shrink-0">
-          {block.type === 'list' ? (
-            <List className="w-3.5 h-3.5 text-emerald-400/80" />
-          ) : (
-            <FileText className="w-3.5 h-3.5 text-zinc-400" />
-          )}
-        </span>
+        {notesDropMode === 'arrows' && onMoveNote && (
+          <div
+            className="flex items-center gap-0.5 shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              disabled={index === 0}
+              onClick={() => onMoveNote(index, 'up')}
+              title={t('moveUp', 'Mover arriba')}
+              className="p-0.5 hover:bg-zinc-800 rounded-xs text-zinc-400 hover:text-zinc-100 disabled:opacity-20 transition touch-manipulation cursor-pointer"
+            >
+              <ChevronUp className="w-3 h-3" />
+            </button>
+            <button
+              type="button"
+              disabled={totalNotes !== undefined ? index >= totalNotes - 1 : false}
+              onClick={() => onMoveNote(index, 'down')}
+              title={t('moveDown', 'Mover abajo')}
+              className="p-0.5 hover:bg-zinc-800 rounded-xs text-zinc-400 hover:text-zinc-100 disabled:opacity-20 transition touch-manipulation cursor-pointer"
+            >
+              <ChevronDown className="w-3 h-3" />
+            </button>
+          </div>
+        )}
 
         {/* Editable title */}
         {editingTitle ? (
@@ -526,102 +599,162 @@ function ContextBlockItemComponent({
               <div className="absolute right-0 top-full mt-1 w-64 bg-zinc-900 border border-zinc-750 rounded-md shadow-xl z-50 p-2.5 text-xs space-y-3 animate-in fade-in duration-100 max-h-84 overflow-y-auto">
                 {/* Storylines */}
                 <div>
-                  <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider font-mono mb-1.5 flex items-center gap-1">
-                    <GitMerge className="w-3 h-3 text-purple-400" />
-                    <span>{t('storylineTags')}</span>
-                  </div>
-                  {storylines.length === 0 ? (
-                    <span className="text-[10px] text-zinc-600 italic block">{t('noPlotThreadsAvailable')}</span>
-                  ) : (
-                    <div className="space-y-1">
-                      {storylines.map((st) => {
-                        const isAttached = (block.storylineIds || []).includes(st.id);
-                        const col = STORYLINE_COLOR_MAP[st.color] || STORYLINE_COLOR_MAP.emerald;
-                        return (
-                          <button
-                            key={st.id}
-                            type="button"
-                            onClick={() => handleToggleStoryline(st.id)}
-                            className={`w-full text-left px-2 py-1 rounded text-[11px] transition flex items-center justify-between cursor-pointer ${
-                              isAttached ? `${col.bg} ${col.text} border ${col.border}` : 'text-zinc-400 hover:bg-zinc-850 hover:text-zinc-200'
-                            }`}
-                          >
-                            <span className="flex items-center gap-1.5 truncate">
-                              <span className={`w-1.5 h-1.5 rounded-full ${col.dot} shrink-0`} />
-                              <span className="truncate">{st.title}</span>
-                            </span>
-                            {isAttached && <Check className="w-3 h-3 shrink-0" />}
-                          </button>
-                        );
-                      })}
+                  <button
+                    type="button"
+                    onClick={() => setIsStorylinesOpen((prev) => !prev)}
+                    className="w-full text-[10px] font-semibold text-zinc-400 uppercase tracking-wider font-mono mb-1.5 flex items-center justify-between hover:text-zinc-200 transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1">
+                      <GitMerge className="w-3 h-3 text-purple-400" />
+                      <span>{t('storylineTags')}</span>
+                      {attachedStorylines.length > 0 && (
+                        <span className="text-[9px] px-1 py-0.2 rounded-xs bg-purple-950/60 text-purple-300 font-mono">
+                          {attachedStorylines.length}
+                        </span>
+                      )}
                     </div>
+                    {isStorylinesOpen ? (
+                      <ChevronDown className="w-3 h-3 text-zinc-500" />
+                    ) : (
+                      <ChevronRight className="w-3 h-3 text-zinc-500" />
+                    )}
+                  </button>
+                  {isStorylinesOpen && (
+                    <>
+                      {storylines.length === 0 ? (
+                        <span className="text-[10px] text-zinc-600 italic block">{t('noPlotThreadsAvailable')}</span>
+                      ) : (
+                        <div className="space-y-1">
+                          {storylines.map((st) => {
+                            const isAttached = (block.storylineIds || []).includes(st.id);
+                            const col = STORYLINE_COLOR_MAP[st.color] || STORYLINE_COLOR_MAP.emerald;
+                            return (
+                              <button
+                                key={st.id}
+                                type="button"
+                                onClick={() => handleToggleStoryline(st.id)}
+                                className={`w-full text-left px-2 py-1 rounded text-[11px] transition flex items-center justify-between cursor-pointer ${
+                                  isAttached ? `${col.bg} ${col.text} border ${col.border}` : 'text-zinc-400 hover:bg-zinc-850 hover:text-zinc-200'
+                                }`}
+                              >
+                                <span className="flex items-center gap-1.5 truncate">
+                                  <span className={`w-1.5 h-1.5 rounded-full ${col.dot} shrink-0`} />
+                                  <span className="truncate">{st.title}</span>
+                                </span>
+                                {isAttached && <Check className="w-3 h-3 shrink-0" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 
                 {/* World & Lore Items */}
                 <div className="pt-2 border-t border-zinc-800">
-                  <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider font-mono mb-1.5 flex items-center gap-1">
-                    <Globe className="w-3 h-3 text-cyan-400" />
-                    <span>{t('worldItemTags')}</span>
-                  </div>
-                  {worldItems.length === 0 ? (
-                    <span className="text-[10px] text-zinc-600 italic block">{t('noWorldItemsAvailable')}</span>
-                  ) : (
-                    <div className="space-y-1 max-h-28 overflow-y-auto">
-                      {worldItems.map((wi) => {
-                        const isAttached = (block.worldItemIds || []).includes(wi.id);
-                        return (
-                          <button
-                            key={wi.id}
-                            type="button"
-                            onClick={() => handleToggleWorldItem(wi.id)}
-                            className={`w-full text-left px-2 py-1 rounded text-[11px] transition flex items-center justify-between cursor-pointer ${
-                              isAttached
-                                ? 'bg-cyan-950/40 text-cyan-300 border border-cyan-800/60'
-                                : 'text-zinc-400 hover:bg-zinc-850 hover:text-zinc-200'
-                            }`}
-                          >
-                            <span className="flex items-center gap-1.5 truncate">
-                              <span className="text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-zinc-400 uppercase font-mono">{wi.category}</span>
-                              <span className="truncate">{wi.title}</span>
-                            </span>
-                            {isAttached && <Check className="w-3 h-3 shrink-0" />}
-                          </button>
-                        );
-                      })}
+                  <button
+                    type="button"
+                    onClick={() => setIsWorldItemsOpen((prev) => !prev)}
+                    className="w-full text-[10px] font-semibold text-zinc-400 uppercase tracking-wider font-mono mb-1.5 flex items-center justify-between hover:text-zinc-200 transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1">
+                      <Globe className="w-3 h-3 text-cyan-400" />
+                      <span>{t('worldItemTags')}</span>
+                      {attachedWorldItems.length > 0 && (
+                        <span className="text-[9px] px-1 py-0.2 rounded-xs bg-cyan-950/60 text-cyan-300 font-mono">
+                          {attachedWorldItems.length}
+                        </span>
+                      )}
                     </div>
+                    {isWorldItemsOpen ? (
+                      <ChevronDown className="w-3 h-3 text-zinc-500" />
+                    ) : (
+                      <ChevronRight className="w-3 h-3 text-zinc-500" />
+                    )}
+                  </button>
+                  {isWorldItemsOpen && (
+                    <>
+                      {worldItems.length === 0 ? (
+                        <span className="text-[10px] text-zinc-600 italic block">{t('noWorldItemsAvailable')}</span>
+                      ) : (
+                        <div className="space-y-1 max-h-28 overflow-y-auto">
+                          {worldItems.map((wi) => {
+                            const isAttached = (block.worldItemIds || []).includes(wi.id);
+                            return (
+                              <button
+                                key={wi.id}
+                                type="button"
+                                onClick={() => handleToggleWorldItem(wi.id)}
+                                className={`w-full text-left px-2 py-1 rounded text-[11px] transition flex items-center justify-between cursor-pointer ${
+                                  isAttached
+                                    ? 'bg-cyan-950/40 text-cyan-300 border border-cyan-800/60'
+                                    : 'text-zinc-400 hover:bg-zinc-850 hover:text-zinc-200'
+                                }`}
+                              >
+                                <span className="flex items-center gap-1.5 truncate">
+                                  <span className="text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-zinc-400 uppercase font-mono">{wi.category}</span>
+                                  <span className="truncate">{wi.title}</span>
+                                </span>
+                                {isAttached && <Check className="w-3 h-3 shrink-0" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 
                 {/* Characters */}
                 <div className="pt-2 border-t border-zinc-800">
-                  <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider font-mono mb-1.5 flex items-center gap-1">
-                    <User className="w-3 h-3 text-blue-400" />
-                    <span>{t('characterTags')}</span>
-                  </div>
-                  {characters.length === 0 ? (
-                    <span className="text-[10px] text-zinc-600 italic block">{t('noCharactersAvailable')}</span>
-                  ) : (
-                    <div className="space-y-1 max-h-28 overflow-y-auto">
-                      {characters.map((ch) => {
-                        const isAttached = (block.characterIds || []).includes(ch.id);
-                        return (
-                          <button
-                            key={ch.id}
-                            type="button"
-                            onClick={() => handleToggleCharacter(ch.id)}
-                            className={`w-full text-left px-2 py-1 rounded text-[11px] transition flex items-center justify-between cursor-pointer ${
-                              isAttached
-                                ? 'bg-blue-950/40 text-blue-300 border border-blue-800/60'
-                                : 'text-zinc-400 hover:bg-zinc-850 hover:text-zinc-200'
-                            }`}
-                          >
-                            <span className="truncate">{ch.name}</span>
-                            {isAttached && <Check className="w-3 h-3 shrink-0" />}
-                          </button>
-                        );
-                      })}
+                  <button
+                    type="button"
+                    onClick={() => setIsCharactersOpen((prev) => !prev)}
+                    className="w-full text-[10px] font-semibold text-zinc-400 uppercase tracking-wider font-mono mb-1.5 flex items-center justify-between hover:text-zinc-200 transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1">
+                      <User className="w-3 h-3 text-blue-400" />
+                      <span>{t('characterTags')}</span>
+                      {attachedCharacters.length > 0 && (
+                        <span className="text-[9px] px-1 py-0.2 rounded-xs bg-blue-950/60 text-blue-300 font-mono">
+                          {attachedCharacters.length}
+                        </span>
+                      )}
                     </div>
+                    {isCharactersOpen ? (
+                      <ChevronDown className="w-3 h-3 text-zinc-500" />
+                    ) : (
+                      <ChevronRight className="w-3 h-3 text-zinc-500" />
+                    )}
+                  </button>
+                  {isCharactersOpen && (
+                    <>
+                      {characters.length === 0 ? (
+                        <span className="text-[10px] text-zinc-600 italic block">{t('noCharactersAvailable')}</span>
+                      ) : (
+                        <div className="space-y-1 max-h-28 overflow-y-auto">
+                          {characters.map((ch) => {
+                            const isAttached = (block.characterIds || []).includes(ch.id);
+                            return (
+                              <button
+                                key={ch.id}
+                                type="button"
+                                onClick={() => handleToggleCharacter(ch.id)}
+                                className={`w-full text-left px-2 py-1 rounded text-[11px] transition flex items-center justify-between cursor-pointer ${
+                                  isAttached
+                                    ? 'bg-blue-950/40 text-blue-300 border border-blue-800/60'
+                                    : 'text-zinc-400 hover:bg-zinc-850 hover:text-zinc-200'
+                                }`}
+                              >
+                                <span className="truncate">{ch.name}</span>
+                                {isAttached && <Check className="w-3 h-3 shrink-0" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 

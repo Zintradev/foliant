@@ -53,7 +53,7 @@ function DockStripTabBar({
       data-dock-strip={strip}
       className="flex items-center justify-between border-b px-1 pt-1 min-h-[34px] bg-zinc-900/60 border-zinc-800 shrink-0"
     >
-      <div className="flex items-center gap-0.5 overflow-x-auto no-scrollbar flex-1 mr-1">
+      <div className="flex items-center gap-0.5 overflow-x-auto no-scrollbar flex-1 mr-1 pb-0.5">
         {stripTabs.map((tabId) => {
           const meta = TAB_META[tabId];
           if (!meta) return null;
@@ -84,9 +84,9 @@ function DockStripTabBar({
                 isBeingDragged ? 'opacity-40 border-dashed border-zinc-500' : ''
               } data-[tab-drag-target=true]:border-zinc-300 data-[tab-drag-target=true]:bg-zinc-800/80`}
             >
-              <GripVertical className="w-2.5 h-2.5 text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity -ml-0.5" />
+              <GripVertical className="dock-tab-grip ui-decorative-icon w-2.5 h-2.5 text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity -ml-0.5" />
               <Icon
-                className={`w-3.5 h-3.5 shrink-0 ${
+                className={`dock-tab-icon ui-decorative-icon w-3.5 h-3.5 shrink-0 ${
                   isActive ? 'text-zinc-100' : 'text-zinc-400 group-hover:text-zinc-200'
                 }`}
               />

@@ -27,4 +27,5 @@ export default {
   viewPortrait: 'Click to view portrait',
   collapseCard: 'Collapse card',
   expandCard: 'Expand card',
+  searchCharacters: 'Search characters...',
 } as const;

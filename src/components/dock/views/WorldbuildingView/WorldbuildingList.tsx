@@ -17,6 +17,7 @@ interface WorldbuildingListProps {
   onDelete: (id: string, e?: React.MouseEvent) => void;
   onCreateNew: () => void;
   onMoveItem?: (id: string, direction: 'up' | 'down') => void;
+  worldDropMode?: 'shift' | 'swap' | 'arrows';
   onDragStart: (e: React.DragEvent, id: string, index: number) => void;
   onContainerDragEnter: (e: React.DragEvent) => void;
   onContainerDragOver: (e: React.DragEvent) => void;
@@ -42,6 +43,7 @@ function WorldbuildingListComponent({
   onDelete,
   onCreateNew,
   onMoveItem,
+  worldDropMode = 'shift',
   onDragStart,
   onContainerDragEnter,
   onContainerDragOver,
@@ -128,6 +130,7 @@ function WorldbuildingListComponent({
               isFirst={index === 0}
               isLast={index === filteredItems.length - 1}
               onMoveItem={onMoveItem}
+              worldDropMode={worldDropMode}
               setElementRef={(el) => {
                 if (el) itemRefs.current.set(item.id, el);
                 else itemRefs.current.delete(item.id);

@@ -1,11 +1,14 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import ContextPanel from './ContextPanel';
 import { ContextBlock } from '../../types/project';
 import { StorylineItem, CharacterItem, WorldItem } from '../../types/dock';
 
 describe('ContextPanel and ContextBlockItem (Notes View)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
   const mockWorldItems: WorldItem[] = [
     {
       id: 'world-1',

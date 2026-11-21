@@ -41,7 +41,24 @@ export function useCharactersState({
     };
   }, [isAdding, newName, editingCharacterId, saveMode, onDirtyChange]);
 
-  const [expandedCharacterIds, setExpandedCharacterIds] = useState<Record<string, boolean>>({});
+  const [expandedCharacterIds, setExpandedCharacterIds] = useState<Record<string, boolean>>(() => {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return {};
+    try {
+      const raw = localStorage.getItem('foliant_characters_expanded_state');
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
+    try {
+      localStorage.setItem('foliant_characters_expanded_state', JSON.stringify(expandedCharacterIds));
+    } catch {
+      // Non-fatal if localStorage write fails
+    }
+  }, [expandedCharacterIds]);
 
   const toggleExpand = (id: string) => {
     setExpandedCharacterIds((prev) => ({ ...prev, [id]: !prev[id] }));

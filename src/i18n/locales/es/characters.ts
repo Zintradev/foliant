@@ -27,4 +27,5 @@ export default {
   viewPortrait: 'Haz clic para ver el retrato',
   collapseCard: 'Contraer ficha',
   expandCard: 'Expandir ficha',
+  searchCharacters: 'Buscar personajes...',
 } as const;

@@ -24,6 +24,7 @@ export default {
   addOrSwitchModule: 'Modules',
   collapsePanel: 'Collapse Panel',
   dragToDockOrReorder: 'Drag to dock or reorder',
+  dragToReorder: 'Drag to reorder',
   unsavedChangesConfirm: 'You have unsaved edits. Are you sure you want to switch tabs? Changes will be lost.',
   // Views - Scene Inspector
   sceneInspector: 'Scene Inspector',

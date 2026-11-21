@@ -6,12 +6,13 @@ import {
   FolderPlus,
   Split,
 } from 'lucide-react';
-import React, { memo, useCallback, useState } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from '../../../../i18n/translations';
 import { TextNode } from '../../../../types/project';
 import { loadSettings } from '../../../../types/settings';
 import ConfirmDeleteModal from '../../../common/ConfirmDeleteModal';
 import ProjectStatsView from '../ProjectStatsView';
+import SceneInspector from '../SceneInspector';
 import { OutlineContextMenu } from './OutlineContextMenu';
 import { OutlineTreeNode } from './OutlineTreeNode';
 import { NovelDetailsSection } from './NovelDetailsSection';
@@ -50,7 +51,7 @@ const OutlineHeader = memo(function OutlineHeader({
   return (
     <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800 bg-zinc-900/50 shrink-0">
       <div className="flex items-center gap-1.5 min-w-0">
-        <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider font-mono">
+        <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider font-mono dock-view-title">
           {t('projectOutline')}
         </span>
       </div>
@@ -62,39 +63,36 @@ const OutlineHeader = memo(function OutlineHeader({
               type="button"
               onClick={() => onLayoutModeChange('details')}
               title={t('novelDetailsTooltip')}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-xs text-[10px] font-mono transition cursor-pointer ${
-                layoutMode === 'details' || layoutMode === '1col'
-                  ? 'bg-zinc-800 text-zinc-100 font-medium shadow-xs'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-xs text-[10px] font-mono transition cursor-pointer ${layoutMode === 'details' || layoutMode === '1col'
+                ? 'bg-zinc-800 text-zinc-100 font-medium shadow-xs'
+                : 'text-zinc-400 hover:text-zinc-200'
+                }`}
             >
-              <BookOpen className="w-3 h-3" />
+              <BookOpen className="w-3 h-3 ui-decorative-icon" />
               <span>{t('novelDetails')}</span>
             </button>
             <button
               type="button"
               onClick={() => onLayoutModeChange('main')}
               title={t('mainViewTooltip')}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-xs text-[10px] font-mono transition cursor-pointer ${
-                layoutMode === 'main' || layoutMode === '2col'
-                  ? 'bg-zinc-800 text-zinc-100 font-medium shadow-xs'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-xs text-[10px] font-mono transition cursor-pointer ${layoutMode === 'main' || layoutMode === '2col'
+                ? 'bg-zinc-800 text-zinc-100 font-medium shadow-xs'
+                : 'text-zinc-400 hover:text-zinc-200'
+                }`}
             >
-              <Columns2 className="w-3 h-3" />
+              <Columns2 className="w-3 h-3 ui-decorative-icon" />
               <span>{t('mainView')}</span>
             </button>
             <button
               type="button"
               onClick={() => onLayoutModeChange('split')}
               title={t('splitViewTooltip')}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-xs text-[10px] font-mono transition cursor-pointer ${
-                layoutMode === 'split'
-                  ? 'bg-zinc-800 text-zinc-100 font-medium shadow-xs'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-xs text-[10px] font-mono transition cursor-pointer ${layoutMode === 'split'
+                ? 'bg-zinc-800 text-zinc-100 font-medium shadow-xs'
+                : 'text-zinc-400 hover:text-zinc-200'
+                }`}
             >
-              <Split className="w-3 h-3" />
+              <Split className="w-3 h-3 ui-decorative-icon" />
               <span>{t('splitView')}</span>
             </button>
           </div>
@@ -200,10 +198,13 @@ export function OutlineViewComponent({
   onAddFolder,
   isExpanded = false,
   storylines = [],
+  characters = [],
+  worldItems = [],
+  sectionOrder,
   onDirtyChange,
-  projectTitle = '',
-  projectAuthor = '',
-  projectSynopsis = '',
+  projectTitle,
+  projectAuthor,
+  projectSynopsis,
   projectCover,
   projectCoverFileName,
   currentFilePath,
@@ -216,7 +217,12 @@ export function OutlineViewComponent({
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [nodePendingDelete, setNodePendingDelete] = useState<TextNode | null>(null);
 
-  const { tree, leftRoots, rightRoots } = useOutlineTree(chapters);
+  const activeNode = useMemo(
+    () => chapters.find((c) => c.id === activeChapterId),
+    [chapters, activeChapterId]
+  );
+
+  const { tree } = useOutlineTree(chapters);
 
   const {
     renamingNodeId,
@@ -363,17 +369,7 @@ export function OutlineViewComponent({
       />
 
       {/* Main Content Area */}
-      {isExpanded && (layoutMode === 'details' || layoutMode === '1col') ? (
-        <NovelDetailsSection
-          title={projectTitle}
-          author={projectAuthor}
-          synopsis={projectSynopsis}
-          cover={projectCover}
-          coverFileName={projectCoverFileName}
-          currentFilePath={currentFilePath}
-          onUpdateMetadata={onUpdateProjectMetadata}
-        />
-      ) : tree.length === 0 ? (
+      {tree.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-zinc-500 gap-2">
           <BookOpen className="w-8 h-8 text-zinc-600" />
           <p className="text-xs font-medium text-zinc-400 max-w-xs leading-relaxed">
@@ -381,15 +377,38 @@ export function OutlineViewComponent({
           </p>
         </div>
       ) : isExpanded ? (
-        layoutMode === 'main' || layoutMode === '2col' ? (
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              <div className="space-y-1 p-3 rounded-sm border border-zinc-855/80 bg-zinc-900/20">
-                {leftRoots.map((item, idx) => renderTreeNode(item, true, idx === 0, idx === leftRoots.length - 1))}
-              </div>
-              <div className="space-y-1 p-3 rounded-sm border border-zinc-855/80 bg-zinc-900/20">
-                {rightRoots.map((item, idx) => renderTreeNode(item, true, idx === 0, idx === rightRoots.length - 1))}
-              </div>
+        layoutMode === 'details' || layoutMode === '1col' ? (
+          <NovelDetailsSection
+            title={projectTitle || ''}
+            author={projectAuthor}
+            synopsis={projectSynopsis}
+            cover={projectCover}
+            coverFileName={projectCoverFileName}
+            currentFilePath={currentFilePath}
+            onUpdateMetadata={onUpdateProjectMetadata}
+          />
+        ) : layoutMode === 'main' || layoutMode === '2col' ? (
+          <div className="flex-1 flex overflow-hidden">
+            {/* Outline Tree (single column) */}
+            <div className="w-1/2 border-r border-zinc-800/80 overflow-y-auto p-4 space-y-1">
+              {tree.map((item, idx) => renderTreeNode(item, true, idx === 0, idx === tree.length - 1))}
+            </div>
+            {/* Scene Inspector for selected scene */}
+            <div className="w-1/2 overflow-y-auto bg-zinc-950/40">
+              <SceneInspector
+                activeNodeId={activeChapterId}
+                activeNode={activeNode}
+                chapters={chapters}
+                characters={characters}
+                worldItems={worldItems}
+                storylines={storylines}
+                customStatuses={customStatuses}
+                colorSettings={colorSettings}
+                sectionOrder={sectionOrder}
+                preserveAccordionOnNodeChange={true}
+                onUpdateNode={onUpdateChapter || (() => { })}
+                onSelectChapter={onSelectChapter}
+              />
             </div>
           </div>
         ) : (
@@ -439,8 +458,7 @@ export function OutlineViewComponent({
       />
 
       {/* Quick Add Footer button */}
-      {(!isExpanded ||
-        (layoutMode !== 'split' && layoutMode !== 'details' && layoutMode !== '1col')) && (
+      {(!isExpanded || layoutMode !== 'split') && (
         <div className="p-2 border-t border-zinc-800 bg-zinc-950/80 flex items-center gap-1.5 shrink-0">
           <button
             type="button"

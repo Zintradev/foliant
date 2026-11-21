@@ -13,13 +13,1004 @@
 }
 
 :root {
-  --bg-base: #09090b;
-  --bg-surface: #18181b;
-  --bg-surface-elevated: #27272a;
+  --bg-base: #121215;
+  --bg-surface: #1c1c20;
+  --bg-surface-elevated: #2c2c31;
   --color-primary: #10b981;
   --text-base: #f4f4f5;
   --text-muted: #a1a1aa;
-  --border-base: #27272a;
+  --border-base: #2e2e33;
+  --border-radius: 0.375rem;
+  --border-width: 1px;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --font-ui: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: inherit;
+  --surface-border: var(--border-base);
+  --surface-card: var(--bg-surface);
+  --surface-texture: none;
+}
+
+/* UI Style: Modern (Default) */
+:root[data-ui-style="modern"] {
+  --border-radius: 0.375rem;
+  --border-width: 1px;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --font-ui: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: inherit;
+  --surface-border: var(--border-base);
+  --surface-card: var(--bg-surface);
+  --surface-texture: none;
+}
+
+/* UI Style: Clean Editorial */
+:root[data-ui-style="editorial"] {
+  --border-radius: 2px;
+  --border-width: 1px;
+  --shadow-sm: none;
+  --shadow-md: 0 1px 3px 0 rgb(0 0 0 / 0.06);
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-heading: "Georgia", "Cambria", "Times New Roman", Times, serif;
+  --surface-border: rgba(161, 161, 170, 0.25);
+  --surface-card: var(--bg-surface);
+  --surface-texture: none;
+}
+
+/* UI Style: Classic */
+:root[data-ui-style="classic"] {
+  --border-radius: 0px;
+  --border-width: 1px;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+  --font-heading: "Georgia", "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --surface-border: var(--border-base);
+  --surface-card: var(--bg-surface);
+  --surface-texture: none;
+}
+
+/* Clean Editorial & Classic Clean: hide decorative icons and reveal typographic indicators */
+:root[data-ui-style="editorial"] .ui-decorative-icon,
+:root[data-ui-style="editorial"] [data-decorative="true"],
+:root[data-ui-style="editorial"] .decorative-icon,
+:root[data-ui-style="editorial"] .dock-view-title,
+:root[data-ui-style="editorial"] .panel-redundant-title,
+:root[data-ui-style="classic-clean"] .ui-decorative-icon,
+:root[data-ui-style="classic-clean"] [data-decorative="true"],
+:root[data-ui-style="classic-clean"] .decorative-icon,
+:root[data-ui-style="classic-clean"] .dock-view-title,
+:root[data-ui-style="classic-clean"] .panel-redundant-title {
+  display: none !important;
+}
+
+/* Activity Bar: text-first literary navigation with widened sidebar for full labels */
+:root[data-ui-style="editorial"] aside[data-tour-id="activity-bar"],
+:root[data-ui-style="classic-clean"] aside[data-tour-id="activity-bar"] {
+  width: 7.25rem !important;
+  padding-left: 0.375rem !important;
+  padding-right: 0.375rem !important;
+}
+
+:root[data-ui-style="editorial"] .activity-bar-icon,
+:root[data-ui-style="classic-clean"] .activity-bar-icon {
+  display: none !important;
+}
+
+:root[data-ui-style="editorial"] .activity-bar-item,
+:root[data-ui-style="classic-clean"] .activity-bar-item {
+  min-height: 36px !important;
+  padding: 6px 4px !important;
+  justify-content: center !important;
+}
+
+:root[data-ui-style="editorial"] .activity-bar-item .ui-nav-label,
+:root[data-ui-style="classic-clean"] .activity-bar-item .ui-nav-label {
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  text-align: center !important;
+  line-height: 1.2 !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+}
+
+:root[data-ui-style="editorial"] .activity-bar-item.is-active {
+  border-left-color: var(--color-primary) !important;
+  background-color: var(--bg-surface) !important;
+}
+
+:root[data-ui-style="classic"] .activity-bar-item.is-active,
+:root[data-ui-style="classic-clean"] .activity-bar-item.is-active {
+  border-left-color: var(--text-base) !important;
+  background-color: var(--bg-surface) !important;
+  border-radius: 0 !important;
+}
+
+/* In classic style, the three lines menu button occupies the entire width */
+:root[data-ui-style="classic"] .activity-bar-menu-btn,
+:root[data-ui-style="classic-clean"] .activity-bar-menu-btn {
+  width: 100% !important;
+  padding-left: 0.25rem !important;
+  padding-right: 0.25rem !important;
+  border-radius: 0px !important;
+}
+
+:root[data-ui-style="classic"] .activity-bar-menu-lines,
+:root[data-ui-style="classic-clean"] .activity-bar-menu-lines {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding-left: 0.25rem !important;
+  padding-right: 0.25rem !important;
+}
+
+:root[data-ui-style="classic"] .activity-bar-menu-lines .menu-line,
+:root[data-ui-style="classic-clean"] .activity-bar-menu-lines .menu-line {
+  width: 100% !important;
+  height: 2px !important;
+  border-radius: 0px !important;
+}
+
+/* Header & Status Bar typographic indicators */
+:root[data-ui-style="editorial"] .ui-header-typographic-indicator,
+:root[data-ui-style="classic"] .ui-header-typographic-indicator,
+:root[data-ui-style="classic-clean"] .ui-header-typographic-indicator {
+  display: inline-block !important;
+}
+
+:root[data-ui-style="editorial"] .status-bar-icon,
+:root[data-ui-style="classic"] .status-bar-icon,
+:root[data-ui-style="classic-clean"] .status-bar-icon {
+  display: none !important;
+}
+
+/* Dock Strip Tab Bars & Bottom Panel Tab Bars: typographic tabs */
+:root[data-ui-style="editorial"] .dock-tab-icon,
+:root[data-ui-style="editorial"] .dock-tab-grip,
+:root[data-ui-style="editorial"] .bottom-dock-tab-icon,
+:root[data-ui-style="classic"] .dock-tab-icon,
+:root[data-ui-style="classic"] .dock-tab-grip,
+:root[data-ui-style="classic"] .bottom-dock-tab-icon,
+:root[data-ui-style="classic-clean"] .dock-tab-icon,
+:root[data-ui-style="classic-clean"] .dock-tab-grip,
+:root[data-ui-style="classic-clean"] .bottom-dock-tab-icon {
+  display: none !important;
+}
+
+:root[data-ui-style="editorial"] [data-dock-tab-id],
+:root[data-ui-style="classic"] [data-dock-tab-id],
+:root[data-ui-style="classic-clean"] [data-dock-tab-id] {
+  padding-left: 0.625rem !important;
+  padding-right: 0.625rem !important;
+}
+
+/* Outline View: clean tree without folder/scene decorative icons */
+:root[data-ui-style="editorial"] .outline-folder-icon,
+:root[data-ui-style="editorial"] .outline-scene-icon,
+:root[data-ui-style="classic"] .outline-folder-icon,
+:root[data-ui-style="classic"] .outline-scene-icon,
+:root[data-ui-style="classic-clean"] .outline-folder-icon,
+:root[data-ui-style="classic-clean"] .outline-scene-icon {
+  display: none !important;
+}
+
+:root[data-ui-style="editorial"] .outline-folder-marker,
+:root[data-ui-style="classic"] .outline-folder-marker,
+:root[data-ui-style="classic-clean"] .outline-folder-marker {
+  display: inline-block !important;
+  font-family: var(--font-heading);
+  font-weight: bold;
+}
+
+:root[data-ui-style="editorial"] .outline-scene-marker,
+:root[data-ui-style="classic"] .outline-scene-marker,
+:root[data-ui-style="classic-clean"] .outline-scene-marker {
+  display: inline-block !important;
+  font-family: var(--font-heading);
+}
+
+/* =========================================================================
+   Clean Editorial (Entre Medias): Refined Literary Aesthetic (Flat, Minimal, Dense)
+   No antique colors/gradients, but no wasted space/margins
+   ========================================================================= */
+:root[data-ui-style="editorial"] {
+  --border-radius: 2px;
+  --border-width: 1px;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --surface-border: var(--border-base);
+  --surface-card: var(--bg-surface);
+  --surface-texture: none;
+}
+
+/* Editorial: compact layout without unnecessary spaces or margins */
+:root[data-ui-style="editorial"] .writing-workspace-container {
+  padding: 0.75rem 1rem !important;
+}
+
+:root[data-ui-style="editorial"] .writing-workspace-sheet {
+  margin-bottom: 1.5rem !important;
+  padding: 1.75rem 2.25rem !important;
+  border-radius: 2px !important;
+}
+
+:root[data-ui-style="editorial"] [data-dock-strip] {
+  min-height: 28px !important;
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+}
+
+:root[data-ui-style="editorial"] [data-dock-tab-id] {
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+  font-size: 11px !important;
+  border-radius: 2px 2px 0 0 !important;
+}
+
+:root[data-ui-style="editorial"] header {
+  min-height: 34px !important;
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
+}
+
+:root[data-ui-style="editorial"] [data-testid="editor-toolbar"] {
+  min-height: 30px !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+}
+
+:root[data-ui-style="editorial"] footer {
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 0 0.5rem !important;
+  font-size: 11px !important;
+}
+
+:root[data-ui-style="editorial"] .context-panel-block,
+:root[data-ui-style="editorial"] .storyline-card,
+:root[data-ui-style="editorial"] .inspector-section {
+  margin-bottom: 0.375rem !important;
+  padding: 0.5rem 0.625rem !important;
+  border-radius: 2px !important;
+}
+
+/* Typography with literary character */
+:root[data-ui-style="editorial"] h1,
+:root[data-ui-style="editorial"] h2,
+:root[data-ui-style="editorial"] h3,
+:root[data-ui-style="editorial"] .ui-heading {
+  font-family: var(--font-heading) !important;
+}
+
+/* =========================================================================
+   Classic Aesthetic: Vintage Java Swing / Early 2000s Desktop Software
+   Zero Margins, 3D Beveled Buttons, Inset Fields & Tab Panes
+   Applies to both Classic (with icons) and Classic Clean (without icons)
+   ========================================================================= */
+:root[data-ui-style="classic"],
+:root[data-ui-style="classic-clean"] {
+  --border-radius: 0px;
+  --border-width: 1px;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --surface-border: var(--border-base);
+  --surface-card: var(--bg-surface);
+  --surface-texture: none;
+}
+
+:root[data-ui-style="classic"] .rounded-sm,
+:root[data-ui-style="classic"] .rounded-md,
+:root[data-ui-style="classic"] .rounded-lg,
+:root[data-ui-style="classic"] .rounded-xl,
+:root[data-ui-style="classic"] .rounded-2xl,
+:root[data-ui-style="classic"] .rounded-full,
+:root[data-ui-style="classic"] button,
+:root[data-ui-style="classic"] input,
+:root[data-ui-style="classic"] select,
+:root[data-ui-style="classic"] textarea,
+:root[data-ui-style="classic-clean"] .rounded-sm,
+:root[data-ui-style="classic-clean"] .rounded-md,
+:root[data-ui-style="classic-clean"] .rounded-lg,
+:root[data-ui-style="classic-clean"] .rounded-xl,
+:root[data-ui-style="classic-clean"] .rounded-2xl,
+:root[data-ui-style="classic-clean"] .rounded-full,
+:root[data-ui-style="classic-clean"] button,
+:root[data-ui-style="classic-clean"] input,
+:root[data-ui-style="classic-clean"] select,
+:root[data-ui-style="classic-clean"] textarea {
+  border-radius: 0px !important;
+}
+
+/* Relationship graph connection / union nodes remain round in classic mode */
+:root[data-ui-style="classic"] .junction-node,
+:root[data-ui-style="classic-clean"] .junction-node,
+:root[data-ui-style="classic"] [data-testid="relationship-graph-canvas"] .rounded-full,
+:root[data-ui-style="classic-clean"] [data-testid="relationship-graph-canvas"] .rounded-full {
+  border-radius: 9999px !important;
+}
+
+/* Solid visible 1px borders between panels */
+:root[data-ui-style="classic"] header,
+:root[data-ui-style="classic"] footer,
+:root[data-ui-style="classic"] aside,
+:root[data-ui-style="classic"] [data-dock-strip],
+:root[data-ui-style="classic"] .border-zinc-800,
+:root[data-ui-style="classic"] .border-zinc-850,
+:root[data-ui-style="classic"] .border-zinc-750,
+:root[data-ui-style="classic"] .border-zinc-700,
+:root[data-ui-style="classic-clean"] header,
+:root[data-ui-style="classic-clean"] footer,
+:root[data-ui-style="classic-clean"] aside,
+:root[data-ui-style="classic-clean"] [data-dock-strip],
+:root[data-ui-style="classic-clean"] .border-zinc-800,
+:root[data-ui-style="classic-clean"] .border-zinc-850,
+:root[data-ui-style="classic-clean"] .border-zinc-750,
+:root[data-ui-style="classic-clean"] .border-zinc-700 {
+  border-color: var(--border-base) !important;
+}
+
+/* Remove modern blur, glassmorphism & drop shadows */
+:root[data-ui-style="classic"] *,
+:root[data-ui-style="classic"] *::before,
+:root[data-ui-style="classic"] *::after,
+:root[data-ui-style="classic-clean"] *,
+:root[data-ui-style="classic-clean"] *::before,
+:root[data-ui-style="classic-clean"] *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* Guided tour highlights: glowing emerald beacon with pulsating blink in all styles */
+@keyframes tourBeaconPulse {
+  0% {
+    outline-color: #34d399 !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0px 2px rgba(52, 211, 153, 0.95), 0 0 20px 4px rgba(52, 211, 153, 0.9) !important;
+    filter: brightness(1.2) !important;
+  }
+  50% {
+    outline-color: rgba(52, 211, 153, 0.3) !important;
+    outline-offset: 4px !important;
+    box-shadow: 0 0 0px 1px rgba(52, 211, 153, 0.25), 0 0 5px 1px rgba(52, 211, 153, 0.2) !important;
+    filter: brightness(1) !important;
+  }
+  100% {
+    outline-color: #34d399 !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0px 2px rgba(52, 211, 153, 0.95), 0 0 20px 4px rgba(52, 211, 153, 0.9) !important;
+    filter: brightness(1.2) !important;
+  }
+}
+
+[data-tour-highlight="true"],
+:root[data-ui-style="classic"] [data-tour-highlight="true"],
+:root[data-ui-style="classic-clean"] [data-tour-highlight="true"],
+:root[data-ui-style="classic"] [class*="ring-emerald-400"],
+:root[data-ui-style="classic-clean"] [class*="ring-emerald-400"] {
+  outline: 3px solid #34d399 !important;
+  border-color: #34d399 !important;
+  animation: tourBeaconPulse 1.2s ease-in-out infinite !important;
+  z-index: 50 !important;
+}
+
+/* Vintage Java Swing 3D beveled buttons */
+:root[data-ui-style="classic"] button:not(.activity-bar-item):not([data-dock-tab-id]),
+:root[data-ui-style="classic-clean"] button:not(.activity-bar-item):not([data-dock-tab-id]) {
+  border-radius: 0px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.45) !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.45) !important;
+  background-color: var(--bg-surface-elevated) !important;
+}
+
+/* Classic toggle switches: authentic rectangular 3D rocker/slider switch.
+   The thumb occupies exactly 50% width and switches sides cleanly without spilling over. */
+:root[data-ui-style="classic"] label input[type="checkbox"].peer + div,
+:root[data-ui-style="classic-clean"] label input[type="checkbox"].peer + div {
+  border-radius: 0px !important;
+  border-top: 1px solid #18181b !important;
+  border-left: 1px solid #18181b !important;
+  border-bottom: 1px solid #52525b !important;
+  border-right: 1px solid #52525b !important;
+  background-color: #27272a !important;
+  height: 20px !important;
+  width: 40px !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  position: relative !important;
+  overflow: hidden !important;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.6) !important;
+}
+
+:root[data-ui-style="classic"] label input[type="checkbox"].peer + div::after,
+:root[data-ui-style="classic-clean"] label input[type="checkbox"].peer + div::after {
+  content: '' !important;
+  position: absolute !important;
+  border-radius: 0px !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 20px !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
+  transform: translateX(0) !important;
+  translate: 0 0 !important;
+  --tw-translate-x: 0 !important;
+  --tw-translate-y: 0 !important;
+  background: linear-gradient(180deg, #d4d4d8 0%, #a1a1aa 100%) !important;
+  border: 1px solid #ffffff !important;
+  border-right-color: #3f3f46 !important;
+  border-bottom-color: #3f3f46 !important;
+  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.35) !important;
+  transition: transform 0.15s ease !important;
+}
+
+:root[data-ui-style="classic"] label input[type="checkbox"].peer:checked + div,
+:root[data-ui-style="classic-clean"] label input[type="checkbox"].peer:checked + div {
+  background-color: #064e3b !important;
+  border-top: 1px solid #064e3b !important;
+  border-left: 1px solid #064e3b !important;
+  border-bottom: 1px solid #34d399 !important;
+  border-right: 1px solid #34d399 !important;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+:root[data-ui-style="classic"] label input[type="checkbox"].peer:checked + div::after,
+:root[data-ui-style="classic-clean"] label input[type="checkbox"].peer:checked + div::after {
+  left: 0 !important;
+  transform: translateX(20px) !important;
+  translate: 0 0 !important;
+  --tw-translate-x: 0 !important;
+  --tw-translate-y: 0 !important;
+  background: linear-gradient(180deg, #34d399 0%, #059669 100%) !important;
+  border: 1px solid #a7f3d0 !important;
+  border-right-color: #064e3b !important;
+  border-bottom-color: #064e3b !important;
+  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.35) !important;
+}
+
+:root.light[data-ui-style="classic"] label input[type="checkbox"].peer + div,
+:root.light[data-ui-style="classic-clean"] label input[type="checkbox"].peer + div {
+  border-top: 1px solid #71717a !important;
+  border-left: 1px solid #71717a !important;
+  border-bottom: 1px solid #ffffff !important;
+  border-right: 1px solid #ffffff !important;
+  background-color: #d4d4d8 !important;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.25) !important;
+}
+
+:root.light[data-ui-style="classic"] label input[type="checkbox"].peer + div::after,
+:root.light[data-ui-style="classic-clean"] label input[type="checkbox"].peer + div::after {
+  left: 0 !important;
+  transform: translateX(0) !important;
+  translate: 0 0 !important;
+  --tw-translate-x: 0 !important;
+  --tw-translate-y: 0 !important;
+  background: linear-gradient(180deg, #ffffff 0%, #e4e4e7 100%) !important;
+  border: 1px solid #ffffff !important;
+  border-right-color: #71717a !important;
+  border-bottom-color: #71717a !important;
+}
+
+:root.light[data-ui-style="classic"] label input[type="checkbox"].peer:checked + div,
+:root.light[data-ui-style="classic-clean"] label input[type="checkbox"].peer:checked + div {
+  background-color: #a7f3d0 !important;
+  border-top: 1px solid #047857 !important;
+  border-left: 1px solid #047857 !important;
+  border-bottom: 1px solid #6ee7b7 !important;
+  border-right: 1px solid #6ee7b7 !important;
+}
+
+:root.light[data-ui-style="classic"] label input[type="checkbox"].peer:checked + div::after,
+:root.light[data-ui-style="classic-clean"] label input[type="checkbox"].peer:checked + div::after {
+  left: 0 !important;
+  transform: translateX(20px) !important;
+  translate: 0 0 !important;
+  --tw-translate-x: 0 !important;
+  --tw-translate-y: 0 !important;
+  background: linear-gradient(180deg, #10b981 0%, #047857 100%) !important;
+  border: 1px solid #d1fae5 !important;
+  border-right-color: #064e3b !important;
+  border-bottom-color: #064e3b !important;
+}
+
+:root[data-ui-style="classic"] button:not(.activity-bar-item):not([data-dock-tab-id]):active,
+:root[data-ui-style="classic-clean"] button:not(.activity-bar-item):not([data-dock-tab-id]):active {
+  border-top: 1px solid rgba(0, 0, 0, 0.45) !important;
+  border-left: 1px solid rgba(0, 0, 0, 0.45) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.16) !important;
+}
+
+:root.light[data-ui-style="classic"] button:not(.activity-bar-item):not([data-dock-tab-id]),
+:root.light[data-ui-style="classic-clean"] button:not(.activity-bar-item):not([data-dock-tab-id]) {
+  border-top: 1px solid #ffffff !important;
+  border-left: 1px solid #ffffff !important;
+  border-bottom: 1px solid #999388 !important;
+  border-right: 1px solid #999388 !important;
+  background-color: #e3ded5 !important;
+}
+
+:root.light[data-ui-style="classic"] button:not(.activity-bar-item):not([data-dock-tab-id]):active,
+:root.light[data-ui-style="classic-clean"] button:not(.activity-bar-item):not([data-dock-tab-id]):active {
+  border-top: 1px solid #777268 !important;
+  border-left: 1px solid #777268 !important;
+  border-bottom: 1px solid #ffffff !important;
+  border-right: 1px solid #ffffff !important;
+}
+
+/* Vintage Java Swing Inset Text Inputs */
+:root[data-ui-style="classic"] input[type="text"],
+:root[data-ui-style="classic"] textarea,
+:root[data-ui-style="classic"] select,
+:root[data-ui-style="classic-clean"] input[type="text"],
+:root[data-ui-style="classic-clean"] textarea,
+:root[data-ui-style="classic-clean"] select {
+  border-radius: 0px !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.5) !important;
+  border-left: 1px solid rgba(0, 0, 0, 0.5) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+:root.light[data-ui-style="classic"] input[type="text"],
+:root.light[data-ui-style="classic"] textarea,
+:root.light[data-ui-style="classic"] select,
+:root.light[data-ui-style="classic-clean"] input[type="text"],
+:root.light[data-ui-style="classic-clean"] textarea,
+:root.light[data-ui-style="classic-clean"] select {
+  border-top: 1px solid #999388 !important;
+  border-left: 1px solid #999388 !important;
+  border-bottom: 1px solid #ffffff !important;
+  border-right: 1px solid #ffffff !important;
+  background-color: #fdfbf7 !important;
+}
+
+/* Classic Java Swing JTabbedPane style tabs */
+:root[data-ui-style="classic"] [data-dock-strip],
+:root[data-ui-style="classic-clean"] [data-dock-strip] {
+  min-height: 25px !important;
+  padding: 0px !important;
+  gap: 1px !important;
+  border-bottom: 1px solid var(--border-base) !important;
+  background: var(--bg-surface-elevated) !important;
+}
+
+:root[data-ui-style="classic"] [data-dock-tab-id],
+:root[data-ui-style="classic-clean"] [data-dock-tab-id] {
+  border-radius: 0px !important;
+  border-top: 1px solid var(--border-base) !important;
+  border-left: 1px solid var(--border-base) !important;
+  border-right: 1px solid var(--border-base) !important;
+  border-bottom: none !important;
+  padding: 2px 8px !important;
+  margin: 0px !important;
+  background: var(--bg-surface-elevated) !important;
+  font-family: var(--font-ui) !important;
+  font-size: 11px !important;
+}
+
+:root[data-ui-style="classic"] [data-dock-tab-id].border-b-emerald-500,
+:root[data-ui-style="classic"] [data-dock-tab-id][class*="text-zinc-100"],
+:root[data-ui-style="classic"] [data-dock-tab-id][class*="font-semibold"],
+:root[data-ui-style="classic-clean"] [data-dock-tab-id].border-b-emerald-500,
+:root[data-ui-style="classic-clean"] [data-dock-tab-id][class*="text-zinc-100"],
+:root[data-ui-style="classic-clean"] [data-dock-tab-id][class*="font-semibold"] {
+  border-top: 2px solid var(--color-primary) !important;
+  border-left: 1px solid var(--border-base) !important;
+  border-right: 1px solid var(--border-base) !important;
+  border-bottom: none !important;
+  background: var(--bg-surface) !important;
+}
+
+/* Formatting toolbar: Java JToolBar style ribbon */
+:root[data-ui-style="classic"] [data-testid="editor-toolbar"],
+:root[data-ui-style="classic-clean"] [data-testid="editor-toolbar"] {
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: 1px solid var(--border-base) !important;
+  border-radius: 0px !important;
+  padding: 1px 4px !important;
+  min-height: 28px !important;
+  background: var(--bg-surface-elevated) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0px !important;
+}
+
+:root[data-ui-style="classic"] [data-testid="editor-toolbar"] select,
+:root[data-ui-style="classic"] [data-testid="editor-toolbar"] button,
+:root[data-ui-style="classic-clean"] [data-testid="editor-toolbar"] select,
+:root[data-ui-style="classic-clean"] [data-testid="editor-toolbar"] button {
+  border-radius: 0px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
+  box-sizing: border-box !important;
+  padding: 0px 5px !important;
+  font-size: 11px !important;
+  line-height: 22px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  margin: 0px !important;
+}
+
+:root[data-ui-style="classic"] [data-testid="editor-toolbar"] > div,
+:root[data-ui-style="classic-clean"] [data-testid="editor-toolbar"] > div {
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 24px !important;
+  margin: 0px !important;
+}
+
+:root[data-ui-style="classic"] [data-testid="editor-toolbar"] .w-px,
+:root[data-ui-style="classic-clean"] [data-testid="editor-toolbar"] .w-px {
+  height: 18px !important;
+  margin: 0 3px !important;
+  align-self: center !important;
+}
+
+/* Flush list rows instead of floating cards */
+:root[data-ui-style="classic"] .dock-container,
+:root[data-ui-style="classic"] .context-panel-block,
+:root[data-ui-style="classic"] .storyline-card,
+:root[data-ui-style="classic-clean"] .dock-container,
+:root[data-ui-style="classic-clean"] .context-panel-block,
+:root[data-ui-style="classic-clean"] .storyline-card {
+  border-radius: 0px !important;
+  margin: 0px !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
+  border-bottom: 1px solid var(--border-base) !important;
+  padding: 6px 8px !important;
+  box-shadow: none !important;
+}
+
+/* Inspector collapsible sections in Classic mode:
+   The accordion button IS the edge-to-edge separation bar with 3D beveled edges, zero margin, no outer frame wrapper */
+:root[data-ui-style="classic"] .inspector-section,
+:root[data-ui-style="classic-clean"] .inspector-section {
+  border-radius: 0px !important;
+  margin: 0px !important;
+  padding: 0px !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+:root[data-ui-style="classic"] .inspector-header-btn,
+:root[data-ui-style="classic-clean"] .inspector-header-btn {
+  width: 100% !important;
+  margin: 0px !important;
+  border-radius: 0px !important;
+  padding: 4px 8px !important;
+  display: flex !important;
+  border-top: 1px solid var(--border-highlight) !important;
+  border-left: 1px solid var(--border-highlight) !important;
+  border-right: 1px solid var(--border-shadow) !important;
+  border-bottom: 1px solid var(--border-shadow) !important;
+  background: var(--bg-surface-elevated) !important;
+  box-shadow: none !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-ui) !important;
+  font-size: 11px !important;
+  font-weight: bold !important;
+}
+
+:root[data-ui-style="classic"] .inspector-header-btn:hover,
+:root[data-ui-style="classic-clean"] .inspector-header-btn:hover {
+  background: var(--bg-surface) !important;
+}
+
+:root[data-ui-style="classic"] .inspector-header-btn:active,
+:root[data-ui-style="classic-clean"] .inspector-header-btn:active {
+  border-top: 1px solid var(--border-shadow) !important;
+  border-left: 1px solid var(--border-shadow) !important;
+  border-right: 1px solid var(--border-highlight) !important;
+  border-bottom: 1px solid var(--border-highlight) !important;
+}
+
+/* Flush Java StatusBar */
+:root[data-ui-style="classic"] footer,
+:root[data-ui-style="classic-clean"] footer {
+  border-top: 1px solid var(--border-base) !important;
+  border-radius: 0px !important;
+  height: 22px !important;
+  min-height: 22px !important;
+  padding: 0 6px !important;
+  font-size: 11px !important;
+  background: var(--bg-surface-elevated) !important;
+}
+
+:root[data-ui-style="classic"] h1:not(.ProseMirror h1),
+:root[data-ui-style="classic"] h2:not(.ProseMirror h2),
+:root[data-ui-style="classic"] h3:not(.ProseMirror h3),
+:root[data-ui-style="classic"] .ui-heading,
+:root[data-ui-style="classic-clean"] h1:not(.ProseMirror h1),
+:root[data-ui-style="classic-clean"] h2:not(.ProseMirror h2),
+:root[data-ui-style="classic-clean"] h3:not(.ProseMirror h3),
+:root[data-ui-style="classic-clean"] .ui-heading {
+  font-family: var(--font-heading) !important;
+  letter-spacing: -0.01em;
+}
+
+/* Ensure the writing sheet in Classic mode keeps the exact same styling as standard/clean modes */
+:root[data-ui-style="classic"] .writing-workspace-sheet,
+:root[data-ui-style="classic-clean"] .writing-workspace-sheet {
+  border-radius: 0.125rem !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+:root[data-ui-style="classic"] .writing-workspace-sheet.shadow-none,
+:root[data-ui-style="classic-clean"] .writing-workspace-sheet.shadow-none {
+  box-shadow: none !important;
+}
+
+:root[data-ui-style="classic"] .ProseMirror h1,
+:root[data-ui-style="classic"] .ProseMirror h2,
+:root[data-ui-style="classic"] .ProseMirror h3,
+:root[data-ui-style="classic-clean"] .ProseMirror h1,
+:root[data-ui-style="classic-clean"] .ProseMirror h2,
+:root[data-ui-style="classic-clean"] .ProseMirror h3 {
+  font-family: inherit !important;
+}
+
+/* Exempt the scene title input on the writing sheet from classic inset text input styling */
+:root[data-ui-style="classic"] .writing-workspace-sheet input[type="text"],
+:root.light[data-ui-style="classic"] .writing-workspace-sheet input[type="text"],
+:root[data-ui-style="classic-clean"] .writing-workspace-sheet input[type="text"],
+:root.light[data-ui-style="classic-clean"] .writing-workspace-sheet input[type="text"] {
+  background-color: transparent !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: 1px solid currentColor !important;
+  border-bottom-color: rgba(128, 128, 128, 0.25) !important;
+  box-shadow: none !important;
+  border-radius: 0px !important;
+}
+
+/* Classic aesthetic: dense, zero margins between buttons and toolbar/dock elements */
+:root[data-ui-style="classic"] button:not(.writing-workspace-sheet button),
+:root[data-ui-style="classic-clean"] button:not(.writing-workspace-sheet button) {
+  margin: 0px !important;
+}
+
+:root[data-ui-style="classic"] [data-testid="editor-toolbar"],
+:root[data-ui-style="classic-clean"] [data-testid="editor-toolbar"] {
+  gap: 0px !important;
+}
+
+:root[data-ui-style="classic"] [data-testid="editor-toolbar"] button,
+:root[data-ui-style="classic"] [data-testid="editor-toolbar"] select,
+:root[data-ui-style="classic-clean"] [data-testid="editor-toolbar"] button,
+:root[data-ui-style="classic-clean"] [data-testid="editor-toolbar"] select {
+  margin: 0px !important;
+}
+
+/* =========================================================================
+   Light Mode: High-Contrast Muted Badges (Accessible, Non-Chillonas)
+   ========================================================================= */
+:root.light .bg-emerald-950\/70,
+:root.light .bg-emerald-950\/40 {
+  background-color: rgba(5, 150, 105, 0.12) !important;
+}
+:root.light .text-emerald-300,
+:root.light .text-emerald-400 {
+  color: #025a3f !important;
+  font-weight: 600 !important;
+}
+:root.light .border-emerald-800\/80,
+:root.light .border-emerald-800\/60 {
+  border-color: rgba(5, 150, 105, 0.35) !important;
+}
+
+:root.light .bg-rose-950\/70,
+:root.light .bg-rose-950\/40 {
+  background-color: rgba(225, 29, 72, 0.1) !important;
+}
+:root.light .text-rose-300,
+:root.light .text-rose-400 {
+  color: #881337 !important;
+  font-weight: 600 !important;
+}
+:root.light .border-rose-800\/80,
+:root.light .border-rose-800\/60 {
+  border-color: rgba(225, 29, 72, 0.35) !important;
+}
+
+:root.light .bg-blue-950\/70,
+:root.light .bg-blue-950\/40 {
+  background-color: rgba(37, 99, 235, 0.1) !important;
+}
+:root.light .text-blue-300,
+:root.light .text-blue-400 {
+  color: #1e3a8a !important;
+  font-weight: 600 !important;
+}
+:root.light .border-blue-800\/80,
+:root.light .border-blue-800\/60 {
+  border-color: rgba(37, 99, 235, 0.35) !important;
+}
+
+:root.light .bg-amber-950\/70,
+:root.light .bg-amber-950\/40 {
+  background-color: rgba(217, 119, 6, 0.12) !important;
+}
+:root.light .text-amber-300,
+:root.light .text-amber-400 {
+  color: #78350f !important;
+  font-weight: 600 !important;
+}
+:root.light .border-amber-800\/80,
+:root.light .border-amber-800\/60 {
+  border-color: rgba(217, 119, 6, 0.35) !important;
+}
+
+:root.light .bg-purple-950\/70,
+:root.light .bg-purple-950\/40 {
+  background-color: rgba(147, 51, 234, 0.1) !important;
+}
+:root.light .text-purple-300,
+:root.light .text-purple-400 {
+  color: #581c87 !important;
+  font-weight: 600 !important;
+}
+:root.light .border-purple-800\/80,
+:root.light .border-purple-800\/60 {
+  border-color: rgba(147, 51, 234, 0.35) !important;
+}
+
+:root.light .bg-cyan-950\/70,
+:root.light .bg-cyan-950\/40 {
+  background-color: rgba(8, 145, 178, 0.1) !important;
+}
+:root.light .text-cyan-300,
+:root.light .text-cyan-400 {
+  color: #164e63 !important;
+  font-weight: 600 !important;
+}
+:root.light .border-cyan-800\/80,
+:root.light .border-cyan-800\/60 {
+  border-color: rgba(8, 145, 178, 0.35) !important;
+}
+
+:root.light .bg-zinc-950\/70,
+:root.light .bg-zinc-950\/40 {
+  background-color: rgba(38, 35, 31, 0.08) !important;
+}
+:root.light .text-zinc-300,
+:root.light .text-zinc-400 {
+  color: #1c1915 !important;
+}
+
+/* =========================================================================
+   Light Mode: 100% Solid Non-Transparent Menus & High Text Contrast
+   ========================================================================= */
+:root.light .file-menu-dropdown,
+:root.light [data-tour-id="activity-bar-file-menu"] + div,
+:root.light .dock-tab-context-menu,
+:root.light .outline-context-menu,
+:root.light .context-menu-box,
+:root.light [role="menu"],
+:root.light [data-menu],
+:root.light .context-menu,
+:root.light [role="dialog"],
+:root.light aside[aria-label="Interactive tutorial prompt"] {
+  background-color: #fcfaf6 !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-color: #c8c0b2 !important;
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.22), 0 8px 12px -6px rgba(0, 0, 0, 0.15) !important;
+}
+
+:root.light .file-menu-dropdown *,
+:root.light .dock-tab-context-menu *,
+:root.light .outline-context-menu *,
+:root.light .context-menu-box *,
+:root.light [role="menu"] * {
+  opacity: 1 !important;
+}
+
+:root.light .file-menu-dropdown button,
+:root.light .dock-tab-context-menu button,
+:root.light .outline-context-menu button,
+:root.light .context-menu-box button,
+:root.light [role="menu"] button {
+  color: #1c1915 !important;
+}
+
+:root.light .file-menu-dropdown button:hover,
+:root.light .dock-tab-context-menu button:hover,
+:root.light .outline-context-menu button:hover,
+:root.light .context-menu-box button:hover,
+:root.light [role="menu"] button:hover {
+  background-color: #e8e2d8 !important;
+  color: #080706 !important;
+}
+
+:root.light .file-menu-dropdown button:hover *,
+:root.light .dock-tab-context-menu button:hover *,
+:root.light .outline-context-menu button:hover *,
+:root.light .context-menu-box button:hover *,
+:root.light [role="menu"] button:hover * {
+  color: #080706 !important;
+}
+
+/* Light mode button hovers: prevent white text turning invisible on light backgrounds */
+:root.light button.hover\:text-white:hover:not([class*="bg-emerald"]):not([class*="bg-rose"]):not([class*="bg-blue"]):not([class*="bg-amber"]),
+:root.light .group:hover .group-hover\:text-white {
+  color: #080706 !important;
+}
+
+/* Light mode high-contrast text typography across all styles */
+:root.light,
+:root.light body {
+  color: #1c1915 !important;
+}
+
+:root.light .text-zinc-600,
+:root.light .text-zinc-500 {
+  color: #3f3a32 !important;
+}
+
+:root.light .text-zinc-400 {
+  color: #2b2721 !important;
+}
+
+:root.light .text-zinc-300,
+:root.light .text-zinc-200,
+:root.light .text-zinc-100 {
+  color: #12100e !important;
+}
+
+:root.light input,
+:root.light textarea,
+:root.light select {
+  color: #12100e !important;
+}
+
+:root.light input::placeholder,
+:root.light textarea::placeholder,
+:root.light [class*="placeholder:text-zinc"]::placeholder {
+  color: #5c5549 !important;
+  opacity: 1 !important;
+}
+
+/* Classic & classic-clean buttons high contrast */
+:root.light[data-ui-style="classic"] button:not(.activity-bar-item):not([data-dock-tab-id]),
+:root.light[data-ui-style="classic-clean"] button:not(.activity-bar-item):not([data-dock-tab-id]) {
+  color: #12100e !important;
+}
+:root.light[data-ui-style="classic"] button:not(.activity-bar-item):not([data-dock-tab-id]) svg,
+:root.light[data-ui-style="classic-clean"] button:not(.activity-bar-item):not([data-dock-tab-id]) svg {
+  color: #12100e !important;
+}
+
+:root.light .bg-emerald-500 { background-color: #059669 !important; }
+:root.light .bg-rose-500 { background-color: #be123c !important; }
+:root.light .bg-blue-500 { background-color: #2563eb !important; }
+:root.light .bg-amber-500 { background-color: #d97706 !important; }
+:root.light .bg-purple-500 { background-color: #7c3aed !important; }
+:root.light .bg-cyan-500 { background-color: #0891b2 !important; }
+
+/* Light mode scrollbars */
+:root.light ::-webkit-scrollbar-thumb {
+  background: #d4cdc1;
+}
+:root.light ::-webkit-scrollbar-thumb:hover {
+  background: #b8b0a1;
+}
+:root.light * {
+  scrollbar-color: #d4cdc1 transparent;
 }
 
 @layer utilities {

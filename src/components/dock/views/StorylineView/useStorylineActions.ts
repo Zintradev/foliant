@@ -250,6 +250,22 @@ export function useStorylineActions({
   );
 
 
+  const handleReorderStorylines = useCallback((sourceIndex: number, targetIndex: number) => {
+    if (
+      sourceIndex === targetIndex ||
+      sourceIndex < 0 ||
+      targetIndex < 0 ||
+      sourceIndex >= storylines.length ||
+      targetIndex >= storylines.length
+    ) {
+      return;
+    }
+    const next = [...storylines];
+    const [moved] = next.splice(sourceIndex, 1);
+    next.splice(targetIndex, 0, moved);
+    onChange(next);
+  }, [storylines, onChange]);
+
   return {
     isAdding,
     setIsAdding,
@@ -271,6 +287,7 @@ export function useStorylineActions({
     editColor,
     setEditColor,
     handleAddStoryline,
+    handleReorderStorylines,
     handleStartEdit,
     handleCancelEdit,
     handleSaveEdit,

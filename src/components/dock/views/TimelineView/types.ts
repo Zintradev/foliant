@@ -4,7 +4,7 @@ import {
   StorylineItem,
   CharacterItem,
 } from '../../../../types/dock';
-import { AppSettings } from '../../../../types/settings';
+import { AppSettings, DropMode } from '../../../../types/settings';
 
 export interface TimelineFilters {
   storyline: string;
@@ -21,7 +21,7 @@ export interface TimelineViewProps {
   onUpdateStorylines?: (updated: StorylineItem[]) => void;
   onUpdateCharacters?: (updated: CharacterItem[]) => void;
   isExpanded?: boolean;
-  timelineDropMode?: 'shift' | 'swap';
+  timelineDropMode?: DropMode;
   selectedStorylineFilter?: string;
   onStorylineFilterChange?: (id: string) => void;
   selectedCharacterFilter?: string;

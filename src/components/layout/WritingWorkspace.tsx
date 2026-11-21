@@ -153,9 +153,9 @@ export const WritingWorkspace = memo(function WritingWorkspace({
     paperBorder = 'rgba(120, 120, 120, 0.18)';
   } else if (paperMode === 'dark' || paperMode === 'default') {
     if (themeMode === 'light' && paperMode === 'default') {
-      paperBg = '#ffffff';
-      paperText = '#18181b';
-      paperBorder = '#e4e4e7';
+      paperBg = '#fbf9f4';
+      paperText = '#26231f';
+      paperBorder = '#d4cdc1';
     } else {
       paperBg = '#09090b';
       paperText = '#d4d4d8';
@@ -163,8 +163,8 @@ export const WritingWorkspace = memo(function WritingWorkspace({
     }
   }
 
-  // Bugfix: ensure that in Light Theme + Paper sheet color, writing panel is NEVER black
-  let containerBg = themeMode === 'light' ? '#f4f4f5' : '#09090b';
+  // Ensure that in Light Theme + Paper sheet color, writing canvas uses pleasant non-blinding desktop canvas tone
+  let containerBg = themeMode === 'light' ? '#ece8e1' : '#09090b';
   if (matchBg) {
     containerBg = paperBg;
   }
@@ -228,6 +228,7 @@ export const WritingWorkspace = memo(function WritingWorkspace({
             onToggleRight={handleToggleRight}
             isFocusMode={isFocusMode}
             onToggleFocus={onToggleFocusMode}
+            showHeaderChapterInfo={Boolean(appSettings.preferences?.showHeaderChapterInfo)}
             t={t}
           />
         )}
@@ -274,7 +275,7 @@ export const WritingWorkspace = memo(function WritingWorkspace({
         {/* Writing Paper Canvas or Empty Canvas State */}
         {!activeChapter ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center select-none min-h-0">
-            <div className="w-12 h-12 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center text-zinc-500 mb-3 shadow-xs">
+            <div className="writing-workspace-empty-icon ui-decorative-icon w-12 h-12 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center text-zinc-500 mb-3 shadow-xs">
               <Feather className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-semibold text-zinc-200 mb-1">
@@ -294,7 +295,7 @@ export const WritingWorkspace = memo(function WritingWorkspace({
                 }}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-sm bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition cursor-pointer shadow-xs"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-3.5 h-3.5 ui-decorative-icon" />
                 <span>{t('newScene', 'Crear nueva escena')}</span>
               </button>
             )}
@@ -303,11 +304,11 @@ export const WritingWorkspace = memo(function WritingWorkspace({
           <div
             ref={scrollContainerRef}
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto px-8 py-10 flex justify-center items-start min-h-0"
+            className="writing-workspace-container flex-1 overflow-x-auto overflow-y-auto px-4 sm:px-6 py-8 flex justify-center items-start min-h-0"
             style={{ backgroundColor: containerBg }}
           >
             <div
-              className={`w-full max-w-2xl min-h-[calc(100vh-6rem)] h-auto rounded-sm p-8 transition-colors duration-150 focus:outline-none mb-10 flex flex-col ${matchBg ? 'border-0 shadow-none' : 'shadow-sm'
+              className={`writing-workspace-sheet w-[580px] min-w-[580px] max-w-[580px] shrink-0 min-h-[calc(100vh-6rem)] h-auto rounded-sm p-8 sm:p-9 transition-colors duration-150 focus:outline-none mb-10 flex flex-col ${matchBg ? 'border-0 shadow-none' : 'shadow-sm'
                 }`}
               style={{
                 backgroundColor: paperBg,
@@ -366,6 +367,7 @@ export const WritingWorkspace = memo(function WritingWorkspace({
             activeChapterTitle={activeChapter?.title || t('noChapterSelected')}
             wordCount={wordCount}
             targetWords={targetWords}
+            hideBottomBarChapterInfo={Boolean(appSettings.preferences?.hideBottomBarChapterInfo)}
             t={t}
           />
         )}

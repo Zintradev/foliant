@@ -24,6 +24,7 @@ export default {
   addOrSwitchModule: 'Módulos',
   collapsePanel: 'Contraer Panel',
   dragToDockOrReorder: 'Arrastrar para mover o reordenar',
+  dragToReorder: 'Arrastrar para reordenar',
   unsavedChangesConfirm: 'Hay cambios sin guardar. ¿Seguro que deseas cambiar de pestaña? Se perderán las modificaciones.',
   // Views - Scene Inspector
   sceneInspector: 'Inspector de Escena',

@@ -87,8 +87,8 @@ export const TimelineChapterGroupLanes = memo(function TimelineChapterGroupLanes
               {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
           )}
-          <div className="w-4 h-4 rounded-xs bg-amber-950/60 border border-amber-800/60 flex items-center justify-center shrink-0">
-            {folder ? <Folder className="w-2.5 h-2.5 text-amber-400" /> : <FileText className="w-2.5 h-2.5 text-zinc-400" />}
+          <div className="w-4 h-4 rounded-xs bg-amber-950/60 border border-amber-800/60 flex items-center justify-center shrink-0 ui-decorative-icon">
+            {folder ? <Folder className="w-2.5 h-2.5 text-amber-400 ui-decorative-icon" /> : <FileText className="w-2.5 h-2.5 text-zinc-400 ui-decorative-icon" />}
           </div>
           <span className="text-xs font-semibold text-zinc-200 truncate">
             {folder ? folder.title : 'Root Scenes'}
@@ -104,7 +104,7 @@ export const TimelineChapterGroupLanes = memo(function TimelineChapterGroupLanes
 
       {/* Horizontal List of Scene Cards in this chapter */}
       {!isCollapsed && (
-        <div className="overflow-x-auto p-2.5 flex items-stretch gap-2.5 bg-zinc-950/50">
+        <div className="overflow-x-auto p-2.5 pb-5 flex items-stretch gap-2.5 bg-zinc-950/50">
           {group.scenes.map((scene) => {
             const isActive = activeChapterId === scene.id;
             const isDimmed = participatingScenesSet ? !participatingScenesSet.has(scene.id) : false;

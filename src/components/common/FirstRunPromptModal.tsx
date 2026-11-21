@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Sparkles, BookOpen, Feather, FolderOpen, FolderDown, X } from 'lucide-react';
+import { BookOpen, Feather, FolderOpen, FolderDown, X } from 'lucide-react';
 import { useTranslation } from '../../i18n/translations';
 
 interface FirstRunPromptModalProps {
@@ -52,10 +52,6 @@ export const FirstRunPromptModal: React.FC<FirstRunPromptModalProps> = ({
             <X className="w-4 h-4" />
           </button>
         )}
-
-        <div className="w-12 h-12 rounded-full bg-emerald-950/60 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-4 shadow-inner">
-          <Sparkles className="w-6 h-6" />
-        </div>
 
         <h2 className="text-base font-bold text-zinc-100 tracking-tight">
           {t('firstRunPromptTitle', 'Welcome to Foliant')}

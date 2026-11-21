@@ -28,13 +28,14 @@ function SceneInspectorGoalSection({
   const { t } = useTranslation();
 
   return (
-    <div className="p-3">
+    <div className="inspector-section border-b border-zinc-850">
       <button
+        type="button"
         onClick={onToggle}
-        className="flex items-center justify-between w-full text-left group cursor-pointer"
+        className="inspector-header-btn flex items-center justify-between w-full text-left px-3 py-2 cursor-pointer bg-zinc-900/30 hover:bg-zinc-850/60 transition group select-none"
       >
         <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider font-mono flex items-center gap-1.5 group-hover:text-zinc-200 transition">
-          <Target className="w-3 h-3 text-zinc-400" />
+          <Target className="ui-decorative-icon w-3 h-3 text-zinc-400" />
           {t('wordGoalAndProgress')}
         </span>
         <div className="flex items-center gap-1.5">
@@ -58,7 +59,8 @@ function SceneInspectorGoalSection({
       </button>
 
       {isOpen && (
-        <div className="mt-3 p-3 rounded-sm border border-zinc-800/80 bg-zinc-900/40 space-y-2.5">
+        <div className="p-3">
+          <div className="p-3 rounded-sm border border-zinc-800/80 bg-zinc-900/40 space-y-2.5">
           <div className="grid grid-cols-2 gap-2">
             <div>
               <span className="text-[10px] text-zinc-500 font-mono block mb-0.5">
@@ -101,7 +103,7 @@ function SceneInspectorGoalSection({
             <div className="flex items-center justify-between text-[9px] text-zinc-500 font-mono">
               <span>{Math.max(0, targetWords - currentWords).toLocaleString()} {t('wordsLeft')}</span>
               <span className="flex items-center gap-1">
-                <Clock className="w-2.5 h-2.5" /> ~{readingTimeMin} {t('minRead')}
+                <Clock className="w-2.5 h-2.5 ui-decorative-icon" /> ~{readingTimeMin} {t('minRead')}
               </span>
             </div>
           </div>
@@ -123,6 +125,7 @@ function SceneInspectorGoalSection({
               </button>
             ))}
           </div>
+        </div>
         </div>
       )}
     </div>

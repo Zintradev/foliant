@@ -137,6 +137,8 @@ export const SettingsModal = React.memo(function SettingsModal({
                 worldDropMode={prefs?.worldDropMode || 'shift'}
                 notesDropMode={prefs?.notesDropMode || 'shift'}
                 visualsDropMode={prefs?.visualsDropMode || 'shift'}
+                storylinesDropMode={prefs?.storylinesDropMode || 'shift'}
+                charactersDropMode={prefs?.charactersDropMode || 'shift'}
                 preserveManualSceneWidth={prefs?.preserveManualSceneWidth ?? false}
                 preserveManualPlotHeight={prefs?.preserveManualPlotHeight ?? false}
                 autoUpdateCheck={prefs?.autoUpdateCheck ?? false}
@@ -145,6 +147,9 @@ export const SettingsModal = React.memo(function SettingsModal({
                 editorIndentSize={prefs?.editorIndentSize ?? 1.5}
                 focusModeShowFormattingToolbar={prefs?.focusModeShowFormattingToolbar ?? false}
                 sceneScrollMode={prefs?.sceneScrollMode ?? 'remember'}
+                inspectorSectionOrder={prefs?.inspectorSectionOrder}
+                showHeaderChapterInfo={prefs?.showHeaderChapterInfo ?? false}
+                hideBottomBarChapterInfo={prefs?.hideBottomBarChapterInfo ?? false}
                 onPreferenceChange={handlePreferenceChange}
                 t={t}
               />
@@ -154,6 +159,7 @@ export const SettingsModal = React.memo(function SettingsModal({
               <SettingsAppearanceSection
                 themeMode={prefs?.themeMode || 'dark'}
                 customTheme={customTheme}
+                uiStyle={prefs?.uiStyle || 'modern'}
                 editorFontFamily={prefs?.editorFontFamily ?? 'serif'}
                 editorPaperColor={prefs?.editorPaperColor ?? 'paper'}
                 editorCustomBg={prefs?.editorCustomBg ?? '#f6f1e8'}

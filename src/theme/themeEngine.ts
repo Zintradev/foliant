@@ -1,4 +1,4 @@
-import { ThemeMode, CustomThemeColors, DEFAULT_CUSTOM_THEME } from '../types/settings';
+import { ThemeMode, CustomThemeColors, DEFAULT_CUSTOM_THEME, UIStyle } from '../types/settings';
 
 export interface ThemePalette {
   bgBase: string;
@@ -11,23 +11,23 @@ export interface ThemePalette {
 }
 
 export const DARK_THEME: ThemePalette = {
-  bgBase: '#09090b', // zinc-950
-  bgSurface: '#18181b', // zinc-900
-  bgSurfaceElevated: '#27272a', // zinc-800
+  bgBase: '#121215', // zinc-950 slightly lighter tone
+  bgSurface: '#1c1c20', // zinc-900 slightly lighter tone
+  bgSurfaceElevated: '#2c2c31', // zinc-800 slightly lighter tone
   colorPrimary: '#10b981', // emerald-500
   textBase: '#f4f4f5', // zinc-100
   textMuted: '#a1a1aa', // zinc-400
-  borderBase: '#27272a', // zinc-800
+  borderBase: '#2e2e33', // zinc-800 slightly lighter tone
 };
 
 export const LIGHT_THEME: ThemePalette = {
-  bgBase: '#f4f4f5', // zinc-100
-  bgSurface: '#ffffff', // white
-  bgSurfaceElevated: '#e4e4e7', // zinc-200
+  bgBase: '#ece8e1', // warm pleasant desktop canvas, easy on the eyes (not blinding white)
+  bgSurface: '#f7f4ee', // warm soft ivory parchment panels
+  bgSurfaceElevated: '#e3ded5', // elevated toolbar & header surfaces
   colorPrimary: '#059669', // emerald-600
-  textBase: '#18181b', // zinc-900
-  textMuted: '#71717a', // zinc-500
-  borderBase: '#e4e4e7', // zinc-200
+  textBase: '#181613', // dark high-contrast ink text
+  textMuted: '#433e36', // dark readable taupe text (contrast > 7:1)
+  borderBase: '#d4cdc1', // soft warm border
 };
 
 /**
@@ -82,6 +82,71 @@ const MANAGED_VARIABLES = [
   '--color-emerald-600',
 ];
 
+export const UI_STYLE_TOKENS: Record<UIStyle, Record<string, string>> = {
+  modern: {
+    '--border-radius': '0.375rem',
+    '--border-width': '1px',
+    '--shadow-sm': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+    '--shadow-md': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+    '--font-ui': 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    '--font-heading': 'inherit',
+    '--surface-border': 'var(--border-base)',
+    '--surface-card': 'var(--bg-surface)',
+    '--surface-texture': 'none',
+  },
+  editorial: {
+    '--border-radius': '2px',
+    '--border-width': '1px',
+    '--shadow-sm': 'none',
+    '--shadow-md': '0 1px 3px 0 rgb(0 0 0 / 0.06)',
+    '--font-ui': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", Arial, sans-serif',
+    '--font-heading': '"Georgia", "Cambria", "Times New Roman", Times, serif',
+    '--surface-border': 'rgba(161, 161, 170, 0.25)',
+    '--surface-card': 'var(--bg-surface)',
+    '--surface-texture': 'none',
+  },
+  classic: {
+    '--border-radius': '0px',
+    '--border-width': '1px',
+    '--shadow-sm': 'none',
+    '--shadow-md': 'none',
+    '--font-ui': 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif',
+    '--font-heading': '"Georgia", "Palatino Linotype", "Book Antiqua", Palatino, serif',
+    '--surface-border': '#3f3f46',
+    '--surface-card': 'var(--bg-surface)',
+    '--surface-texture': 'none',
+  },
+  'classic-clean': {
+    '--border-radius': '0px',
+    '--border-width': '1px',
+    '--shadow-sm': 'none',
+    '--shadow-md': 'none',
+    '--font-ui': 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif',
+    '--font-heading': '"Georgia", "Palatino Linotype", "Book Antiqua", Palatino, serif',
+    '--surface-border': '#3f3f46',
+    '--surface-card': 'var(--bg-surface)',
+    '--surface-texture': 'none',
+  },
+};
+
+/**
+ * Injects UI personality attributes and corresponding CSS variables onto `:root`.
+ */
+export function applyUIStyle(uiStyle: UIStyle = 'modern'): void {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  const validStyle: UIStyle = (['modern', 'editorial', 'classic', 'classic-clean'].includes(uiStyle)
+    ? uiStyle
+    : 'modern') as UIStyle;
+
+  root.setAttribute('data-ui-style', validStyle);
+
+  const tokens = UI_STYLE_TOKENS[validStyle] || UI_STYLE_TOKENS.modern;
+  for (const [key, value] of Object.entries(tokens)) {
+    root.style.setProperty(key, value);
+  }
+}
+
 /**
  * Injects dynamic CSS Custom Properties directly onto `document.documentElement` (`:root`).
  *
@@ -94,10 +159,13 @@ const MANAGED_VARIABLES = [
  */
 export function applyTheme(
   themeMode: ThemeMode = 'dark',
-  customTheme: CustomThemeColors = DEFAULT_CUSTOM_THEME
+  customTheme: CustomThemeColors = DEFAULT_CUSTOM_THEME,
+  uiStyle: UIStyle = 'modern'
 ): void {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
+
+  applyUIStyle(uiStyle);
 
   if (themeMode === 'light') {
     root.classList.remove('dark');
@@ -113,19 +181,19 @@ export function applyTheme(
     root.style.setProperty('--text-muted', LIGHT_THEME.textMuted);
     root.style.setProperty('--border-base', LIGHT_THEME.borderBase);
 
-    // Tailwind v4 Zinc Scale overrides for crisp Light Mode
-    root.style.setProperty('--color-zinc-950', '#f4f4f5'); // Canvas background
-    root.style.setProperty('--color-zinc-900', '#ffffff'); // Surface panels & sidebars
-    root.style.setProperty('--color-zinc-850', '#f0f0f3'); // Elevated surface
-    root.style.setProperty('--color-zinc-800', '#e4e4e7'); // Borders & dividers
-    root.style.setProperty('--color-zinc-750', '#dcdee2'); // Elevated borders
-    root.style.setProperty('--color-zinc-700', '#d4d4d8'); // Button hovers
-    root.style.setProperty('--color-zinc-600', '#a1a1aa'); // Inactive icons
-    root.style.setProperty('--color-zinc-500', '#71717a'); // Secondary/muted labels
-    root.style.setProperty('--color-zinc-400', '#52525b'); // Tertiary text
-    root.style.setProperty('--color-zinc-300', '#3f3f46'); // Body text
-    root.style.setProperty('--color-zinc-200', '#27272a'); // Titles & high contrast
-    root.style.setProperty('--color-zinc-100', '#09090b'); // Pure dark headings
+    // Tailwind v4 Zinc Scale overrides for pleasant warm Light Mode (non-blinding classic tone)
+    root.style.setProperty('--color-zinc-950', '#ece8e1'); // Canvas & window background
+    root.style.setProperty('--color-zinc-900', '#f7f4ee'); // Surface panels & sidebars
+    root.style.setProperty('--color-zinc-850', '#e3ded5'); // Elevated surfaces & active tab
+    root.style.setProperty('--color-zinc-800', '#d4cdc1'); // Borders & dividers
+    root.style.setProperty('--color-zinc-750', '#c8c0b2'); // Elevated borders
+    root.style.setProperty('--color-zinc-700', '#7a7162'); // Button hovers & borders
+    root.style.setProperty('--color-zinc-600', '#554f44'); // Inactive icons / subtle text (> 6.2:1 contrast)
+    root.style.setProperty('--color-zinc-500', '#3f3a32'); // Secondary / muted labels (> 8.5:1 contrast)
+    root.style.setProperty('--color-zinc-400', '#2b2721'); // Tertiary text (> 11:1 contrast)
+    root.style.setProperty('--color-zinc-300', '#1c1915'); // Body text (> 14:1 contrast)
+    root.style.setProperty('--color-zinc-200', '#12100e'); // Titles & high contrast (> 16:1 contrast)
+    root.style.setProperty('--color-zinc-100', '#080706'); // Pure dark headings (> 18:1 contrast)
     root.style.setProperty('--color-zinc-50', '#000000'); // Pure black text
 
     // Accent overrides

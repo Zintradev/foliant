@@ -73,7 +73,7 @@ export const DockTabContextMenu = memo(function DockTabContextMenu({
     <div
       ref={menuRef}
       style={{ top: `${top}px`, left: `${left}px` }}
-      className="fixed z-[99999] min-w-[180px] bg-zinc-950 border border-zinc-800 rounded-sm shadow-2xl py-1 text-xs text-zinc-300 font-sans animate-in fade-in zoom-in-95 duration-75 select-none"
+      className="dock-tab-context-menu fixed z-[99999] min-w-[180px] bg-zinc-950 border border-zinc-800 rounded-sm shadow-2xl py-1 text-xs text-zinc-300 font-sans animate-in fade-in zoom-in-95 duration-75 select-none"
     >
       <div className="px-2.5 py-1 text-[10px] font-mono text-zinc-500 uppercase tracking-wider border-b border-zinc-800/80 mb-0.5 truncate">
         {tabLabel}

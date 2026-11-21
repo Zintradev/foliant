@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { ChevronRight, ChevronDown, ChevronUp, Folder, FolderOpen, FilePlus, FolderPlus, Trash2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, ChevronUp, FilePlus, FolderPlus, Trash2 } from 'lucide-react';
 import { TextNode } from '../../../../types/project';
 
 interface OutlineFolderRowProps {
@@ -69,12 +69,6 @@ export const OutlineFolderRow = memo(function OutlineFolderRow({
             <ChevronDown className="w-3 h-3" />
           )}
         </button>
-
-        {isCollapsed ? (
-          <Folder className="w-3.5 h-3.5 text-amber-500/80 shrink-0" />
-        ) : (
-          <FolderOpen className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-        )}
 
         {isRenaming ? (
           <div

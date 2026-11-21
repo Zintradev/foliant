@@ -14,6 +14,7 @@ export interface EditorStatusBarProps {
   activeChapterTitle: string;
   wordCount: number;
   targetWords: number;
+  hideBottomBarChapterInfo?: boolean;
   t: (key: any, defaultVal?: string) => string;
 }
 
@@ -27,6 +28,7 @@ export const EditorStatusBar = memo(function EditorStatusBar({
   activeChapterTitle,
   wordCount,
   targetWords,
+  hideBottomBarChapterInfo = false,
   t,
 }: EditorStatusBarProps) {
   const timelineLabel = TAB_TRANSLATION_KEYS.timeline
@@ -42,39 +44,45 @@ export const EditorStatusBar = memo(function EditorStatusBar({
       <div className="flex items-center gap-1.5">
         <button
           onClick={onOpenTimelineBottom}
-          className={`flex items-center gap-1 px-1.5 py-0.5 rounded-xs transition text-[10px] font-mono cursor-pointer ${
+          className={`status-bar-tab-btn flex items-center gap-1 px-1.5 py-0.5 rounded-xs transition text-[10px] font-mono cursor-pointer ${
             isBottomOpen && activeBottomTab === 'timeline'
               ? 'bg-zinc-850 text-zinc-200 border border-zinc-750'
               : 'hover:bg-zinc-900 text-zinc-400 hover:text-zinc-200'
           }`}
           title={timelineLabel}
         >
-          <Clock className="w-3 h-3 text-zinc-400" />
+          <Clock className="status-bar-icon ui-decorative-icon w-3 h-3 text-zinc-400" />
           <span className="font-sans font-medium">{timelineLabel}</span>
         </button>
         <button
           onClick={onOpenRelationshipsBottom}
-          className={`flex items-center gap-1 px-1.5 py-0.5 rounded-xs transition text-[10px] font-mono cursor-pointer ${
+          className={`status-bar-tab-btn flex items-center gap-1 px-1.5 py-0.5 rounded-xs transition text-[10px] font-mono cursor-pointer ${
             isBottomOpen && activeBottomTab === 'relationships'
               ? 'bg-zinc-850 text-zinc-200 border border-zinc-750'
               : 'hover:bg-zinc-900 text-zinc-400 hover:text-zinc-200'
           }`}
           title={relationshipsLabel}
         >
-          <Network className="w-3 h-3 text-zinc-400" />
+          <Network className="status-bar-icon ui-decorative-icon w-3 h-3 text-zinc-400" />
           <span className="font-sans font-medium">{relationshipsLabel}</span>
         </button>
 
-        <span className="text-zinc-800 ml-1">|</span>
-        <span className="text-[10px] text-zinc-500 truncate max-w-xs">
-          {activeChapterTitle}
-        </span>
+        {!hideBottomBarChapterInfo && (
+          <>
+            <span className="text-zinc-800 ml-1">|</span>
+            <span className="text-[10px] text-zinc-500 truncate max-w-xs">
+              {activeChapterTitle}
+            </span>
+          </>
+        )}
       </div>
 
-      <div className="flex items-center gap-3 text-[10px]">
-        <span>{wordCount.toLocaleString()} {t('words').toLowerCase()}</span>
-        <span>{t('target')}: {targetWords.toLocaleString()}</span>
-      </div>
+      {!hideBottomBarChapterInfo && (
+        <div className="flex items-center gap-3 text-[10px]">
+          <span>{wordCount.toLocaleString()} {t('words').toLowerCase()}</span>
+          <span>{t('target')}: {targetWords.toLocaleString()}</span>
+        </div>
+      )}
     </footer>
   );
 });

@@ -1,5 +1,6 @@
-import { UserPlus, Users, X } from 'lucide-react';
-import { memo, useMemo, useState } from 'react';
+import { Search, SpellCheck2, Plus, Users, X } from 'lucide-react';
+import { memo, useMemo, useState, useCallback } from 'react';
+import Fuse from 'fuse.js';
 import { useTranslation } from '../../../../i18n/translations';
 import ConfirmDeleteModal from '../../../common/ConfirmDeleteModal';
 import { CharacterAddDrawer } from './CharacterAddDrawer';
@@ -8,6 +9,7 @@ import { CharacterEditCard } from './CharacterEditCard';
 import { CharacterItem, CharactersViewProps, CharacterTag } from './types';
 import { loadSettings } from '../../../../types/settings';
 import { useCharactersState } from './useCharactersState';
+import { useCharactersDragDrop } from './useCharactersDragDrop';
 
 const CharacterLightboxModal = memo(function CharacterLightboxModal({
   image,
@@ -62,9 +64,26 @@ export function CharactersViewComponent({
   colorSettings,
   saveMode = 'auto',
   onDirtyChange,
+  charactersDropMode = 'shift',
 }: CharactersViewProps) {
   const { t } = useTranslation();
   const [characterPendingDelete, setCharacterPendingDelete] = useState<CharacterItem | null>(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isFuzzy, setIsFuzzy] = useState(false);
+  const handleMoveCharacter = useCallback(
+    (index: number, direction: 'up' | 'down') => {
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= characters.length) return;
+      const next = [...characters];
+      const temp = next[index];
+      next[index] = next[targetIndex];
+      next[targetIndex] = temp;
+      onChange(next);
+      onDirtyChange?.(true);
+    },
+    [characters, onChange, onDirtyChange]
+  );
 
   const {
     isAdding,
@@ -120,6 +139,66 @@ export function CharactersViewComponent({
     return result;
   }, [characters]);
 
+  const characterFuse = useMemo(() => {
+    if (!isFuzzy) return null;
+    return new Fuse(characters, {
+      keys: ['name', 'role', 'summary', 'notes', 'tags.label'],
+      threshold: 0.4,
+      distance: 100,
+      ignoreLocation: true,
+    });
+  }, [characters, isFuzzy]);
+
+  const matchingFuzzyCharacterIds = useMemo(() => {
+    if (!isFuzzy || !characterFuse || searchQuery.trim().length < 2) return null;
+    return new Set(characterFuse.search(searchQuery.trim()).map((res) => res.item.id));
+  }, [isFuzzy, characterFuse, searchQuery]);
+
+  const displayedCharacters = useMemo(() => {
+    if (!searchQuery.trim()) return characters;
+    if (matchingFuzzyCharacterIds) {
+      return characters.filter((c) => matchingFuzzyCharacterIds.has(c.id));
+    }
+    const q = searchQuery.toLowerCase().trim();
+    return characters.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        (c.role && c.role.toLowerCase().includes(q)) ||
+        (c.summary && c.summary.toLowerCase().includes(q)) ||
+        (c.notes && c.notes.toLowerCase().includes(q)) ||
+        (c.tags && c.tags.some((t) => t.label.toLowerCase().includes(q)))
+    );
+  }, [characters, searchQuery, matchingFuzzyCharacterIds]);
+
+  const {
+    containerRef,
+    draggedCharId,
+    dragOverCharId,
+    registerCard,
+    getCardOffset,
+    handleDragStart,
+    handleDragEnter,
+    handleDragOver,
+    handleContainerDragEnter,
+    handleContainerDragOver,
+    handleDrop,
+    handleContainerDrop,
+    handleDragEnd,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    handleTouchCancel,
+  } = useCharactersDragDrop({
+    characters,
+    displayedCharacters,
+    charactersDropMode,
+    onChange,
+    onDirtyChange,
+    isExpanded,
+  });
+
+  const isDraggingAny = draggedCharId !== null;
+
   const requestDelete = (char: CharacterItem) => {
     const shouldConfirm = loadSettings()?.preferences?.confirmDelete?.characters ?? true;
     if (!shouldConfirm) {
@@ -150,22 +229,79 @@ export function CharactersViewComponent({
     <div className="flex flex-col h-full bg-zinc-950 select-none overflow-hidden font-sans relative">
       {/* Top Header */}
       <div className="px-3 py-2 border-b border-zinc-850 flex items-center justify-between bg-zinc-900/50">
-        <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider font-mono">
+        <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider font-mono dock-view-title">
           {t('charactersView')}
         </span>
-        <button
-          data-tour-id="characters-add-btn"
-          onClick={() => setIsAdding(!isAdding)}
-          className={`flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-medium transition cursor-pointer ${isAdding
-              ? 'bg-zinc-800 text-zinc-200'
-              : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-850'
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => {
+              setIsSearchOpen((prev) => !prev);
+              if (isSearchOpen && searchQuery) {
+                setSearchQuery('');
+              }
+            }}
+            className={`p-1.5 rounded-sm transition cursor-pointer ${
+              isSearchOpen || searchQuery
+                ? 'bg-zinc-800 text-zinc-100'
+                : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-850'
             }`}
-          title={isAdding ? t('cancel') : t('newCharacter')}
-        >
-          <UserPlus className="w-3.5 h-3.5" />
-          <span>{isAdding ? t('cancel') : t('add')}</span>
-        </button>
+            title={t('search')}
+            aria-label={t('search')}
+          >
+            <Search className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => setIsAdding(!isAdding)}
+            title={t('newCharacter')}
+            data-tour-id="characters-add-btn"
+            className="p-1 hover:bg-zinc-800 rounded-sm text-zinc-400 hover:text-white transition cursor-pointer"
+            aria-label={t('newCharacter')}
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
+
+      {/* Expandable Search Bar */}
+      {isSearchOpen && (
+        <div className="px-3 py-1.5 border-b border-zinc-850 bg-zinc-950 flex items-center gap-2 shrink-0">
+          <div className="flex-1 flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 rounded-sm px-2 py-1">
+            <Search className="w-3 h-3 text-zinc-500 shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('searchCharacters', 'Search characters...')}
+              autoFocus
+              className="w-full bg-transparent text-xs text-zinc-200 outline-none placeholder:text-zinc-600 font-sans"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="text-zinc-500 hover:text-zinc-300 cursor-pointer"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isFuzzy}
+            onClick={() => setIsFuzzy(!isFuzzy)}
+            title={t('fuzzySearchTooltip', 'Enable fuzzy search to tolerate minor typos')}
+            className={`flex items-center gap-1 px-2 py-1 rounded-sm text-[11px] font-mono transition cursor-pointer border shrink-0 ${
+              isFuzzy
+                ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
+                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <SpellCheck2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Drawer for adding a new character */}
       {isAdding && (
@@ -182,12 +318,18 @@ export function CharactersViewComponent({
       )}
 
       {/* Characters List or Grid */}
-      <div className="flex-1 overflow-y-auto p-3">
-        {characters.length === 0 ? (
+      <div
+        ref={containerRef}
+        onDragEnter={handleContainerDragEnter}
+        onDragOver={handleContainerDragOver}
+        onDrop={handleContainerDrop}
+        className={`flex-1 overflow-y-auto p-3 ${isDraggingAny ? 'touch-none' : ''}`}
+      >
+        {displayedCharacters.length === 0 ? (
           <div className="h-48 flex flex-col items-center justify-center text-center p-6 gap-2">
             <Users className="w-8 h-8 text-zinc-600" />
             <p className="text-xs font-medium text-zinc-400 max-w-xs leading-relaxed">
-              {t('emptyCharactersMessage')}
+              {searchQuery ? t('noMatchesFound', 'No matches found.') : t('emptyCharactersMessage')}
             </p>
           </div>
         ) : (
@@ -198,7 +340,7 @@ export function CharactersViewComponent({
                 : 'space-y-2'
             }
           >
-            {characters.map((char) => {
+            {displayedCharacters.map((char, index) => {
               const isEditing = editingCharacterId === char.id;
               const isCardOpen = Boolean(expandedCharacterIds[char.id]);
 
@@ -250,11 +392,34 @@ export function CharactersViewComponent({
                 );
               }
 
+              const offset = getCardOffset(index);
+
               return (
                 <CharacterDisplayCard
                   key={char.id}
                   char={char}
+                  cardRef={(el) => registerCard(char.id, el)}
+                  translateX={offset.x}
+                  rowTranslateY={offset.y}
+                  isShiftMode={charactersDropMode === 'shift'}
+                  isDraggingAny={isDraggingAny}
+                  index={index}
+                  totalCharacters={displayedCharacters.length}
+                  charactersDropMode={charactersDropMode}
+                  onMoveCharacter={handleMoveCharacter}
+                  onDragStart={handleDragStart}
+                  onDragEnter={handleDragEnter}
+                  onDragOver={(e) => handleDragOver(e, char, index)}
+                  onDrop={(e) => handleDrop(e, char, index)}
+                  onDragEnd={handleDragEnd}
+                  onTouchDragStart={handleTouchStart}
+                  onTouchDragMove={handleTouchMove}
+                  onTouchDragEnd={handleTouchEnd}
+                  onTouchDragCancel={handleTouchCancel}
+                  isDragging={draggedCharId === char.id}
+                  isDragOver={dragOverCharId === char.id && draggedCharId !== char.id}
                   isCardOpen={isCardOpen}
+                  isExpandedView={isExpanded}
                   colorSettings={colorSettings}
                   onToggleExpand={() => toggleExpand(char.id)}
                   onPortraitClick={() => {

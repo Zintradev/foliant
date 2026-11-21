@@ -22,7 +22,7 @@ interface TimelineSubwayTrackRowProps {
   draggedStorylineId: string | null;
   dragOverPlotId: string | null;
   shiftTargetIndex: number | null;
-  timelineDropMode: 'shift' | 'swap';
+  timelineDropMode: 'shift' | 'swap' | 'arrows';
   getSceneWidth: (sceneId: string) => number;
   manualSceneWidths?: Record<string, number>;
   isManualHeight?: boolean;
@@ -130,12 +130,14 @@ function TimelineSubwayTrackRowComponent({
     >
       {/* Sticky Track Label Header (Draggable) */}
       <div
-        draggable={true}
+        draggable={timelineDropMode !== 'arrows'}
         onDragStart={(e) => onDragStart(e, index, storyline.id)}
         onDragEnd={onDragEnd}
         {...touchDragProps}
         style={{ height: rowHeightStyle }}
-        className={`w-64 min-w-[16rem] sticky left-0 z-30 bg-zinc-950/95 backdrop-blur-md border-r border-zinc-800/90 border-b border-zinc-800/90 p-2.5 flex flex-col justify-between shrink-0 shadow-xs cursor-grab active:cursor-grabbing select-none transition-all duration-150 ease-out ${
+        className={`w-64 min-w-[16rem] sticky left-0 z-30 bg-zinc-950/95 backdrop-blur-md border-r border-zinc-800/90 border-b border-zinc-800/90 p-2.5 flex flex-col justify-between shrink-0 shadow-xs ${
+          timelineDropMode !== 'arrows' ? 'cursor-grab active:cursor-grabbing' : ''
+        } select-none transition-all duration-150 ease-out ${
           isHolding
             ? 'scale-[1.02] shadow-xl border-zinc-650'
             : (isDragging || isTouchDragging)
@@ -147,7 +149,9 @@ function TimelineSubwayTrackRowComponent({
       >
         <div className="flex items-center justify-between gap-1.5 min-w-0 pointer-events-none">
           <div className="flex items-center gap-1 min-w-0 pointer-events-none">
-            <GripVertical className="w-3 h-3 text-zinc-600 group-hover:text-zinc-400 transition shrink-0 pointer-events-none" />
+            {timelineDropMode !== 'arrows' && (
+              <GripVertical className="w-3 h-3 text-zinc-600 group-hover:text-zinc-400 transition shrink-0 pointer-events-none" />
+            )}
             <button
               type="button"
               tabIndex={0}
@@ -175,7 +179,7 @@ function TimelineSubwayTrackRowComponent({
             </h4>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            {onMoveStoryline && (
+            {onMoveStoryline && timelineDropMode === 'arrows' && (
               <div
                 className="flex items-center gap-0.5 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 hover:!opacity-100 transition-opacity pointer-events-auto"
                 onClick={(e) => e.stopPropagation()}
@@ -200,9 +204,6 @@ function TimelineSubwayTrackRowComponent({
                 </button>
               </div>
             )}
-            <span className="text-[9px] font-mono text-zinc-500 shrink-0 pointer-events-none">
-              {span?.count || 0} {(span?.count || 0) === 1 ? 'stop' : 'stops'}
-            </span>
           </div>
         </div>
 

@@ -1,6 +1,7 @@
 import { TextNode } from '../../../../types/project';
-import { StorylineItem } from '../../../../types/dock';
+import { StorylineItem, CharacterItem, WorldItem } from '../../../../types/dock';
 import { AppColorSettings } from '../../../../types/settings';
+import { SceneInspectorAccordionKey } from '../SceneInspector/types';
 
 export type LayoutMode = 'details' | 'main' | 'split' | '1col' | '2col';
 
@@ -16,6 +17,9 @@ export interface OutlineViewProps {
   onReorderChapter?: (id: string, direction: 'up' | 'down') => void;
   isExpanded?: boolean;
   storylines?: StorylineItem[];
+  characters?: CharacterItem[];
+  worldItems?: WorldItem[];
+  sectionOrder?: SceneInspectorAccordionKey[];
   onDirtyChange?: (isDirty: boolean) => void;
   projectTitle?: string;
   projectAuthor?: string;

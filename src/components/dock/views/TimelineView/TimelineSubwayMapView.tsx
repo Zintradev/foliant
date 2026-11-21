@@ -23,7 +23,7 @@ interface TimelineSubwayMapViewProps {
   draggedStorylineId: string | null;
   dragOverPlotId: string | null;
   shiftTargetIndex: number | null;
-  timelineDropMode: 'shift' | 'swap';
+  timelineDropMode: 'shift' | 'swap' | 'arrows';
   openAttachDropdown: { sceneId: string; type: 'character' | 'storyline' } | null;
   getSceneWidth: (sceneId: string) => number;
   getRowHeight: (storylineId: string) => number;
@@ -74,7 +74,7 @@ function TimelineSubwayMapViewComponent(props: TimelineSubwayMapViewProps) {
   return (
     <div
       ref={timelineContainerRef}
-      className="flex-1 overflow-auto bg-zinc-950 p-3 select-none"
+      className="flex-1 overflow-auto bg-zinc-950 p-3 pb-6 select-none"
     >
       <div className="inline-block min-w-full align-top">
         {/* Sticky Header with Scene Column Headers */}

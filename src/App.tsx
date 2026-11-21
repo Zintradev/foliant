@@ -26,6 +26,7 @@ import { DEFAULT_PROJECT, getDefaultProject } from './data/getMockProject';
 import { useAppCloseGuard } from './hooks/useAppCloseGuard';
 import { isTauriApp, closeDesktopApp } from './utils/platform';
 import { checkForAppUpdates } from './utils/updater';
+import { FirstRunTourToast } from './components/common/FirstRunTourToast';
 
 export default function App() {
   const hasSavedProjectKey = (() => {
@@ -150,8 +151,16 @@ export default function App() {
   });
 
   useEffect(() => {
-    applyTheme(appSettings.preferences?.themeMode || 'dark', appSettings.preferences?.customTheme);
-  }, [appSettings.preferences?.themeMode, appSettings.preferences?.customTheme]);
+    applyTheme(
+      appSettings.preferences?.themeMode || 'dark',
+      appSettings.preferences?.customTheme,
+      appSettings.preferences?.uiStyle || 'modern'
+    );
+  }, [
+    appSettings.preferences?.themeMode,
+    appSettings.preferences?.customTheme,
+    appSettings.preferences?.uiStyle,
+  ]);
 
   // Dismiss splash screen smoothly once the main application mounts
   useEffect(() => {
@@ -547,6 +556,8 @@ export default function App() {
           onCloseGuidedTour={handleCloseGuidedTour}
           onSelectMainView={nav.handleSelectMainView}
         />
+
+        <FirstRunTourToast onStartTour={handleStartGuidedTour} />
       </div>
     </LanguageProvider>
   );

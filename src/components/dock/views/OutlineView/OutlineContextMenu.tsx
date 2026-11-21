@@ -57,7 +57,7 @@ export const OutlineContextMenu = memo(function OutlineContextMenu({
     <div
       ref={contextMenuRef}
       style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}
-      className="fixed z-50 min-w-[160px] bg-zinc-950 border border-zinc-800 rounded-sm shadow-2xl py-1 text-xs text-zinc-300 font-sans animate-in fade-in zoom-in-95 duration-75 select-none"
+      className="outline-context-menu fixed z-50 min-w-[160px] bg-zinc-950 border border-zinc-800 rounded-sm shadow-2xl py-1 text-xs text-zinc-300 font-sans animate-in fade-in zoom-in-95 duration-75 select-none"
     >
       <div className="px-2.5 py-1 text-[10px] font-mono text-zinc-500 border-b border-zinc-800 truncate max-w-[180px]">
         {contextMenu.node.title || t('untitled')}
