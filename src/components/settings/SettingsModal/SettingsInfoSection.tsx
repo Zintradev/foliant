@@ -11,7 +11,7 @@ export const SettingsInfoSection = React.memo(function SettingsInfoSection({
   t,
 }: SettingsInfoSectionProps) {
   const isDesktop = isTauriApp();
-  const appVersion = 'v0.1.0';
+  const appVersion = 'v0.3.0';
 
   return (
     <div className="space-y-6">
@@ -24,9 +24,6 @@ export const SettingsInfoSection = React.memo(function SettingsInfoSection({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-base font-bold text-zinc-100 tracking-tight">Foliant Studio</h3>
-              <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-                {appVersion}
-              </span>
             </div>
             <p className="text-xs text-zinc-400 mt-0.5">
               {t('appInfoSubtitle')}

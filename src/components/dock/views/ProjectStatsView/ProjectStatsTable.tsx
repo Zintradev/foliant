@@ -41,9 +41,6 @@ function ProjectStatsTableComponent({
               <th className={`font-medium ${isExpanded ? 'py-2.5 px-3' : 'py-2 px-2'}`}>
                 {t('outlineStructure')}
               </th>
-              <th className={`font-medium text-center ${isExpanded ? 'w-20' : 'w-14'}`}>
-                {t('columnType')}
-              </th>
               {isExpanded ? (
                 <>
                   <th className="py-2.5 px-3 font-medium text-right w-40">
@@ -81,7 +78,7 @@ function ProjectStatsTableComponent({
             {visibleTreeItems.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={5}
                   className="py-8 text-center text-zinc-500 text-xs"
                 >
                   {searchQuery ? t('noElementsMatch') : t('noChaptersAvailable')}

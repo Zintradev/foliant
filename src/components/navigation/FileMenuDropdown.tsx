@@ -10,7 +10,6 @@ import {
   ArrowLeft,
   HelpCircle,
   Coffee,
-  BookMarked,
 } from 'lucide-react';
 import { openKofiUrl } from '../help/KofiButton';
 import { isWebPlatform } from '../../utils/platform';
@@ -23,7 +22,6 @@ export interface FileMenuDropdownProps {
   onOpenProject?: () => void;
   onSaveProject?: () => void;
   onSaveProjectAs?: () => void;
-  onOpenProjectDetails?: () => void;
   onImportManuskript?: () => void;
   onExportEpub?: () => void;
   onOpenSearch?: () => void;
@@ -39,7 +37,6 @@ export default function FileMenuDropdown({
   onOpenProject,
   onSaveProject,
   onSaveProjectAs,
-  onOpenProjectDetails,
   onImportManuskript,
   onExportEpub,
   onOpenSearch,
@@ -52,7 +49,7 @@ export default function FileMenuDropdown({
   const { t } = useTranslation(language);
 
   return (
-    <div className="absolute left-12 top-0 z-[80] min-w-[210px] bg-zinc-900 border border-zinc-800 rounded-md shadow-2xl py-1.5 text-xs text-zinc-300 animate-in fade-in zoom-in-95 duration-100">
+    <div className="file-menu-dropdown absolute left-12 top-0 z-[80] min-w-[210px] bg-zinc-900 border border-zinc-800 rounded-md shadow-2xl py-1.5 text-xs text-zinc-300 animate-in fade-in zoom-in-95 duration-100">
       <div className="px-3 py-1 text-[10px] font-mono tracking-wider text-zinc-500 uppercase border-b border-zinc-800/80 mb-1">
         {t('foliantProject', 'Foliant Project')}
       </div>
@@ -117,25 +114,6 @@ export default function FileMenuDropdown({
             <span>{t('saveProjectAs', 'Save As...')}</span>
           </span>
           <span className="text-[10px] font-mono text-zinc-500">Ctrl+Shift+S</span>
-        </button>
-      )}
-
-      {(onOpenProjectDetails || onExportEpub) && (
-        <button
-          onClick={() => {
-            onClose();
-            if (onOpenProjectDetails) {
-              onOpenProjectDetails();
-            } else if (onExportEpub) {
-              onExportEpub();
-            }
-          }}
-          className="w-full flex items-center justify-between px-3 py-2 md:py-1.5 min-h-[34px] md:min-h-0 touch-manipulation hover:bg-zinc-800 hover:text-white transition text-left cursor-pointer"
-        >
-          <span className="flex items-center gap-2">
-            <BookMarked className="w-3.5 h-3.5 text-zinc-400" />
-            <span>{t('projectDetails', 'Project Details...')}</span>
-          </span>
         </button>
       )}
 

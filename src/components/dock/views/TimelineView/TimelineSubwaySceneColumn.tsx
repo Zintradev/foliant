@@ -5,6 +5,7 @@ import { PlotStatus } from '../../../../types/project';
 import { TimelineColumnItem } from './types';
 import { STORYLINE_COLOR_MAP, MARKER_COLOR_CONFIG, renderMarkerIcon } from './constants';
 import { TimelineAttachDropdown } from './TimelineAttachDropdown';
+import { useTranslation } from '../../../../i18n/translations';
 
 interface TimelineSubwaySceneColumnProps {
   col: TimelineColumnItem;
@@ -49,8 +50,21 @@ function TimelineSubwaySceneColumnComponent({
   onAttachStoryline,
   onAttachCharacter,
 }: TimelineSubwaySceneColumnProps) {
+  const { t } = useTranslation();
   const scene = col.scene;
   const isDropdownOpen = openAttachDropdown?.sceneId === scene.id;
+
+  const getTranslatedStatus = (st?: string) => {
+    if (!st) return t('statusNotStarted', 'Not Started');
+    const s = st.toLowerCase();
+    if (s === 'not started') return t('statusNotStarted', 'Not Started');
+    if (s === 'draft') return t('statusDraft', 'Draft');
+    if (s === 'in progress') return t('statusInProgress', 'In Progress');
+    if (s === 'first draft') return t('statusFirstDraft', 'First Draft');
+    if (s === 'revised') return t('statusRevised', 'Revised');
+    if (s === 'done' || s === 'completed' || s === 'final') return t('statusDone', 'Completed');
+    return st;
+  };
 
   return (
     <div
@@ -75,7 +89,7 @@ function TimelineSubwaySceneColumnComponent({
                 #{col.originalIndex + 1}
               </span>
               <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-wider truncate">
-                {scene.status || 'Not Started'}
+                {getTranslatedStatus(scene.status)}
               </span>
             </div>
             <span className="text-[9px] font-mono text-zinc-500">
@@ -85,7 +99,7 @@ function TimelineSubwaySceneColumnComponent({
 
           <div>
             <div className="flex items-center gap-1.5">
-              <FileText className="w-3 h-3 text-zinc-400 shrink-0" />
+              <FileText className="w-3 h-3 text-zinc-400 shrink-0 ui-decorative-icon" />
               <h4 className="text-xs font-semibold text-zinc-100 truncate" title={scene.title}>
                 {scene.title || 'Untitled Scene'}
               </h4>
@@ -161,8 +175,8 @@ function TimelineSubwaySceneColumnComponent({
                       <span className={`w-1.5 h-1.5 rounded-full ${theme.dot} ${isDormant ? 'opacity-50' : ''}`} />
                     )}
                     <span className={`truncate ${isResolved ? 'line-through' : ''}`}>{st.title}</span>
-                    {isDormant && <span className="text-[8px] opacity-75 font-sans lowercase">(Dormant)</span>}
-                    {isResolved && <span className="text-[8px] opacity-75 font-sans lowercase">(Resolved)</span>}
+                    {isDormant && <span className="text-[8px] opacity-75 font-sans">({t('statusDormant', 'Dormant')})</span>}
+                    {isResolved && <span className="text-[8px] opacity-75 font-sans">({t('statusResolved', 'Resolved')})</span>}
                   </span>
                 );
               })}
@@ -181,7 +195,7 @@ function TimelineSubwaySceneColumnComponent({
             title="Add key event milestone or alert to this scene"
           >
             <Plus className="w-2.5 h-2.5 shrink-0" />
-            <span className="truncate">Alert</span>
+            <span className="truncate">{t('alert', 'Alert')}</span>
           </button>
           <button
             type="button"
@@ -193,7 +207,7 @@ function TimelineSubwaySceneColumnComponent({
             title="Attach plot thread to scene"
           >
             <Plus className="w-2.5 h-2.5 shrink-0" />
-            <span className="truncate">Plot</span>
+            <span className="truncate">{t('attachPlot', 'Plot')}</span>
           </button>
           <button
             type="button"
@@ -205,7 +219,7 @@ function TimelineSubwaySceneColumnComponent({
             title="Attach character to scene"
           >
             <Plus className="w-2.5 h-2.5 shrink-0" />
-            <span className="truncate">Cast</span>
+            <span className="truncate">{t('attachCast', 'Cast')}</span>
           </button>
         </div>
       </div>

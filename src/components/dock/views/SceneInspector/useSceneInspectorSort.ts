@@ -1,6 +1,10 @@
 import { useMemo } from 'react';
 import { CharacterItem, WorldItem, StorylineItem } from '../../../../types/dock';
 import { ScenePlotState } from '../../../../types/project';
+import {
+  SceneInspectorAccordionKey,
+  DEFAULT_INSPECTOR_SECTION_ORDER,
+} from '../../../../types/settings';
 
 interface UseSceneInspectorSortParams {
   storylines: StorylineItem[];
@@ -9,6 +13,7 @@ interface UseSceneInspectorSortParams {
   attachedCharacterIds: string[];
   worldItems: WorldItem[];
   attachedWorldItemIds: string[];
+  sectionOrder?: SceneInspectorAccordionKey[];
 }
 
 export function useSceneInspectorSort({
@@ -18,6 +23,7 @@ export function useSceneInspectorSort({
   attachedCharacterIds,
   worldItems,
   attachedWorldItemIds,
+  sectionOrder,
 }: UseSceneInspectorSortParams) {
   // Stable sort: selected/attached items float to top, and upon deselection return to original index
   const sortedStorylines = useMemo(() => {
@@ -50,9 +56,19 @@ export function useSceneInspectorSort({
     });
   }, [worldItems, attachedWorldItemIds]);
 
+  const orderedSections = useMemo(() => {
+    if (!sectionOrder || !Array.isArray(sectionOrder) || sectionOrder.length === 0) {
+      return DEFAULT_INSPECTOR_SECTION_ORDER;
+    }
+    const valid = sectionOrder.filter((k) => DEFAULT_INSPECTOR_SECTION_ORDER.includes(k));
+    const missing = DEFAULT_INSPECTOR_SECTION_ORDER.filter((k) => !valid.includes(k));
+    return [...valid, ...missing];
+  }, [sectionOrder]);
+
   return {
     sortedStorylines,
     sortedCharacters,
     sortedWorldItems,
+    orderedSections,
   };
 }

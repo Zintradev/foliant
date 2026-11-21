@@ -112,19 +112,15 @@ export const NovelDetailsSection = memo(function NovelDetailsSection({
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
           {/* Text Fields Column (Left / Main) */}
           <div className="md:col-span-7 space-y-5">
-            {/* Novel Title Field (Required) */}
+            {/* Novel Title Field */}
             <div className="space-y-1.5">
               <label
                 htmlFor="novel-title-input"
                 className="flex items-center justify-between text-xs font-semibold text-zinc-200 uppercase tracking-wider"
               >
                 <span className="flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
+                  <BookOpen className="ui-decorative-icon w-3.5 h-3.5 text-zinc-200" />
                   <span>{t('novelTitle', 'Nombre de la novela')}</span>
-                  <span className="text-rose-400 font-bold">*</span>
-                </span>
-                <span className="text-[10px] font-mono text-emerald-400/90 font-normal lowercase bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-800/40">
-                  {t('required', 'Requerido')}
                 </span>
               </label>
 
@@ -163,7 +159,7 @@ export const NovelDetailsSection = memo(function NovelDetailsSection({
                 className="flex items-center justify-between text-xs font-semibold text-zinc-300 uppercase tracking-wider"
               >
                 <span className="flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-zinc-400" />
+                  <User className="ui-decorative-icon w-3.5 h-3.5 text-zinc-400" />
                   <span>{t('author', 'Autor')}</span>
                 </span>
                 <span className="text-[10px] font-normal text-zinc-500 lowercase">
@@ -192,7 +188,7 @@ export const NovelDetailsSection = memo(function NovelDetailsSection({
                 className="flex items-center justify-between text-xs font-semibold text-zinc-300 uppercase tracking-wider"
               >
                 <span className="flex items-center gap-1.5">
-                  <AlignLeft className="w-3.5 h-3.5 text-zinc-400" />
+                  <AlignLeft className="ui-decorative-icon w-3.5 h-3.5 text-zinc-400" />
                   <span>{t('synopsis', 'Sinopsis')}</span>
                 </span>
                 <span className="text-[10px] font-normal text-zinc-500 lowercase">
@@ -219,7 +215,7 @@ export const NovelDetailsSection = memo(function NovelDetailsSection({
           <div className="md:col-span-5 space-y-2">
             <label className="flex items-center justify-between text-xs font-semibold text-zinc-300 uppercase tracking-wider">
               <span className="flex items-center gap-1.5">
-                <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />
+                <ImageIcon className="ui-decorative-icon w-3.5 h-3.5 text-zinc-200" />
                 <span>{t('coverImage', 'Portada')}</span>
               </span>
               <span className="text-[10px] font-normal text-zinc-500 lowercase">
@@ -246,8 +242,8 @@ export const NovelDetailsSection = memo(function NovelDetailsSection({
                 </div>
 
                 <div className="w-full">
-                  <div className="flex items-center justify-center gap-1.5 text-emerald-400 text-xs font-medium">
-                    <FileCheck className="w-3.5 h-3.5" />
+                  <div className="flex items-center justify-center gap-1.5 text-zinc-200 text-xs font-medium">
+                    <FileCheck className="ui-decorative-icon w-3.5 h-3.5 text-zinc-300" />
                     <span>{t('coverReady', 'Portada lista')}</span>
                   </div>
                   {coverFileName && (
@@ -296,8 +292,8 @@ export const NovelDetailsSection = memo(function NovelDetailsSection({
                     : 'border-zinc-800 bg-zinc-900/30 hover:bg-zinc-900/70 hover:border-zinc-700 text-zinc-400'
                 }`}
               >
-                <div className="p-3 rounded-full bg-zinc-850 border border-zinc-750 mb-2">
-                  <UploadCloud className="w-6 h-6 text-emerald-400" />
+                <div className="ui-decorative-icon p-3 rounded-full bg-zinc-850 border border-zinc-750 mb-2">
+                  <UploadCloud className="w-6 h-6 text-zinc-300" />
                 </div>
                 <p className="text-xs font-medium text-zinc-200 text-center">
                   {t('dropCoverHere', 'Haz clic o arrastra aquí la portada de la novela')}

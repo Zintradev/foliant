@@ -16,13 +16,15 @@ export const CollapsibleStorylineDescription = React.memo(
 
     return (
       <div className="space-y-1">
-        <p
-          className={`text-[11px] text-zinc-400 font-sans leading-relaxed ${
-            !isExpanded && isLong ? 'line-clamp-2' : ''
+        <div
+          className={`text-[11px] text-zinc-400 font-sans leading-relaxed transition-all ${
+            !isExpanded && isLong
+              ? 'line-clamp-2 max-h-12 overflow-hidden text-ellipsis'
+              : 'max-h-48 overflow-y-auto'
           }`}
         >
-          {description}
-        </p>
+          <p>{description}</p>
+        </div>
         {isLong && (
           <button
             type="button"

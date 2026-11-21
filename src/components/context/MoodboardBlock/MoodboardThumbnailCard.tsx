@@ -27,6 +27,7 @@ interface MoodboardThumbnailCardProps {
   anyDragging?: boolean;
   registerCard?: (id: string, el: HTMLElement | null) => void;
   cardRef?: (el: HTMLElement | null) => void;
+  isArrowsMode?: boolean;
 }
 
 export const MoodboardThumbnailCard = React.memo(function MoodboardThumbnailCard({
@@ -50,6 +51,7 @@ export const MoodboardThumbnailCard = React.memo(function MoodboardThumbnailCard
   anyDragging,
   registerCard,
   cardRef,
+  isArrowsMode = false,
 }: MoodboardThumbnailCardProps) {
   const [loadError, setLoadError] = useState(false);
 
@@ -84,7 +86,7 @@ export const MoodboardThumbnailCard = React.memo(function MoodboardThumbnailCard
     <div
       ref={setCardElement}
       data-image-id={image.id}
-      draggable={true}
+      draggable={!isArrowsMode}
       onDragStart={(e) => onDragStart(e, image)}
       onDragEnter={(e) => onDragEnter(e, image)}
       onDragOver={(e) => {
@@ -112,7 +114,9 @@ export const MoodboardThumbnailCard = React.memo(function MoodboardThumbnailCard
           ? 'opacity-30 border border-dashed border-zinc-700 bg-zinc-900/50 shadow-xl z-20 touch-none'
           : isDragOver
           ? 'border-2 border-emerald-500 ring-2 ring-emerald-500/40 bg-emerald-950/20 shadow-xl scale-[1.02] z-30'
-          : 'border border-zinc-800 bg-zinc-900 hover:border-zinc-650 hover:shadow-lg shadow-xs cursor-grab active:cursor-grabbing'
+          : `border border-zinc-800 bg-zinc-900 hover:border-zinc-650 hover:shadow-lg shadow-xs ${
+              isArrowsMode ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
+            }`
       }`}
     >
       {isDragOver && !isDragging && !isTouchDragging && (

@@ -1,5 +1,5 @@
-import { useState, useCallback, memo } from 'react';
-import { Loader2, Sparkles } from 'lucide-react';
+import { useState, useCallback, useRef, memo } from 'react';
+import { Loader2, Plus } from 'lucide-react';
 import { useTranslation } from '../../../i18n/translations';
 import { useFlipAnimation } from '../../common/useFlipAnimation';
 import { MoodboardBlockProps, MoodboardSection, ReferenceImage } from './types';
@@ -31,6 +31,7 @@ export function MoodboardBlockComponent({
   const [newSectionName, setNewSectionName] = useState('');
   const [folderPendingDelete, setFolderPendingDelete] = useState<MoodboardSection | null>(null);
   const [imagePendingDelete, setImagePendingDelete] = useState<ReferenceImage | null>(null);
+  const emptyFileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     images,
@@ -249,10 +250,32 @@ export function MoodboardBlockComponent({
                 <span className="text-xs font-mono">{t('loadingImages')}</span>
               </div>
             ) : previewImages.length === 0 ? (
-              <div className="py-8 flex flex-col items-center justify-center text-zinc-500 gap-2 border border-dashed border-zinc-800/80 rounded">
-                <Sparkles className="w-6 h-6 text-zinc-600" />
-                <span className="text-xs font-medium text-zinc-400">{t('emptyVisualsMessage')}</span>
-                <span className="text-[10px] text-zinc-600 font-mono">
+              <div className="py-8 flex flex-col items-center justify-center text-zinc-500 gap-2.5 border border-dashed border-zinc-800/80 rounded bg-zinc-900/20">
+                <input
+                  ref={emptyFileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*,image/png,image/jpeg,image/gif,image/webp,image/svg+xml,image/avif"
+                  className="hidden"
+                  onChange={(e) => {
+                    const fileList = e.target.files;
+                    if (fileList && fileList.length > 0) {
+                      handleFilesSelected(Array.from(fileList));
+                    }
+                    e.target.value = '';
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => emptyFileInputRef.current?.click()}
+                  title={t('addImages')}
+                  aria-label={t('addImages')}
+                  className="p-2.5 rounded-full border border-zinc-700 bg-zinc-800/80 hover:bg-zinc-700 hover:border-zinc-500 text-zinc-300 hover:text-zinc-100 transition shadow-xs cursor-pointer"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+                <span className="text-xs font-medium text-zinc-300">{t('emptyVisualsMessage')}</span>
+                <span className="text-[10px] text-zinc-500 font-mono">
                   {t('dragDropOrAdd')}
                 </span>
               </div>
@@ -283,6 +306,7 @@ export function MoodboardBlockComponent({
                       onSectionDragOver={onSectionDragOver}
                       onSectionDragLeave={onSectionDragLeave}
                       registerCard={registerCard}
+                      visualsDropMode={visualsDropMode}
                       onMoveImage={handleMoveImage}
                       onPreview={setActiveLightbox}
                       onDeleteImage={requestDeleteImage}

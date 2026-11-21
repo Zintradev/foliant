@@ -1,11 +1,13 @@
 import { useState, useMemo, useEffect, memo } from 'react';
-import { BarChart3, Clock, Target, TrendingUp, Search, ChevronsUpDown } from 'lucide-react';
+import { BarChart3, TrendingUp, Search, ChevronsUpDown, SpellCheck2 } from 'lucide-react';
+import Fuse from 'fuse.js';
 import { ProjectStatsViewProps, TreeStatItem, ProgressStatus } from './types';
-import { getProgressStatus, formatReadingTime } from './statUtils';
+import { getProgressStatus } from './statUtils';
 import { useProjectStatsTree } from './useProjectStatsTree';
 import { ProjectStatsCardsExpanded } from './ProjectStatsCardsExpanded';
 import { ProjectStatsTable } from './ProjectStatsTable';
 import { useTranslation } from '../../../../i18n/translations';
+import { loadSettings } from '../../../../types/settings';
 
 // ---------------------------------------------------------------------------
 // Cohesive Inlined Presentational Subcomponents
@@ -27,12 +29,12 @@ interface ProjectStatsHeaderProps {
 
 const ProjectStatsHeader = memo(function ProjectStatsHeader({
   isExpanded,
-  totalWords,
-  targetWordCount,
+  totalWords: _totalWords,
+  targetWordCount: _targetWordCount,
   isEditingTarget,
   customTargetInput,
   sumSceneTargets,
-  onToggleEditingTarget,
+  onToggleEditingTarget: _onToggleEditingTarget,
   onCustomTargetInputChange,
   onSaveTarget,
   onCancelEditingTarget,
@@ -44,30 +46,10 @@ const ProjectStatsHeader = memo(function ProjectStatsHeader({
     <>
       <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800 bg-zinc-900/50">
         <div className="flex items-center gap-1.5 min-w-0">
-          <BarChart3 className="w-3.5 h-3.5 text-zinc-300 shrink-0" />
-          <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider font-mono truncate">
+          <BarChart3 className="w-3.5 h-3.5 text-zinc-300 shrink-0 ui-decorative-icon" />
+          <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider font-mono truncate dock-view-title">
             {isExpanded ? t('projectAnalyticsTracking') : t('projectAnalytics')}
           </span>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <span
-            className="hidden sm:flex items-center gap-1 text-[10px] text-zinc-500 font-mono px-1.5 py-0.5 rounded-sm bg-zinc-950 border border-zinc-850"
-            title={t('estReadingTimeTooltip')}
-          >
-            <Clock className="w-2.5 h-2.5 text-zinc-500" />
-            <span>~{formatReadingTime(totalWords)}</span>
-          </span>
-
-          <button
-            type="button"
-            onClick={onToggleEditingTarget}
-            title={t('configureTargetWordCount')}
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-mono text-zinc-400 hover:text-zinc-200 hover:bg-zinc-855 transition border border-zinc-800 cursor-pointer"
-          >
-            <Target className="w-2.5 h-2.5" />
-            <span>{targetWordCount.toLocaleString()}w</span>
-          </button>
         </div>
       </div>
 
@@ -135,6 +117,8 @@ const ProjectStatsCardCompact = memo(function ProjectStatsCardCompact({
 }: ProjectStatsCardCompactProps) {
   const { t } = useTranslation();
 
+  const isClean = ['editorial', 'classic-clean'].includes(loadSettings().preferences?.uiStyle || 'modern');
+
   return (
     <div className="p-2.5 rounded-sm border border-zinc-800 bg-zinc-900/40 space-y-1.5">
       <div className="flex items-center justify-between text-[10px] text-zinc-400 uppercase tracking-wider font-mono">
@@ -177,16 +161,18 @@ const ProjectStatsCardCompact = memo(function ProjectStatsCardCompact({
         />
       </div>
 
-      <div className="flex items-center justify-between text-[9px] text-zinc-500 font-mono pt-0.5">
-        <span>
-          {remainingWords > 0
-            ? `${remainingWords.toLocaleString()} ${t('wordsLeft')}`
-            : t('goalReached')}
-        </span>
-        <span>
-          {sceneCount} {t('scenesCountLabel')}
-        </span>
-      </div>
+      {!isClean && (
+        <div className="flex items-center justify-between text-[9px] text-zinc-500 font-mono pt-0.5">
+          <span>
+            {remainingWords > 0
+              ? `${remainingWords.toLocaleString()} ${t('wordsLeft')}`
+              : t('goalReached')}
+          </span>
+          <span>
+            {sceneCount} {t('scenesCountLabel')}
+          </span>
+        </div>
+      )}
     </div>
   );
 });
@@ -194,6 +180,8 @@ const ProjectStatsCardCompact = memo(function ProjectStatsCardCompact({
 interface ProjectStatsToolbarProps {
   searchQuery: string;
   onSearchChange: (q: string) => void;
+  isFuzzy: boolean;
+  onToggleFuzzy: (fuzzy: boolean) => void;
   folderCount: number;
   hasCollapsedFolders: boolean;
   onToggleExpandAll: () => void;
@@ -202,6 +190,8 @@ interface ProjectStatsToolbarProps {
 const ProjectStatsToolbar = memo(function ProjectStatsToolbar({
   searchQuery,
   onSearchChange,
+  isFuzzy,
+  onToggleFuzzy,
   folderCount,
   hasCollapsedFolders,
   onToggleExpandAll,
@@ -220,6 +210,21 @@ const ProjectStatsToolbar = memo(function ProjectStatsToolbar({
           className="w-full bg-zinc-950 border border-zinc-800 rounded-sm pl-7 pr-3 py-1 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 font-sans"
         />
       </div>
+
+      <button
+        type="button"
+        role="switch"
+        aria-checked={isFuzzy}
+        onClick={() => onToggleFuzzy(!isFuzzy)}
+        title={t('fuzzySearchTooltip', 'Enable fuzzy search to tolerate minor typos')}
+        className={`flex items-center gap-1 px-2 py-1 rounded-sm text-[11px] font-mono transition cursor-pointer border shrink-0 ${
+          isFuzzy
+            ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
+            : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+        }`}
+      >
+        <SpellCheck2 className="w-3.5 h-3.5" />
+      </button>
 
       {folderCount > 0 && (
         <button
@@ -254,6 +259,7 @@ export function ProjectStatsViewComponent({
 }: ProjectStatsViewProps) {
   const [targetWordCount, setTargetWordCount] = useState<number>(initialTarget);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isFuzzy, setIsFuzzy] = useState(false);
   const [isEditingTarget, setIsEditingTarget] = useState(false);
   const [customTargetInput, setCustomTargetInput] = useState(String(initialTarget));
   const [collapsedFolderIds, setCollapsedFolderIds] = useState<Set<string>>(new Set());
@@ -277,16 +283,41 @@ export function ProjectStatsViewComponent({
   const globalStatus = getProgressStatus(totalWords, targetWordCount);
   const remainingWords = Math.max(0, targetWordCount - totalWords);
 
+  const fuse = useMemo(() => {
+    if (!isFuzzy) return null;
+    const allNodes: { id: string; title: string; synopsis?: string }[] = [];
+    const collect = (items: TreeStatItem[]) => {
+      for (const item of items) {
+        allNodes.push({ id: item.node.id, title: item.node.title, synopsis: item.node.synopsis });
+        collect(item.children);
+      }
+    };
+    collect(roots);
+    return new Fuse(allNodes, {
+      keys: ['title', 'synopsis'],
+      threshold: 0.4,
+      distance: 100,
+      ignoreLocation: true,
+    });
+  }, [roots, isFuzzy]);
+
+  const matchingFuzzyIds = useMemo(() => {
+    if (!isFuzzy || !fuse || searchQuery.trim().length < 2) return null;
+    return new Set(fuse.search(searchQuery.trim()).map((res) => res.item.id));
+  }, [isFuzzy, fuse, searchQuery]);
+
   const visibleTreeItems = useMemo(() => {
     const list: TreeStatItem[] = [];
 
     const traverse = (items: TreeStatItem[]) => {
       for (const item of items) {
-        const matchesSearch =
-          !searchQuery.trim() ||
-          item.node.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (item.node.synopsis &&
-            item.node.synopsis.toLowerCase().includes(searchQuery.toLowerCase()));
+        const matchesSearch = !searchQuery.trim()
+          ? true
+          : matchingFuzzyIds
+          ? matchingFuzzyIds.has(item.node.id)
+          : item.node.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.node.synopsis &&
+              item.node.synopsis.toLowerCase().includes(searchQuery.toLowerCase()));
 
         if (matchesSearch) {
           list.push(item);
@@ -300,7 +331,7 @@ export function ProjectStatsViewComponent({
 
     traverse(roots);
     return list;
-  }, [roots, collapsedFolderIds, searchQuery]);
+  }, [roots, collapsedFolderIds, searchQuery, matchingFuzzyIds]);
 
   const handleToggleFolder = (folderId: string) => {
     setCollapsedFolderIds((prev) => {
@@ -396,6 +427,8 @@ export function ProjectStatsViewComponent({
         <ProjectStatsToolbar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          isFuzzy={isFuzzy}
+          onToggleFuzzy={setIsFuzzy}
           folderCount={folderCount}
           hasCollapsedFolders={collapsedFolderIds.size > 0}
           onToggleExpandAll={handleToggleExpandAll}

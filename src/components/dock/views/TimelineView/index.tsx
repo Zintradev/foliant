@@ -56,6 +56,8 @@ function TimelineViewComponent({
     zoomX: zoomHook.zoomX,
     zoomY: zoomHook.zoomY,
     zoomYRef: zoomHook.zoomYRef,
+    appSettings,
+    effectiveAppSettings,
   });
   clearManualSceneWidthsRef.current = heightsHook.clearManualSceneWidths;
   clearManualPlotHeightsRef.current = heightsHook.clearManualPlotHeights;

@@ -102,4 +102,9 @@ export default {
   tourExpand: 'Expandir Guía',
   tourMinimize: 'Minimizar Guía',
   tourGoToView: 'Ir a la pestaña «{0}»',
+  tourToastTitle: '¿Primeros pasos en Foliant?',
+  tourToastDesc: 'Realiza un breve tutorial interactivo para conocer las herramientas.',
+  tourToastStart: 'Iniciar tutorial',
+  tourToastDismiss: 'Más tarde',
+  tourToastNever: 'No volver a mostrar',
 } as const;

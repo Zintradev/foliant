@@ -99,4 +99,89 @@ describe('SceneInspector Component', () => {
     expect(select.style.backgroundColor).toBe('rgba(168, 85, 247, 0.2)');
     expect(select.style.borderColor).toBe('rgba(168, 85, 247, 0.6)');
   });
+
+  it('keeps all accordion sections collapsed by default and hides synopsis word count until expanded', () => {
+    render(
+      <SceneInspector
+        activeNodeId="scene-1"
+        activeNode={mockScene}
+        chapters={[mockScene]}
+        onUpdateNode={vi.fn()}
+      />
+    );
+
+    // Textarea for synopsis should not be visible when collapsed
+    expect(screen.queryByPlaceholderText(/synopsis/i)).not.toBeInTheDocument();
+
+    // Word count in synopsis header should be hidden when collapsed
+    expect(screen.queryByText(/w$/)).not.toBeInTheDocument();
+
+    // Click to open synopsis section
+    const synopsisButton = screen.getByText(/Synopsis/i);
+    fireEvent.click(synopsisButton);
+
+    // Textarea is now visible
+    expect(screen.getByDisplayValue(mockScene.synopsis!)).toBeInTheDocument();
+    // Word count is now visible (synopsis has 5 words)
+    expect(screen.getByText('5 w')).toBeInTheDocument();
+  });
+
+  it('collapses sections again when changing activeNodeId', () => {
+    const scene2: TextNode = {
+      id: 'scene-2',
+      title: 'Second Scene',
+      content: '',
+      synopsis: 'Next chapter notes',
+      type: 'scene',
+      parentId: null,
+    };
+
+    const { rerender } = render(
+      <SceneInspector
+        activeNodeId="scene-1"
+        activeNode={mockScene}
+        chapters={[mockScene, scene2]}
+        onUpdateNode={vi.fn()}
+      />
+    );
+
+    // Open synopsis
+    fireEvent.click(screen.getByText(/Synopsis/i));
+    expect(screen.getByDisplayValue(mockScene.synopsis!)).toBeInTheDocument();
+
+    // Switch to scene-2
+    rerender(
+      <SceneInspector
+        activeNodeId="scene-2"
+        activeNode={scene2}
+        chapters={[mockScene, scene2]}
+        onUpdateNode={vi.fn()}
+      />
+    );
+
+    // All sections should be collapsed again
+    expect(screen.queryByDisplayValue(scene2.synopsis!)).not.toBeInTheDocument();
+  });
+
+  it('renders sections respecting the sectionOrder prop', () => {
+    render(
+      <SceneInspector
+        activeNodeId="scene-1"
+        activeNode={mockScene}
+        chapters={[mockScene]}
+        sectionOrder={['world', 'cast', 'plots', 'synopsis', 'goal']}
+        onUpdateNode={vi.fn()}
+      />
+    );
+
+    const buttons = screen.getAllByRole('button');
+    // Extract section header button texts
+    const buttonTexts = buttons.map((b) => b.textContent || '');
+    const worldIdx = buttonTexts.findIndex((t) => t.includes('Mundo') || t.includes('World'));
+    const castIdx = buttonTexts.findIndex((t) => t.includes('Personajes') || t.includes('Cast'));
+    const goalIdx = buttonTexts.findIndex((t) => t.includes('Objetivo') || t.includes('Goal'));
+
+    expect(worldIdx).toBeLessThan(castIdx);
+    expect(castIdx).toBeLessThan(goalIdx);
+  });
 });

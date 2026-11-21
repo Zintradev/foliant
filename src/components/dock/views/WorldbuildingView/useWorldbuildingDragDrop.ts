@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
 import { WorldItem } from './types';
+import { DropMode } from '../../../../types/settings';
 
 interface UseWorldbuildingDragDropOptions {
   items: WorldItem[];
   filteredItems: WorldItem[];
-  worldDropMode: 'shift' | 'swap';
+  worldDropMode?: DropMode;
   onChange: (items: WorldItem[]) => void;
 }
 

@@ -97,11 +97,11 @@ export const TOUR_STEPS: TourStep[] = [
     titleEs: '04 • Tramas: Asocia personajes o capítulos',
     titleEn: '04 • Plots: Link characters or chapters',
     descEs:
-      'Accede a la pestaña de Tramas en la barra lateral. Pulsa el botón «+» iluminado para crear tu trama y utiliza el selector iluminado para vincular un capítulo o personaje.',
+      'Accede a la pestaña de Tramas en la barra lateral. Pulsa el botón «+» iluminado para crear tu trama, despliégala haciendo clic sobre ella para ver sus opciones y utiliza el selector iluminado para vincular un capítulo o personaje.',
     descEn:
-      'Access the Plots tab in the side bar. Click the illuminated «+» button to create your storyline and use the illuminated selector to link a chapter or character.',
-    tipEs: 'Crea una trama con el botón «+» y vincúlala a un capítulo o personaje para desbloquear el siguiente paso.',
-    tipEn: 'Create a storyline using the «+» button and link it to a chapter or character to unlock the next step.',
+      'Access the Plots tab in the side bar. Click the illuminated «+» button to create your storyline, expand it by clicking on it to reveal its options, and use the illuminated selector to link a chapter or character.',
+    tipEs: 'Crea una trama con el botón «+», despliégala para ver sus opciones y vincúlala a un capítulo o personaje para desbloquear el siguiente paso.',
+    tipEn: 'Create a storyline using the «+» button, expand it to reveal its options, and link it to a chapter or character to unlock the next step.',
   },
   {
     id: 'timeline-demo-choice',
@@ -154,7 +154,7 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
   onClose,
   language = 'en',
   activeMainView = 'write',
-  onSelectView: _onSelectView,
+  onSelectView,
   onLoadDemoProject,
   isSettingsOpen = false,
   onHighlightViewChange,
@@ -175,6 +175,15 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
 
   // Determine if user is currently on the expected view for this step
   const isOnTargetView = !currentStep.targetView || activeMainView === currentStep.targetView;
+
+  // Auto-switch view to match current step's target view
+  useEffect(() => {
+    if (!isOpen || isMinimized) return;
+    const target = currentStep.targetView;
+    if (target && onSelectView && activeMainView !== target) {
+      onSelectView(target);
+    }
+  }, [isOpen, isMinimized, currentStepIndex, currentStep.targetView, onSelectView, activeMainView]);
 
   // Notify parent of view highlighting
   useEffect(() => {
@@ -278,56 +287,45 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
     // Apply pulse ring to target elements
     let highlightedElements: HTMLElement[] = [];
 
+    const highlightClasses = ['ring-4', 'ring-emerald-400', 'ring-offset-2', 'ring-offset-zinc-950', 'animate-pulse', 'shadow-[0_0_18px_rgba(52,211,153,0.85)]', 'z-40'];
+
     const applyHighlight = () => {
-      // Remove pulse classes from elements no longer highlighted
+      // Remove pulse classes and attribute from elements no longer highlighted
       highlightedElements.forEach((el) => {
-        el.classList.remove('ring-2', 'ring-emerald-400', 'ring-offset-1', 'ring-offset-zinc-950', 'animate-pulse');
+        el.classList.remove(...highlightClasses);
+        el.removeAttribute('data-tour-highlight');
       });
       highlightedElements = [];
+
+      const markHighlight = (el: HTMLElement | null) => {
+        if (el) {
+          el.classList.add(...highlightClasses);
+          el.setAttribute('data-tour-highlight', 'true');
+          highlightedElements.push(el);
+        }
+      };
 
       if (currentStepIndex === 0) {
         const btn1 = document.querySelector('[data-tour-id="outline-create-scene-btn"]') as HTMLElement;
         const btn2 = document.querySelector('[data-tour-id="outline-create-scene-btn-footer"]') as HTMLElement;
-        [btn1, btn2].forEach((el) => {
-          if (el) {
-            el.classList.add('ring-2', 'ring-emerald-400', 'ring-offset-1', 'ring-offset-zinc-950', 'animate-pulse');
-            highlightedElements.push(el);
-          }
-        });
-      } else if (currentStepIndex === 1 && !addBtnClicked) {
+        [btn1, btn2].forEach(markHighlight);
+      } else if (currentStepIndex === 1) {
         const charBtn = document.querySelector('[data-tour-id="characters-add-btn"]') as HTMLElement;
-        if (charBtn) {
-          charBtn.classList.add('ring-2', 'ring-emerald-400', 'ring-offset-1', 'ring-offset-zinc-950', 'animate-pulse');
-          highlightedElements.push(charBtn);
-
-          const handleClick = () => {
-            setAddBtnClicked(true);
-            charBtn.classList.remove('ring-2', 'ring-emerald-400', 'ring-offset-1', 'ring-offset-zinc-950', 'animate-pulse');
-          };
-          charBtn.addEventListener('click', handleClick, { once: true });
-        }
+        const charSubmitBtn = document.querySelector('[data-tour-id="characters-submit-btn"]') as HTMLElement;
+        [charBtn, charSubmitBtn].forEach(markHighlight);
       } else if (currentStepIndex === 3) {
-        // Step 4: Plots - Highlight add storyline button, submit button in drawer, and link chapter/character selectors
+        // Step 4: Plots - Highlight add storyline button, submit button in drawer, link selectors, and expand button
         const addBtn = document.querySelector('[data-tour-id="storylines-add-btn"]') as HTMLElement;
         const submitBtn = document.querySelector('[data-tour-id="storylines-submit-btn"]') as HTMLElement;
         const linkChapterSelect = document.querySelector('[data-tour-id="storylines-link-chapter-select"]') as HTMLElement;
         const linkCharacterSelect = document.querySelector('[data-tour-id="storylines-link-character-select"]') as HTMLElement;
-        [addBtn, submitBtn, linkChapterSelect, linkCharacterSelect].forEach((el) => {
-          if (el) {
-            el.classList.add('ring-2', 'ring-emerald-400', 'ring-offset-1', 'ring-offset-zinc-950', 'animate-pulse');
-            highlightedElements.push(el);
-          }
-        });
+        const expandBtn = document.querySelector('[data-tour-id="storylines-expand-btn"]') as HTMLElement;
+        [addBtn, submitBtn, linkChapterSelect, linkCharacterSelect, expandBtn].forEach(markHighlight);
       } else if (currentStepIndex === 5 && !isSettingsOpen) {
         // Step 6: Settings - Highlight the File Menu / Options button and settings item
         const settingsBtn = document.querySelector('[data-tour-id="activity-bar-settings-btn"]') as HTMLElement;
         const fileMenuBtn = document.querySelector('[data-tour-id="activity-bar-file-menu"]') as HTMLElement;
-        [settingsBtn, fileMenuBtn].forEach((el) => {
-          if (el) {
-            el.classList.add('ring-2', 'ring-emerald-400', 'ring-offset-1', 'ring-offset-zinc-950', 'animate-pulse');
-            highlightedElements.push(el);
-          }
-        });
+        [settingsBtn, fileMenuBtn].forEach(markHighlight);
       }
     };
 
@@ -337,7 +335,8 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
     return () => {
       clearInterval(interval);
       highlightedElements.forEach((el) => {
-        el.classList.remove('ring-2', 'ring-emerald-400', 'ring-offset-1', 'ring-offset-zinc-950', 'animate-pulse');
+        el.classList.remove(...highlightClasses);
+        el.removeAttribute('data-tour-highlight');
       });
     };
   }, [isOpen, isMinimized, currentStepIndex, addBtnClicked, isSettingsOpen, activeMainView]);
@@ -461,13 +460,17 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
           <div className="p-4 flex flex-col gap-3">
             {/* View navigation alert when not on target tab */}
             {!isOnTargetView && currentStep.targetView && (
-              <div className="bg-emerald-950/40 border border-emerald-600/40 rounded-lg p-2.5 flex items-center justify-between gap-2 text-xs text-emerald-300">
+              <div
+                onClick={() => currentStep.targetView && onSelectView?.(currentStep.targetView)}
+                className="bg-emerald-950/40 border border-emerald-600/40 rounded-lg p-2.5 flex items-center justify-between gap-2 text-xs text-emerald-300 cursor-pointer hover:bg-emerald-950/60 transition"
+                title={isEs ? 'Cambiar a esta vista' : 'Switch to this view'}
+              >
                 <div className="flex items-center gap-2">
                   <ArrowRight className="w-4 h-4 text-emerald-400 animate-bounce-x" />
                   <span>
                     {isEs
-                      ? `Pulsa en la pestaña iluminada en el lateral para ir a «${getLocalizedViewName(currentStep.targetView, language)}»`
-                      : `Click the highlighted tab on the side bar to visit «${getLocalizedViewName(currentStep.targetView, language)}»`}
+                      ? `Pulsa aquí o en la pestaña del lateral para ir a «${getLocalizedViewName(currentStep.targetView, language)}»`
+                      : `Click here or the side bar tab to visit «${getLocalizedViewName(currentStep.targetView, language)}»`}
                   </span>
                 </div>
               </div>

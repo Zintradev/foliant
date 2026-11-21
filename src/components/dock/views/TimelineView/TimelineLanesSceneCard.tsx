@@ -46,6 +46,18 @@ function TimelineLanesSceneCardComponent({
   const { t } = useTranslation();
   const isDropdownOpen = openAttachDropdown?.sceneId === scene.id;
 
+  const getTranslatedStatus = (st?: string) => {
+    if (!st) return t('statusDraft', 'Draft');
+    const s = st.toLowerCase();
+    if (s === 'not started') return t('statusNotStarted', 'Not Started');
+    if (s === 'draft') return t('statusDraft', 'Draft');
+    if (s === 'in progress') return t('statusInProgress', 'In Progress');
+    if (s === 'first draft') return t('statusFirstDraft', 'First Draft');
+    if (s === 'revised') return t('statusRevised', 'Revised');
+    if (s === 'done' || s === 'completed' || s === 'final') return t('statusDone', 'Completed');
+    return st;
+  };
+
   return (
     <div
       onClick={() => onSelectScene(scene.id)}
@@ -60,7 +72,7 @@ function TimelineLanesSceneCardComponent({
         <div className="flex items-center justify-between gap-1 pb-1 border-b border-zinc-800/80">
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="text-[10px] font-mono px-1 rounded-xs bg-zinc-950 border border-zinc-800 text-zinc-400 shrink-0">
-              {scene.status || 'Draft'}
+              {getTranslatedStatus(scene.status || 'Draft')}
             </span>
             <h4 className="text-xs font-semibold text-zinc-200 truncate" title={scene.title}>
               {scene.title}
@@ -178,7 +190,7 @@ function TimelineLanesSceneCardComponent({
             title="Attach plot thread to scene"
           >
             <Plus className="w-2.5 h-2.5 shrink-0" />
-            <span className="truncate">{t('dockStoriesShort')}</span>
+            <span className="truncate">{t('attachPlot', 'Plot')}</span>
           </button>
           <button
             type="button"
@@ -190,7 +202,7 @@ function TimelineLanesSceneCardComponent({
             title="Attach character to scene"
           >
             <Plus className="w-2.5 h-2.5 shrink-0" />
-            <span className="truncate">{t('dockCastShort')}</span>
+            <span className="truncate">{t('attachCast', 'Cast')}</span>
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { TextNode } from '../../../../types/project';
 import { CharacterItem, WorldItem, StorylineItem } from '../../../../types/dock';
-import { AppColorSettings } from '../../../../types/settings';
+import { AppColorSettings, SceneInspectorAccordionKey } from '../../../../types/settings';
 
 export interface SceneInspectorProps {
   activeNodeId: string;
@@ -11,8 +11,10 @@ export interface SceneInspectorProps {
   storylines?: StorylineItem[];
   customStatuses?: string[];
   colorSettings?: AppColorSettings;
+  sectionOrder?: SceneInspectorAccordionKey[];
+  preserveAccordionOnNodeChange?: boolean;
   onUpdateNode: (id: string, updates: Partial<TextNode>) => void;
   onSelectChapter?: (id: string) => void;
 }
 
-export type SceneInspectorAccordionKey = 'goal' | 'synopsis' | 'plots' | 'cast' | 'world';
+export type { SceneInspectorAccordionKey };

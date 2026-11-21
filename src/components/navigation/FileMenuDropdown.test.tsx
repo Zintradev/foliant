@@ -40,7 +40,7 @@ describe('FileMenuDropdown Component', () => {
     expect(screen.queryByText(/volver a la portada/i)).not.toBeInTheDocument();
   });
 
-  it('renders "Others" section header and allows editing project metadata and EPUB options', () => {
+  it('renders "Others" section header and EPUB export options without Project Details in menu', () => {
     const onExportEpub = vi.fn();
     const onClose = vi.fn();
 
@@ -56,10 +56,13 @@ describe('FileMenuDropdown Component', () => {
     // "Otros" section header
     expect(screen.getByText('Otros')).toBeInTheDocument();
 
-    // Project details button
-    const metadataBtn = screen.getByRole('button', { name: /detalles del proyecto/i });
-    expect(metadataBtn).toBeInTheDocument();
-    fireEvent.click(metadataBtn);
+    // Project details button should not be present in the dropdown menu
+    expect(screen.queryByRole('button', { name: /detalles del proyecto/i })).not.toBeInTheDocument();
+
+    // EPUB export button works
+    const epubBtn = screen.getByRole('button', { name: /exportar a epub/i });
+    expect(epubBtn).toBeInTheDocument();
+    fireEvent.click(epubBtn);
     expect(onExportEpub).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
   });

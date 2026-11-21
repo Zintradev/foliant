@@ -16,12 +16,20 @@ import {
   PenTool,
   Sliders,
   Indent,
+  Layers,
+  ArrowUp,
+  ArrowDown,
+  GitBranch,
+  Users,
 } from 'lucide-react';
 import {
   Language,
+  DropMode,
   DeleteConfirmationPreferences,
   DEFAULT_DELETE_CONFIRMATIONS,
   SceneScrollMode,
+  SceneInspectorAccordionKey,
+  DEFAULT_INSPECTOR_SECTION_ORDER,
 } from '../../../types/settings';
 import { PreferenceChangeHandler } from './types';
 import { GbFlag, EsFlag } from '../../common/FlagIcons';
@@ -32,10 +40,12 @@ interface SettingsGeneralSectionProps {
   currentLang: Language;
   saveMode: 'auto' | 'manual';
   autoSaveInterval?: number;
-  timelineDropMode: 'shift' | 'swap';
-  worldDropMode: 'shift' | 'swap';
-  notesDropMode?: 'shift' | 'swap';
-  visualsDropMode?: 'shift' | 'swap';
+  timelineDropMode: DropMode;
+  worldDropMode: DropMode;
+  notesDropMode?: DropMode;
+  visualsDropMode?: DropMode;
+  storylinesDropMode?: DropMode;
+  charactersDropMode?: DropMode;
   preserveManualSceneWidth: boolean;
   preserveManualPlotHeight: boolean;
   autoUpdateCheck?: boolean;
@@ -44,6 +54,9 @@ interface SettingsGeneralSectionProps {
   editorIndentSize?: number;
   focusModeShowFormattingToolbar?: boolean;
   sceneScrollMode?: SceneScrollMode;
+  inspectorSectionOrder?: SceneInspectorAccordionKey[];
+  showHeaderChapterInfo?: boolean;
+  hideBottomBarChapterInfo?: boolean;
   onPreferenceChange: PreferenceChangeHandler;
   t: (key: string, fallback?: string) => string;
 }
@@ -56,6 +69,8 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
   worldDropMode,
   notesDropMode = 'shift',
   visualsDropMode = 'shift',
+  storylinesDropMode = 'shift',
+  charactersDropMode = 'shift',
   preserveManualSceneWidth,
   preserveManualPlotHeight,
   autoUpdateCheck = false,
@@ -64,6 +79,9 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
   editorIndentSize = 1.5,
   focusModeShowFormattingToolbar = false,
   sceneScrollMode = 'remember',
+  inspectorSectionOrder = DEFAULT_INSPECTOR_SECTION_ORDER,
+  showHeaderChapterInfo = false,
+  hideBottomBarChapterInfo = false,
   onPreferenceChange,
   t,
 }: SettingsGeneralSectionProps) {
@@ -71,6 +89,37 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
   const [updateStatusMessage, setUpdateStatusMessage] = useState<string>('');
 
   const isDesktop = isTauriApp();
+
+  const currentInspectorOrder = inspectorSectionOrder && inspectorSectionOrder.length > 0
+    ? inspectorSectionOrder
+    : DEFAULT_INSPECTOR_SECTION_ORDER;
+
+  const handleMoveInspectorSection = (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= currentInspectorOrder.length) return;
+    const nextOrder = [...currentInspectorOrder];
+    const temp = nextOrder[index];
+    nextOrder[index] = nextOrder[targetIndex];
+    nextOrder[targetIndex] = temp;
+    onPreferenceChange('inspectorSectionOrder', nextOrder);
+  };
+
+  const getSectionTitle = (key: SceneInspectorAccordionKey): string => {
+    switch (key) {
+      case 'goal':
+        return t('inspectorSectionGoal', 'Goal & Metrics');
+      case 'synopsis':
+        return t('inspectorSectionSynopsis', 'Synopsis & Notes');
+      case 'plots':
+        return t('inspectorSectionPlots', 'Plot Tracks');
+      case 'cast':
+        return t('inspectorSectionCast', 'Characters & POV');
+      case 'world':
+        return t('inspectorSectionWorld', 'Worldbuilding Elements');
+      default:
+        return key;
+    }
+  };
 
   const handleManualCheckUpdates = async () => {
     if (!isTauriApp()) return;
@@ -470,6 +519,63 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
             </label>
           </div>
         </div>
+
+        {/* Header & Status Bar Scene Metrics Visibility */}
+        <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3">
+          <div>
+            <label className="text-xs font-semibold text-zinc-200">
+              {t('workspaceHeaderInfoSettings', 'Header & Status Bar')}
+            </label>
+          </div>
+
+          <div className="space-y-3 pt-1">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs text-zinc-200">
+                  {t('showHeaderChapterInfo', 'Show chapter title, words, and target in header')}
+                </div>
+                <p className="text-[11px] text-zinc-400 mt-0.5">
+                  {t(
+                    'showHeaderChapterInfoDesc',
+                    'Displays active scene name, word count, and word target in the top editor header.'
+                  )}
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+                <input
+                  type="checkbox"
+                  checked={showHeaderChapterInfo}
+                  onChange={(e) => onPreferenceChange('showHeaderChapterInfo', e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
+              </label>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-zinc-800/60">
+              <div>
+                <div className="text-xs text-zinc-200">
+                  {t('hideBottomBarChapterInfo', 'Hide also in bottom status bar')}
+                </div>
+                <p className="text-[11px] text-zinc-400 mt-0.5">
+                  {t(
+                    'hideBottomBarChapterInfoDesc',
+                    'Hides scene title, word count, and target in the bottom status bar for an uncluttered workspace.'
+                  )}
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+                <input
+                  type="checkbox"
+                  checked={hideBottomBarChapterInfo}
+                  onChange={(e) => onPreferenceChange('hideBottomBarChapterInfo', e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ------------------------------------------------------------------- */}
@@ -523,6 +629,18 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
                 <span>{t('swapMode')}</span>
                 {timelineDropMode === 'swap' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
               </button>
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('timelineDropMode', 'arrows')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  timelineDropMode === 'arrows'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('arrowsMode')}</span>
+                {timelineDropMode === 'arrows' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
             </div>
           </div>
 
@@ -562,6 +680,18 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
               >
                 <span>{t('swapMode')}</span>
                 {worldDropMode === 'swap' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('worldDropMode', 'arrows')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  worldDropMode === 'arrows'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('arrowsMode')}</span>
+                {worldDropMode === 'arrows' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
               </button>
             </div>
           </div>
@@ -603,6 +733,18 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
                 <span>{t('swapMode')}</span>
                 {notesDropMode === 'swap' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
               </button>
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('notesDropMode', 'arrows')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  notesDropMode === 'arrows'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('arrowsMode')}</span>
+                {notesDropMode === 'arrows' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
             </div>
           </div>
 
@@ -642,6 +784,122 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
               >
                 <span>{t('swapMode')}</span>
                 {visualsDropMode === 'swap' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('visualsDropMode', 'arrows')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  visualsDropMode === 'arrows'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('arrowsMode')}</span>
+                {visualsDropMode === 'arrows' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Storylines Drop Mode */}
+          <div className="p-3 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
+                <GitBranch className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <span>{t('storylinesDropMode')}</span>
+              </label>
+              <div className="text-[11px] text-zinc-500 mt-0.5 pl-5.5">
+                {t('storylinesDropModeDesc')}
+              </div>
+            </div>
+
+            <div className="flex items-center p-0.5 bg-zinc-950 border border-zinc-800 rounded-md shrink-0">
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('storylinesDropMode', 'shift')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  storylinesDropMode === 'shift'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('shiftMode')}</span>
+                {storylinesDropMode === 'shift' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('storylinesDropMode', 'swap')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  storylinesDropMode === 'swap'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('swapMode')}</span>
+                {storylinesDropMode === 'swap' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('storylinesDropMode', 'arrows')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  storylinesDropMode === 'arrows'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('arrowsMode')}</span>
+                {storylinesDropMode === 'arrows' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Cast / Characters Drop Mode */}
+          <div className="p-3 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
+                <Users className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <span>{t('charactersDropMode')}</span>
+              </label>
+              <div className="text-[11px] text-zinc-500 mt-0.5 pl-5.5">
+                {t('charactersDropModeDesc')}
+              </div>
+            </div>
+
+            <div className="flex items-center p-0.5 bg-zinc-950 border border-zinc-800 rounded-md shrink-0">
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('charactersDropMode', 'shift')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  charactersDropMode === 'shift'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('shiftMode')}</span>
+                {charactersDropMode === 'shift' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('charactersDropMode', 'swap')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  charactersDropMode === 'swap'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('swapMode')}</span>
+                {charactersDropMode === 'swap' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => onPreferenceChange('charactersDropMode', 'arrows')}
+                className={`px-3 py-1 text-xs font-medium rounded transition flex items-center gap-1.5 cursor-pointer ${
+                  charactersDropMode === 'arrows'
+                    ? 'border border-emerald-500/50 bg-emerald-950/50 text-zinc-100 ring-1 ring-emerald-500/30 shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                <span>{t('arrowsMode')}</span>
+                {charactersDropMode === 'arrows' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
               </button>
             </div>
           </div>
@@ -694,6 +952,55 @@ export const SettingsGeneralSection = React.memo(function SettingsGeneralSection
                 <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
               </label>
             </div>
+          </div>
+        </div>
+
+        {/* Inspector Section Order Card */}
+        <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-3.5">
+          <div>
+            <div className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
+              <Layers className="w-3.5 h-3.5 text-blue-400" />
+              <span>{t('inspectorSectionOrder', 'Inspector Section Order')}</span>
+            </div>
+            <p className="text-[11px] text-zinc-400 mt-0.5">
+              {t('inspectorSectionOrderDesc', 'Configure the vertical arrangement of sections in the Scene Inspector panel.')}
+            </p>
+          </div>
+
+          <div className="space-y-1.5 pt-2 border-t border-zinc-800/80">
+            {currentInspectorOrder.map((sectionKey, idx) => (
+              <div
+                key={sectionKey}
+                className="flex items-center justify-between p-2 rounded-md bg-zinc-950/80 border border-zinc-800 text-xs text-zinc-300"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[10px] text-zinc-500 w-4">{idx + 1}.</span>
+                  <span className="font-medium text-zinc-200">{getSectionTitle(sectionKey)}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    title={t('moveUp', 'Move Up')}
+                    aria-label={`${t('moveUp', 'Move Up')} ${getSectionTitle(sectionKey)}`}
+                    disabled={idx === 0}
+                    onClick={() => handleMoveInspectorSection(idx, 'up')}
+                    className="p-1 rounded-sm text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
+                  >
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    title={t('moveDown', 'Move Down')}
+                    aria-label={`${t('moveDown', 'Move Down')} ${getSectionTitle(sectionKey)}`}
+                    disabled={idx === currentInspectorOrder.length - 1}
+                    onClick={() => handleMoveInspectorSection(idx, 'down')}
+                    className="p-1 rounded-sm text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
+                  >
+                    <ArrowDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

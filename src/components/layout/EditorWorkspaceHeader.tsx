@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Feather, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight } from 'lucide-react';
+import { PanelLeftClose, PanelLeft, PanelRightClose, PanelRight } from 'lucide-react';
 
 function SquareInsideSquareIcon({ className = 'w-3 h-3' }: { className?: string }) {
   return (
@@ -29,6 +29,7 @@ export interface EditorWorkspaceHeaderProps {
   onToggleRight: () => void;
   isFocusMode?: boolean;
   onToggleFocus?: () => void;
+  showHeaderChapterInfo?: boolean;
   t: (key: any, defaultVal?: string) => string;
 }
 
@@ -42,6 +43,7 @@ export const EditorWorkspaceHeader = memo(function EditorWorkspaceHeader({
   onToggleRight,
   isFocusMode = false,
   onToggleFocus,
+  showHeaderChapterInfo = false,
   t,
 }: EditorWorkspaceHeaderProps) {
   return (
@@ -64,24 +66,29 @@ export const EditorWorkspaceHeader = memo(function EditorWorkspaceHeader({
           )}
         </button>
 
-        <div className="flex items-center gap-1.5 text-zinc-400 min-w-0">
-          <Feather className="w-3.5 h-3.5 text-zinc-300 shrink-0" />
-          <span className="text-xs font-medium text-zinc-200 truncate max-w-[120px] sm:max-w-xs md:max-w-sm">
-            {activeChapterTitle}
-          </span>
-        </div>
+        {showHeaderChapterInfo && (
+          <div className="flex items-center gap-1.5 text-zinc-400 min-w-0">
+            <span className="text-xs font-medium text-zinc-200 truncate max-w-[120px] sm:max-w-xs md:max-w-sm">
+              {activeChapterTitle}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 text-xs text-zinc-400 shrink-0">
-        <span className="whitespace-nowrap">
-          {t('words')}: <strong className="text-zinc-200 font-mono">{wordCount}</strong>
-        </span>
-        <span className="whitespace-nowrap hidden sm:inline">
-          {t('target')}:{' '}
-          <strong className="text-zinc-200 font-mono">
-            {targetWords.toLocaleString()}
-          </strong>
-        </span>
+        {showHeaderChapterInfo && (
+          <>
+            <span className="whitespace-nowrap">
+              {t('words')}: <strong className="text-zinc-200 font-mono">{wordCount}</strong>
+            </span>
+            <span className="whitespace-nowrap hidden sm:inline">
+              {t('target')}:{' '}
+              <strong className="text-zinc-200 font-mono">
+                {targetWords.toLocaleString()}
+              </strong>
+            </span>
+          </>
+        )}
 
         {onToggleFocus && (
           <button
@@ -89,7 +96,7 @@ export const EditorWorkspaceHeader = memo(function EditorWorkspaceHeader({
             title={isFocusMode ? t('exitFocusMode', 'Salir de Concentración') : t('focusMode', 'Concentración')}
             className="flex items-center gap-1 px-2 py-1 md:py-0.5 rounded-xs text-[11px] font-medium bg-zinc-800 hover:bg-zinc-750 text-zinc-300 hover:text-white border border-zinc-700 transition cursor-pointer touch-manipulation"
           >
-            <SquareInsideSquareIcon className="w-3 h-3 text-zinc-300 shrink-0" />
+            <SquareInsideSquareIcon className="w-3 h-3 text-zinc-300 shrink-0 ui-decorative-icon" />
             <span className="hidden sm:inline">{isFocusMode ? t('exitFocusMode', 'Exit Focus') : t('focusMode', 'Focus')}</span>
           </button>
         )}

@@ -19,6 +19,7 @@ interface WorldbuildingListItemProps {
   isFirst?: boolean;
   isLast?: boolean;
   onMoveItem?: (id: string, direction: 'up' | 'down') => void;
+  worldDropMode?: 'shift' | 'swap' | 'arrows';
   setElementRef: (el: HTMLDivElement | null) => void;
   onSelect: (id: string) => void;
   onDelete: (id: string, e?: React.MouseEvent) => void;
@@ -47,6 +48,7 @@ function WorldbuildingListItemComponent({
   isFirst,
   isLast,
   onMoveItem,
+  worldDropMode = 'shift',
   setElementRef,
   onSelect,
   onDelete,
@@ -92,7 +94,7 @@ function WorldbuildingListItemComponent({
   return (
     <div
       ref={setElementRef}
-      draggable={true}
+      draggable={worldDropMode !== 'arrows'}
       onDragStart={(e) => onDragStart(e, item.id, index)}
       onDragEnter={onDragEnter}
       onDragOver={(e) => onDragOver(e, item.id, index)}
@@ -128,7 +130,9 @@ function WorldbuildingListItemComponent({
     >
       <div className="flex items-center justify-between gap-1.5">
         <div className="flex items-center gap-1.5 min-w-0">
-          <GripVertical className="w-3 h-3 text-zinc-600 group-hover:text-zinc-400 transition shrink-0 cursor-grab active:cursor-grabbing" />
+          {worldDropMode !== 'arrows' && (
+            <GripVertical className="w-3 h-3 text-zinc-600 group-hover:text-zinc-400 transition shrink-0 cursor-grab active:cursor-grabbing" />
+          )}
           {item.imageUrl || item.avatarUrl ? (
             <div className="w-5 h-5 rounded-xs overflow-hidden border border-zinc-800 shrink-0 bg-zinc-950">
               <img
@@ -151,7 +155,7 @@ function WorldbuildingListItemComponent({
           >
             {getCategoryLabel(item.category)}
           </span>
-          {onMoveItem && (
+          {onMoveItem && worldDropMode === 'arrows' && (
             <div
               className="flex items-center gap-0.5 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 hover:!opacity-100 transition-opacity"
               onClick={(e) => e.stopPropagation()}

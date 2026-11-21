@@ -350,6 +350,7 @@ describe('MoodboardBlock Component', () => {
         title="Moodboard"
         projectId="reorder-proj"
         initialVisuals={defaultVisuals}
+        visualsDropMode="arrows"
         onUpdateVisuals={handleUpdate}
       />
     );

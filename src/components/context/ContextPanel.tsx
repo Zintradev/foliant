@@ -6,8 +6,10 @@ import {
   Folder,
   FolderPlus,
   Search,
+  SpellCheck2,
   X,
 } from 'lucide-react';
+import Fuse from 'fuse.js';
 import { ContextBlock } from '../../types/project';
 import { loadSettings } from '../../types/settings';
 import { StorylineItem, CharacterItem, WorldItem } from '../../types/dock';
@@ -23,7 +25,7 @@ interface ContextPanelProps {
   storylines?: StorylineItem[];
   characters?: CharacterItem[];
   worldItems?: WorldItem[];
-  notesDropMode?: 'shift' | 'swap';
+  notesDropMode?: 'shift' | 'swap' | 'arrows';
 }
 
 let nextId = 100;
@@ -57,10 +59,26 @@ function ContextPanelComponent({
   const [newFolderNameInput, setNewFolderNameInput] = useState('');
   const [customFolderList, setCustomFolderList] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isFuzzy, setIsFuzzy] = useState(false);
   const [filterTag, setFilterTag] = useState<string | null>(null);
 
   const blocksRef = useRef(blocks);
   blocksRef.current = blocks;
+
+  const fuse = useMemo(() => {
+    if (!isFuzzy) return null;
+    return new Fuse(blocks, {
+      keys: ['title', 'content', 'folder', 'tags'],
+      threshold: 0.4,
+      distance: 100,
+      ignoreLocation: true,
+    });
+  }, [blocks, isFuzzy]);
+
+  const matchingFuzzyIds = useMemo(() => {
+    if (!isFuzzy || !fuse || searchQuery.trim().length < 2) return null;
+    return new Set(fuse.search(searchQuery.trim()).map((res) => res.item.id));
+  }, [isFuzzy, fuse, searchQuery]);
 
   // Derive unique folders from all blocks and created folders
   const allFolders = useMemo(() => {
@@ -399,6 +417,18 @@ function ContextPanelComponent({
     resetDragState();
   };
 
+  const handleMoveNote = useCallback(
+    (index: number, direction: 'up' | 'down') => {
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= blocks.length) return;
+      const next = [...blocks];
+      const [moved] = next.splice(index, 1);
+      next.splice(targetIndex, 0, moved);
+      onChange(next);
+    },
+    [blocks, onChange]
+  );
+
   // Filter blocks by folder, search query, and tag
   const filteredBlocks = useMemo(() => {
     return blocks.filter((b) => {
@@ -428,38 +458,42 @@ function ContextPanelComponent({
 
       // Search query filter
       if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const matchesTitle = b.title.toLowerCase().includes(q);
-        const matchesContent = b.content.toLowerCase().includes(q);
-        const matchesTags = (b.tags || []).some((tag) => tag.toLowerCase().includes(q));
-        const matchesFolder = Boolean(b.folder && b.folder.toLowerCase().includes(q));
-        const matchesCharacters = (b.characterIds || []).some((id) => {
-          const char = characters.find((c) => c.id === id);
-          return char && char.name.toLowerCase().includes(q);
-        });
-        const matchesStorylines = (b.storylineIds || []).some((id) => {
-          const st = storylines.find((s) => s.id === id);
-          return st && st.title.toLowerCase().includes(q);
-        });
-        const matchesWorld = (b.worldItemIds || []).some((id) => {
-          const w = worldItems.find((item) => item.id === id);
-          return w && w.title.toLowerCase().includes(q);
-        });
-        if (
-          !matchesTitle &&
-          !matchesContent &&
-          !matchesTags &&
-          !matchesFolder &&
-          !matchesCharacters &&
-          !matchesStorylines &&
-          !matchesWorld
-        )
-          return false;
+        if (matchingFuzzyIds) {
+          if (!matchingFuzzyIds.has(b.id)) return false;
+        } else {
+          const q = searchQuery.toLowerCase().trim();
+          const matchesTitle = b.title.toLowerCase().includes(q);
+          const matchesContent = b.content.toLowerCase().includes(q);
+          const matchesTags = (b.tags || []).some((tag) => tag.toLowerCase().includes(q));
+          const matchesFolder = Boolean(b.folder && b.folder.toLowerCase().includes(q));
+          const matchesCharacters = (b.characterIds || []).some((id) => {
+            const char = characters.find((c) => c.id === id);
+            return char && char.name.toLowerCase().includes(q);
+          });
+          const matchesStorylines = (b.storylineIds || []).some((id) => {
+            const st = storylines.find((s) => s.id === id);
+            return st && st.title.toLowerCase().includes(q);
+          });
+          const matchesWorld = (b.worldItemIds || []).some((id) => {
+            const w = worldItems.find((item) => item.id === id);
+            return w && w.title.toLowerCase().includes(q);
+          });
+          if (
+            !matchesTitle &&
+            !matchesContent &&
+            !matchesTags &&
+            !matchesFolder &&
+            !matchesCharacters &&
+            !matchesStorylines &&
+            !matchesWorld
+          )
+            return false;
+        }
       }
 
       return true;
     });
-  }, [blocks, selectedFolder, filterTag, searchQuery]);
+  }, [blocks, selectedFolder, filterTag, searchQuery, matchingFuzzyIds]);
 
   const uncategorizedCount = useMemo(
     () => blocks.filter((b) => !b.folder || b.folder.trim().length === 0).length,
@@ -471,7 +505,7 @@ function ContextPanelComponent({
       {/* Header bar with layout column mode selector */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/60 shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider font-mono">
+          <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider font-mono dock-view-title">
             {t('dockNotes')}
           </span>
           <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 border border-zinc-750">
@@ -538,7 +572,7 @@ function ContextPanelComponent({
                   : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850'
               }`}
             >
-              <Folder className={`w-3 h-3 ${isActive ? 'text-amber-400' : 'text-zinc-500'}`} />
+              <Folder className={`w-3 h-3 ui-decorative-icon ${isActive ? 'text-amber-400' : 'text-zinc-500'}`} />
               <span className="truncate max-w-[110px]">{folder}</span>
               <span className="text-[9px] opacity-70 font-mono">({count})</span>
             </button>
@@ -598,7 +632,7 @@ function ContextPanelComponent({
             title={t('newFolder')}
             className="shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-zinc-500 hover:text-zinc-200 hover:bg-zinc-850 transition cursor-pointer border border-dashed border-zinc-800"
           >
-            <FolderPlus className="w-3 h-3" />
+            <FolderPlus className="w-3 h-3 ui-decorative-icon" />
             <span>{t('newFolder')}</span>
           </button>
         )}
@@ -625,6 +659,21 @@ function ContextPanelComponent({
             </button>
           )}
         </div>
+
+        <button
+          type="button"
+          role="switch"
+          aria-checked={isFuzzy}
+          onClick={() => setIsFuzzy(!isFuzzy)}
+          title={t('fuzzySearchTooltip', 'Enable fuzzy search to tolerate minor typos')}
+          className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-mono transition cursor-pointer border shrink-0 ${
+            isFuzzy
+              ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
+              : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+          }`}
+        >
+          <SpellCheck2 className="w-3 h-3" />
+        </button>
 
         {/* Tag Filter Selector if tags exist */}
         {allAvailableTags.length > 0 && (
@@ -798,6 +847,9 @@ function ContextPanelComponent({
                     availableFolders={allFolders}
                     onAddFolder={handleAddFolder}
                     isLineView={layoutCols === 1}
+                    notesDropMode={notesDropMode}
+                    onMoveNote={handleMoveNote}
+                    totalNotes={filteredBlocks.length}
                   />
                 );
               });
@@ -829,7 +881,7 @@ function ContextPanelComponent({
           onClick={() => addBlock('text')}
           className="flex items-center justify-center gap-1.5 w-full px-2.5 py-1.5 rounded-sm text-[11px] font-medium text-zinc-300 hover:text-white border border-zinc-750 hover:border-zinc-500 bg-zinc-900/80 hover:bg-zinc-800 transition shadow-xs cursor-pointer active:scale-[0.99] group"
         >
-          <Plus className="w-3.5 h-3.5 text-zinc-400 group-hover:text-white transition-colors" />
+          <Plus className="w-3.5 h-3.5 text-zinc-400 group-hover:text-white transition-colors ui-decorative-icon" />
           <span>{t('addTextSection')}</span>
         </button>
         <button
@@ -837,7 +889,7 @@ function ContextPanelComponent({
           onClick={() => addBlock('list')}
           className="flex items-center justify-center gap-1.5 w-full px-2.5 py-1.5 rounded-sm text-[11px] font-medium text-zinc-300 hover:text-white border border-zinc-750 hover:border-zinc-500 bg-zinc-900/80 hover:bg-zinc-800 transition shadow-xs cursor-pointer active:scale-[0.99] group"
         >
-          <Plus className="w-3.5 h-3.5 text-zinc-400 group-hover:text-white transition-colors" />
+          <Plus className="w-3.5 h-3.5 text-zinc-400 group-hover:text-white transition-colors ui-decorative-icon" />
           <span>{t('addListSection')}</span>
         </button>
       </div>

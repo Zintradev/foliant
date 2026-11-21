@@ -46,4 +46,7 @@ export default {
   idle: 'Inactivo',
   openFullscreen: 'Abrir en pantalla completa',
   expandPanel: 'Desplegar panel',
+  searchStorylines: 'Buscar tramas...',
+  moveLeft: 'Mover a la izquierda',
+  moveRight: 'Mover a la derecha',
 } as const;

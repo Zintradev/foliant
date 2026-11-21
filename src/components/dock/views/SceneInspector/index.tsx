@@ -1,4 +1,4 @@
-import React, { useMemo, useState, memo, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, memo, useCallback } from 'react';
 import { ChapterStatus, PlotStatus, ScenePlotState } from '../../../../types/project';
 import { countWords } from '../../../../utils/textMetrics';
 import { SceneInspectorProps, SceneInspectorAccordionKey } from './types';
@@ -20,6 +20,8 @@ export function SceneInspectorComponent({
   storylines = [],
   customStatuses,
   colorSettings,
+  sectionOrder,
+  preserveAccordionOnNodeChange = false,
   onUpdateNode,
 }: SceneInspectorProps) {
   // Resolve node by prop or lookup from chapters
@@ -28,31 +30,95 @@ export function SceneInspectorComponent({
     return chapters.find((c) => c.id === activeNodeId) || activeNode;
   }, [activeNode, activeNodeId, chapters]);
 
-  // Accordion state management: all sections collapsible
-  const [openSections, setOpenSections] = useState<Record<SceneInspectorAccordionKey, boolean>>({
-    goal: true,
-    synopsis: true,
-    plots: true,
-    cast: true,
-    world: true,
+  const SESSION_ACCORDION_KEY = 'foliant_outline_inspector_accordion';
+
+  // Helper to load map of all scenes' accordion state from session storage
+  const getSessionAccordionMap = useCallback((): Record<string, Record<SceneInspectorAccordionKey, boolean>> => {
+    try {
+      const saved = sessionStorage.getItem(SESSION_ACCORDION_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return {};
+  }, []);
+
+  // Accordion state management: independent for each scene within the session
+  const [openSections, setOpenSections] = useState<Record<SceneInspectorAccordionKey, boolean>>(() => {
+    if (preserveAccordionOnNodeChange && activeNodeId) {
+      const map = getSessionAccordionMap();
+      if (map[activeNodeId]) {
+        return {
+          goal: Boolean(map[activeNodeId].goal),
+          synopsis: Boolean(map[activeNodeId].synopsis),
+          plots: Boolean(map[activeNodeId].plots),
+          cast: Boolean(map[activeNodeId].cast),
+          world: Boolean(map[activeNodeId].world),
+        };
+      }
+    }
+    return {
+      goal: false,
+      synopsis: false,
+      plots: false,
+      cast: false,
+      world: false,
+    };
   });
 
+  // Switch to the independent accordion state for the selected node
+  useEffect(() => {
+    if (preserveAccordionOnNodeChange && activeNodeId) {
+      const map = getSessionAccordionMap();
+      if (map[activeNodeId]) {
+        setOpenSections({
+          goal: Boolean(map[activeNodeId].goal),
+          synopsis: Boolean(map[activeNodeId].synopsis),
+          plots: Boolean(map[activeNodeId].plots),
+          cast: Boolean(map[activeNodeId].cast),
+          world: Boolean(map[activeNodeId].world),
+        });
+        return;
+      }
+    }
+    setOpenSections({
+      goal: false,
+      synopsis: false,
+      plots: false,
+      cast: false,
+      world: false,
+    });
+  }, [activeNodeId, preserveAccordionOnNodeChange, getSessionAccordionMap]);
+
   const toggleSection = useCallback((key: SceneInspectorAccordionKey) => {
-    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
-  }, []);
+    setOpenSections((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      if (preserveAccordionOnNodeChange && activeNodeId) {
+        try {
+          const map = getSessionAccordionMap();
+          map[activeNodeId] = next;
+          sessionStorage.setItem(SESSION_ACCORDION_KEY, JSON.stringify(map));
+        } catch {
+          // ignore
+        }
+      }
+      return next;
+    });
+  }, [preserveAccordionOnNodeChange, activeNodeId, getSessionAccordionMap]);
 
   // Attached entity IDs
   const attachedCharacterIds = node?.attachedCharacterIds || [];
   const attachedWorldItemIds = node?.attachedWorldItemIds || [];
   const currentPlotStates: ScenePlotState[] = node?.plotStates || [];
 
-  const { sortedStorylines, sortedCharacters, sortedWorldItems } = useSceneInspectorSort({
+  const { sortedStorylines, sortedCharacters, sortedWorldItems, orderedSections } = useSceneInspectorSort({
     storylines,
     currentPlotStates,
     characters,
     attachedCharacterIds,
     worldItems,
     attachedWorldItemIds,
+    sectionOrder,
   });
 
   if (!node) {
@@ -134,8 +200,79 @@ export function SceneInspectorComponent({
     onUpdateNode(node.id, { plotStates: updated });
   };
 
+  const renderSection = (key: SceneInspectorAccordionKey) => {
+    switch (key) {
+      case 'goal':
+        return (
+          <SceneInspectorGoalSection
+            key="goal"
+            isOpen={openSections.goal}
+            onToggle={() => toggleSection('goal')}
+            currentWords={currentWords}
+            targetWords={targetWords}
+            progressPercent={progressPercent}
+            clampedProgress={clampedProgress}
+            readingTimeMin={readingTimeMin}
+            onTargetWordsChange={handleTargetWordsChange}
+            onSelectPreset={handleSelectPreset}
+          />
+        );
+      case 'synopsis':
+        return (
+          <SceneInspectorSynopsisSection
+            key="synopsis"
+            isOpen={openSections.synopsis}
+            onToggle={() => toggleSection('synopsis')}
+            synopsis={node.synopsis ?? ''}
+            onSynopsisChange={handleSynopsisChange}
+          />
+        );
+      case 'plots':
+        return (
+          <SceneInspectorPlotsSection
+            key="plots"
+            isOpen={openSections.plots}
+            onToggle={() => toggleSection('plots')}
+            storylines={storylines}
+            sortedStorylines={sortedStorylines}
+            currentPlotStates={currentPlotStates}
+            onTogglePlotInScene={handleTogglePlotInScene}
+            onUpdatePlotStatus={handleUpdatePlotStatus}
+          />
+        );
+      case 'cast':
+        return (
+          <SceneInspectorCastSection
+            key="cast"
+            isOpen={openSections.cast}
+            onToggle={() => toggleSection('cast')}
+            povCharacterId={node.povCharacterId}
+            characters={characters}
+            sortedCharacters={sortedCharacters}
+            attachedCharacterIds={attachedCharacterIds}
+            onPovChange={handlePovChange}
+            onToggleCharacter={handleToggleCharacter}
+          />
+        );
+      case 'world':
+        return (
+          <SceneInspectorWorldSection
+            key="world"
+            isOpen={openSections.world}
+            onToggle={() => toggleSection('world')}
+            worldItems={worldItems}
+            sortedWorldItems={sortedWorldItems}
+            attachedWorldItemIds={attachedWorldItemIds}
+            onToggleWorldItem={handleToggleWorldItem}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full bg-zinc-950 select-none overflow-y-auto text-zinc-200 font-sans divide-y divide-zinc-850">
+    <div className="flex flex-col h-full bg-zinc-950 select-none overflow-y-auto text-zinc-200 font-sans">
       <SceneInspectorHeader
         isFolder={isFolder}
         title={node.title}
@@ -146,54 +283,7 @@ export function SceneInspectorComponent({
         onStatusChange={handleStatusChange}
       />
 
-      <SceneInspectorGoalSection
-        isOpen={openSections.goal}
-        onToggle={() => toggleSection('goal')}
-        currentWords={currentWords}
-        targetWords={targetWords}
-        progressPercent={progressPercent}
-        clampedProgress={clampedProgress}
-        readingTimeMin={readingTimeMin}
-        onTargetWordsChange={handleTargetWordsChange}
-        onSelectPreset={handleSelectPreset}
-      />
-
-      <SceneInspectorSynopsisSection
-        isOpen={openSections.synopsis}
-        onToggle={() => toggleSection('synopsis')}
-        synopsis={node.synopsis ?? ''}
-        onSynopsisChange={handleSynopsisChange}
-      />
-
-      <SceneInspectorPlotsSection
-        isOpen={openSections.plots}
-        onToggle={() => toggleSection('plots')}
-        storylines={storylines}
-        sortedStorylines={sortedStorylines}
-        currentPlotStates={currentPlotStates}
-        onTogglePlotInScene={handleTogglePlotInScene}
-        onUpdatePlotStatus={handleUpdatePlotStatus}
-      />
-
-      <SceneInspectorCastSection
-        isOpen={openSections.cast}
-        onToggle={() => toggleSection('cast')}
-        povCharacterId={node.povCharacterId}
-        characters={characters}
-        sortedCharacters={sortedCharacters}
-        attachedCharacterIds={attachedCharacterIds}
-        onPovChange={handlePovChange}
-        onToggleCharacter={handleToggleCharacter}
-      />
-
-      <SceneInspectorWorldSection
-        isOpen={openSections.world}
-        onToggle={() => toggleSection('world')}
-        worldItems={worldItems}
-        sortedWorldItems={sortedWorldItems}
-        attachedWorldItemIds={attachedWorldItemIds}
-        onToggleWorldItem={handleToggleWorldItem}
-      />
+      {orderedSections.map((key) => renderSection(key))}
     </div>
   );
 }

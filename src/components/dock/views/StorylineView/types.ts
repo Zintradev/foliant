@@ -12,6 +12,7 @@ export interface StorylineViewProps {
   colorSettings?: AppColorSettings;
   isExpanded?: boolean;
   onDirtyChange?: (isDirty: boolean) => void;
+  storylinesDropMode?: 'shift' | 'swap' | 'arrows';
 }
 
 export type ViewMode = 'threads' | 'chapters';

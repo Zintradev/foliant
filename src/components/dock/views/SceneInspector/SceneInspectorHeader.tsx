@@ -1,5 +1,4 @@
 import React, { memo, useMemo } from 'react';
-import { FileText, Folder } from 'lucide-react';
 import { ChapterStatus } from '../../../../types/project';
 import { AppColorSettings } from '../../../../types/settings';
 import { getAllStatusOptions, getStatusBadgeProps } from '../ProjectStatsView';
@@ -16,7 +15,7 @@ interface SceneInspectorHeaderProps {
 }
 
 function SceneInspectorHeader({
-  isFolder,
+  isFolder: _isFolder,
   title,
   status,
   customStatuses,
@@ -51,23 +50,8 @@ function SceneInspectorHeader({
   const badge = getStatusBadgeProps(currentStatus, colorSettings);
 
   return (
-    <div className="p-3 bg-zinc-900/60 flex flex-col gap-2 shrink-0">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <div
-            className={`w-5 h-5 rounded-sm flex items-center justify-center shrink-0 ${
-              isFolder
-                ? 'bg-amber-950/60 border border-amber-800/60 text-amber-400'
-                : 'bg-blue-950/60 border border-blue-800/60 text-blue-400'
-            }`}
-          >
-            {isFolder ? <Folder className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
-          </div>
-          <span className="text-[11px] font-semibold text-zinc-200 uppercase tracking-wider font-mono truncate">
-            {isFolder ? t('folderSection') : t('sceneInspector')}
-          </span>
-        </div>
-
+    <div className="p-3 bg-zinc-900/60 flex flex-col gap-2 shrink-0 border-b border-zinc-850">
+      <div className="flex items-center justify-end">
         <select
           value={currentStatus}
           onChange={(e) => onStatusChange(e.target.value as ChapterStatus)}

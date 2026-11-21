@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { StorylineItem } from '../../../../types/dock';
+import { DropMode } from '../../../../types/settings';
 
 interface UseTimelineDragDropParams {
   storylines: StorylineItem[];
-  timelineDropMode: 'shift' | 'swap';
+  timelineDropMode?: DropMode;
   getRowHeight: (id: string) => number;
   collapsedStorylines?: Record<string, boolean>;
   onUpdateStorylines?: (updated: StorylineItem[]) => void;

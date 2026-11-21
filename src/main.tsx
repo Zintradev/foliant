@@ -8,7 +8,11 @@ import { applyTheme } from "./theme/themeEngine";
 // Apply persisted theme and splash localization immediately before initial React mount
 try {
   const initialSettings = loadSettings();
-  applyTheme(initialSettings.preferences?.themeMode, initialSettings.preferences?.customTheme);
+  applyTheme(
+    initialSettings.preferences?.themeMode,
+    initialSettings.preferences?.customTheme,
+    initialSettings.preferences?.uiStyle || 'modern'
+  );
   const lang = initialSettings.preferences?.language || 'en';
   const splashStatus = document.getElementById('foliant-splash-status') || document.querySelector('.splash-status');
   if (splashStatus) {

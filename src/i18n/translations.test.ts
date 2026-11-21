@@ -158,7 +158,7 @@ describe('Translation Key & Namespace 1:1 Parity', () => {
     expect(missingInEs).toEqual([]);
     expect(missingInEn).toEqual([]);
     expect(enKeys.length).toBe(esKeys.length);
-    expect(enKeys.length).toBe(916);
+    expect(enKeys.length).toBe(955);
   });
 
   it('guarantees 1:1 parity of namespaces between English and Spanish', () => {

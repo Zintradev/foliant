@@ -46,4 +46,7 @@ export default {
   idle: 'Idle',
   openFullscreen: 'Open in Fullscreen',
   expandPanel: 'Expand Panel',
+  searchStorylines: 'Search storylines...',
+  moveLeft: 'Move left',
+  moveRight: 'Move right',
 } as const;

@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, SpellCheck2, X } from 'lucide-react';
 import { WorldItem } from './types';
 import { getCategoryConfig } from './constants';
 import { useTranslation } from '../../../../i18n/translations';
@@ -11,6 +11,8 @@ interface WorldbuildingFiltersProps {
   onSearchChange: (query: string) => void;
   allCategories: string[];
   items: WorldItem[];
+  isFuzzy?: boolean;
+  onToggleFuzzy?: (fuzzy: boolean) => void;
 }
 
 function WorldbuildingFiltersComponent({
@@ -20,6 +22,8 @@ function WorldbuildingFiltersComponent({
   onSearchChange,
   allCategories,
   items,
+  isFuzzy = false,
+  onToggleFuzzy,
 }: WorldbuildingFiltersProps) {
   const { t } = useTranslation();
 
@@ -79,22 +83,41 @@ function WorldbuildingFiltersComponent({
         })}
       </div>
 
-      <div className="relative">
-        <Search className="w-3 h-3 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder={t('searchLorePlaceholder')}
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-sm pl-7 pr-7 py-1 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
-        />
-        {searchQuery && (
+      <div className="flex items-center gap-1.5">
+        <div className="relative flex-1">
+          <Search className="w-3 h-3 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder={t('searchLorePlaceholder')}
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-sm pl-7 pr-7 py-1 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 font-sans"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => onSearchChange('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+
+        {onToggleFuzzy && (
           <button
             type="button"
-            onClick={() => onSearchChange('')}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+            role="switch"
+            aria-checked={isFuzzy}
+            onClick={() => onToggleFuzzy(!isFuzzy)}
+            title={t('fuzzySearchTooltip', 'Enable fuzzy search to tolerate minor typos')}
+            className={`flex items-center gap-1 px-2 py-1 rounded-xs text-[11px] font-mono transition cursor-pointer border shrink-0 ${
+              isFuzzy
+                ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
+                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+            }`}
           >
-            <X className="w-3 h-3" />
+            <SpellCheck2 className="w-3.5 h-3.5" />
           </button>
         )}
       </div>

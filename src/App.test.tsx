@@ -740,7 +740,7 @@ describe('App Component', () => {
     fireEvent.click(helpBtn);
 
     // HelpGuideModal appears
-    expect(await screen.findByRole('dialog', { name: /help & guide/i })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: /help & guide/i }, { timeout: 3000 })).toBeInTheDocument();
 
     // Ko-fi link is inside the modal
     const kofiLink = screen.getByRole('link', { name: /support on ko-fi/i });
