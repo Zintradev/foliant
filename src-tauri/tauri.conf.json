@@ -43,7 +43,13 @@
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
-      "icons/icon.ico"
+      "icons/icon.ico",
+      "icons/file_icon.ico",
+      "icons/file_icon.icns"
+    ],
+    "resources": [
+      "icons/file_icon.ico",
+      "icons/file_icon.icns"
     ],
     "fileAssociations": [
       {
@@ -52,17 +58,23 @@
         ],
         "name": "Foliant Project",
         "description": "Foliant Studio Project File",
-        "role": "Editor"
+        "role": "Editor",
+        "mimeType": "application/x-foliant"
       }
     ],
     "windows": {
       "nsis": {
-        "installMode": "currentUser"
+        "installMode": "currentUser",
+        "installerHooks": "windows/hooks.nsh"
       }
     },
     "macOS": {
       "frameworks": [],
-      "minimumSystemVersion": "10.13"
+      "minimumSystemVersion": "10.13",
+      "files": {
+        "Resources/file_icon.icns": "icons/file_icon.icns"
+      },
+      "infoPlist": "Info.plist"
     }
   },
   "plugins": {
