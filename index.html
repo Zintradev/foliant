@@ -253,18 +253,21 @@
     }
 
     function handleWsImgError(img, fallbackId) {
-      var currentSrc = img.getAttribute('src') || '';
-      if (currentSrc.startsWith('/screenshots/')) {
-        img.src = '.' + currentSrc;
-        return;
-      }
-      if (currentSrc.startsWith('./screenshots/')) {
-        img.src = '/foliant/' + currentSrc.replace('./', '');
-        return;
-      }
-      if (currentSrc.includes('/foliant/screenshots/')) {
-        img.src = './public' + currentSrc.replace('/foliant', '');
-        return;
+      if (!img) return;
+      var currentSrc = (img.getAttribute('src') || '').trim();
+      if (/^[a-zA-Z0-9_./-]+\.png$/.test(currentSrc)) {
+        if (currentSrc.startsWith('/screenshots/')) {
+          img.src = '.' + currentSrc;
+          return;
+        }
+        if (currentSrc.startsWith('./screenshots/')) {
+          img.src = '/foliant/' + currentSrc.replace('./', '');
+          return;
+        }
+        if (currentSrc.indexOf('/foliant/screenshots/') !== -1) {
+          img.src = './public' + currentSrc.replace('/foliant', '');
+          return;
+        }
       }
       img.style.display = 'none';
       if (fallbackId) {
@@ -273,13 +276,34 @@
       }
     }
 
+    function sanitizeSafeImageUrl(url) {
+      if (typeof url !== 'string') return '';
+      var clean = url.trim();
+      if (/^(?:\.\/|\/)?(?:foliant\/|public\/)?screenshots\/(?:es|en)\/[a-zA-Z0-9_-]+\.png$/.test(clean)) {
+        return clean;
+      }
+      return '';
+    }
+
+    function getCurrentSafeLang() {
+      var attr = document.documentElement.getAttribute('data-lang');
+      return (attr === 'en' || document.documentElement.lang === 'en') ? 'en' : 'es';
+    }
+
     function openImageLightbox(candidateUrls, alt) {
       var modal = document.getElementById('image-lightbox');
       var img = document.getElementById('lightbox-img');
       var cap = document.getElementById('lightbox-caption');
       if (!modal || !img) return;
 
-      var urls = Array.isArray(candidateUrls) ? candidateUrls.slice() : [candidateUrls];
+      var rawList = Array.isArray(candidateUrls) ? candidateUrls : [candidateUrls];
+      var urls = [];
+      for (var i = 0; i < rawList.length; i++) {
+        var sanitized = sanitizeSafeImageUrl(rawList[i]);
+        if (sanitized && urls.indexOf(sanitized) === -1) {
+          urls.push(sanitized);
+        }
+      }
       var idx = 0;
 
       img.onload = function() {
@@ -292,8 +316,9 @@
         }
       };
 
-      img.alt = alt || '';
-      if (cap) cap.textContent = alt || '';
+      var safeAlt = typeof alt === 'string' ? alt : '';
+      img.alt = safeAlt;
+      if (cap) cap.textContent = safeAlt;
 
       if (urls.length > 0) {
         img.src = urls[idx++];
@@ -309,50 +334,54 @@
       modal.style.display = 'none';
       document.body.style.overflow = '';
       var img = document.getElementById('lightbox-img');
-      if (img) img.src = '';
+      if (img) img.removeAttribute('src');
     }
 
     function getImageCandidates(type, lang) {
-      var l = lang || document.documentElement.getAttribute('data-lang') || 'es';
-      var filename = type.endsWith('.png') ? type : type + '.png';
-      var activeEl = document.querySelector('img.lang-' + l + '[src*="' + type.replace('.png', '') + '"]');
-      var list = [];
-      if (activeEl && activeEl.currentSrc) list.push(activeEl.currentSrc);
-      if (activeEl && activeEl.getAttribute('src')) list.push(activeEl.getAttribute('src'));
-      list.push('./screenshots/' + l + '/' + filename);
-      list.push('screenshots/' + l + '/' + filename);
-      list.push('/foliant/screenshots/' + l + '/' + filename);
-      list.push('/screenshots/' + l + '/' + filename);
-      list.push('./public/screenshots/' + l + '/' + filename);
-      list.push('public/screenshots/' + l + '/' + filename);
+      var l = (lang === 'en') ? 'en' : getCurrentSafeLang();
+      var safeType = (typeof type === 'string') ? type.replace(/[^a-zA-Z0-9_-]/g, '') : '';
+      if (!safeType) return [];
+      var filename = safeType.endsWith('.png') ? safeType : safeType + '.png';
+
+      var list = [
+        './screenshots/' + l + '/' + filename,
+        'screenshots/' + l + '/' + filename,
+        '/foliant/screenshots/' + l + '/' + filename,
+        '/screenshots/' + l + '/' + filename,
+        './public/screenshots/' + l + '/' + filename,
+        'public/screenshots/' + l + '/' + filename
+      ];
+
       var dedup = [];
       for (var i = 0; i < list.length; i++) {
-        if (list[i] && dedup.indexOf(list[i]) === -1) dedup.push(list[i]);
+        var valid = sanitizeSafeImageUrl(list[i]);
+        if (valid && dedup.indexOf(valid) === -1) dedup.push(valid);
       }
       return dedup;
     }
 
     function openTimelineLightbox() {
-      var lang = document.documentElement.getAttribute('data-lang') || 'es';
+      var lang = getCurrentSafeLang();
       var alt = lang === 'en' ? 'Multi-thread Timeline Foliant' : 'Línea de Tiempo Multivía Foliant';
       openImageLightbox(getImageCandidates('timeline', lang), alt);
     }
 
     function openGraphLightbox() {
-      var lang = document.documentElement.getAttribute('data-lang') || 'es';
+      var lang = getCurrentSafeLang();
       var alt = lang === 'en' ? 'Character Relationship Graph' : 'Grafo de Relaciones del Elenco';
       openImageLightbox(getImageCandidates('graph', lang), alt);
     }
 
     function openWorkspaceLightbox(index) {
-      var lang = document.documentElement.getAttribute('data-lang') || 'es';
+      var lang = getCurrentSafeLang();
       var names = ['workspace-default', 'workspace-clean', 'workspace-classic-clean', 'workspace-light'];
       var labels = {
         es: ['Foliant - Modo Default (Oscuro)', 'Foliant - Modo Clean', 'Foliant - Modo Classic Clean', 'Foliant - Modo Claro'],
         en: ['Foliant - Default Dark Mode', 'Foliant - Clean Mode', 'Foliant - Classic Clean Mode', 'Foliant - Light Mode']
       };
-      var target = names[index] || names[0];
-      var alt = (labels[lang] && labels[lang][index]) || 'Foliant Workspace';
+      var idx = (typeof index === 'number' && index >= 0 && index < names.length) ? index : 0;
+      var target = names[idx];
+      var alt = (labels[lang] && labels[lang][idx]) || 'Foliant Workspace';
       openImageLightbox(getImageCandidates(target, lang), alt);
     }
 
@@ -1739,20 +1768,40 @@
             ? 'rounded-sm p-3 text-xs font-medium border bg-zinc-900 text-zinc-200 border-zinc-700 flex items-center gap-2.5'
             : 'rounded-sm p-3 text-xs font-medium border bg-zinc-900 text-rose-300 border-rose-800/80 flex items-center gap-2.5';
 
-          var marker = type === 'success'
-            ? '<span class="text-zinc-300 font-mono text-sm">✓</span>'
-            : '<span class="text-rose-400 font-mono text-sm">✕</span>';
+          while (statusEl.firstChild) {
+            statusEl.removeChild(statusEl.firstChild);
+          }
 
-          statusEl.innerHTML = marker +
-            '<div><span class="lang-es">' + esMsg + '</span>' +
-            '<span class="lang-en">' + enMsg + '</span></div>';
+          var marker = document.createElement('span');
+          marker.className = type === 'success'
+            ? 'text-zinc-300 font-mono text-sm'
+            : 'text-rose-400 font-mono text-sm';
+          marker.textContent = type === 'success' ? '✓' : '✕';
+
+          var msgContainer = document.createElement('div');
+
+          var esSpan = document.createElement('span');
+          esSpan.className = 'lang-es';
+          esSpan.textContent = esMsg || '';
+
+          var enSpan = document.createElement('span');
+          enSpan.className = 'lang-en';
+          enSpan.textContent = enMsg || '';
+
+          msgContainer.appendChild(esSpan);
+          msgContainer.appendChild(enSpan);
+
+          statusEl.appendChild(marker);
+          statusEl.appendChild(msgContainer);
           statusEl.classList.remove('hidden');
         }
 
         function hideStatus() {
           if (!statusEl) return;
           statusEl.classList.add('hidden');
-          statusEl.innerHTML = '';
+          while (statusEl.firstChild) {
+            statusEl.removeChild(statusEl.firstChild);
+          }
         }
 
         function setLoading(isLoading) {
