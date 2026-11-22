@@ -11,7 +11,7 @@ export const SettingsInfoSection = React.memo(function SettingsInfoSection({
   t,
 }: SettingsInfoSectionProps) {
   const isDesktop = isTauriApp();
-  const appVersion = 'v0.3.0';
+  const appVersion = 'v0.3.1';
 
   return (
     <div className="space-y-6">

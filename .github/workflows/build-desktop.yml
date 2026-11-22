@@ -81,6 +81,18 @@ jobs:
             exit 1
           }
 
+          # 1b. NSIS Installer Signature (.exe.sig)
+          $nsisSig = Get-ChildItem -Path "src-tauri/target" -Recurse -Filter "*.exe.sig" | Where-Object { $_.FullName -like "*bundle\nsis\*" } | Select-Object -First 1
+          if (-not $nsisSig) {
+            $nsisSig = Get-ChildItem -Path "src-tauri/target" -Recurse -Filter "*.exe.sig" | Select-Object -First 1
+          }
+          if ($nsisSig) {
+            Write-Host "Found NSIS signature: $($nsisSig.FullName)"
+            Copy-Item $nsisSig.FullName "release-assets/$($nsisSig.Name)"
+          } else {
+            Write-Host "Warning: No NSIS signature (.exe.sig) found in src-tauri/target!"
+          }
+
           # 2. MSI Installer (.msi)
           $msi = Get-ChildItem -Path "src-tauri/target" -Recurse -Filter "*.msi" | Where-Object { $_.FullName -like "*bundle\msi\*" } | Select-Object -First 1
           if ($msi) {
@@ -173,6 +185,12 @@ jobs:
             cp release-assets/Foliant-macOS-Portable.zip release-assets/Foliant-Mac-Portable.zip 2>/dev/null || true
           fi
 
+          # 3. Updater artifacts (.app.tar.gz and .app.tar.gz.sig)
+          for f in $(find src-tauri/target -name "*.app.tar.gz" -o -name "*.app.tar.gz.sig" 2>/dev/null); do
+            echo "Found updater artifact: $f"
+            cp "$f" "release-assets/$(basename "$f")"
+          done
+
           if [ ! -f "release-assets/Foliant-Mac.dmg" ]; then
             echo "::error ::release-assets/Foliant-Mac.dmg was not generated!"
             exit 1
@@ -195,6 +213,84 @@ jobs:
         with:
           path: all-assets
           merge-multiple: true
+
+      - name: Generate Tauri v2 latest.json
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event.inputs.release_tag || github.ref_name }}
+        run: |
+          node - << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+
+          const assetsDir = path.resolve('all-assets');
+          const files = fs.readdirSync(assetsDir);
+          console.log('Available assets in all-assets:', files);
+
+          const tag = (process.env.RELEASE_TAG || 'v0.3.1').trim();
+          const version = tag.replace(/^v/, '');
+          const pubDate = new Date().toISOString();
+
+          // 1. Windows x86_64 (.exe and .exe.sig)
+          const winSigFile = files.find(f => f.endsWith('.exe.sig'));
+          let windowsPlatform = null;
+          if (winSigFile) {
+            const expectedExe = winSigFile.replace(/\.sig$/, '');
+            const winExeFile = files.includes(expectedExe)
+              ? expectedExe
+              : files.find(f => f.endsWith('.exe') && !f.includes('Portable'));
+            if (winExeFile) {
+              const signature = fs.readFileSync(path.join(assetsDir, winSigFile), 'utf8').trim();
+              windowsPlatform = {
+                signature,
+                url: `https://github.com/Zintradev/foliant/releases/download/${tag}/${winExeFile}`
+              };
+              console.log(`Windows updater target: ${winExeFile}`);
+            }
+          } else {
+            console.warn('Warning: No .exe.sig file found in all-assets');
+          }
+
+          // 2. Darwin aarch64 (.app.tar.gz and .app.tar.gz.sig)
+          const macSigFile = files.find(f => f.endsWith('.app.tar.gz.sig'));
+          let darwinPlatform = null;
+          if (macSigFile) {
+            const expectedTar = macSigFile.replace(/\.sig$/, '');
+            const macTarFile = files.includes(expectedTar)
+              ? expectedTar
+              : files.find(f => f.endsWith('.app.tar.gz'));
+            if (macTarFile) {
+              const signature = fs.readFileSync(path.join(assetsDir, macSigFile), 'utf8').trim();
+              darwinPlatform = {
+                signature,
+                url: `https://github.com/Zintradev/foliant/releases/download/${tag}/${macTarFile}`
+              };
+              console.log(`macOS updater target: ${macTarFile}`);
+            }
+          } else {
+            console.warn('Warning: No .app.tar.gz.sig file found in all-assets');
+          }
+
+          const platforms = {};
+          if (windowsPlatform) {
+            platforms['windows-x86_64'] = windowsPlatform;
+          }
+          if (darwinPlatform) {
+            platforms['darwin-aarch64'] = darwinPlatform;
+          }
+
+          const latestJson = {
+            version,
+            notes: `Foliant Release ${tag}`,
+            pub_date: pubDate,
+            platforms
+          };
+
+          const outPath = path.join(assetsDir, 'latest.json');
+          fs.writeFileSync(outPath, JSON.stringify(latestJson, null, 2) + '\n', 'utf8');
+          console.log('Generated all-assets/latest.json successfully:');
+          console.log(fs.readFileSync(outPath, 'utf8'));
+          EOF
 
       - name: Publish all assets to GitHub Release
         uses: softprops/action-gh-release@v2
