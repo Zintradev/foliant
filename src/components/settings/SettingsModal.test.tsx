@@ -1144,7 +1144,7 @@ describe('SettingsModal Component', () => {
 
     // Check version and title
     expect(screen.getByText('Foliant Studio')).toBeInTheDocument();
-    expect(screen.getAllByText('v0.3.1').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('v0.3.2').length).toBeGreaterThan(0);
     expect(screen.getByText(dict.en.appLocalFirstTitle)).toBeInTheDocument();
     expect(screen.getByText(dict.en.appLocalFirstDesc)).toBeInTheDocument();
     expect(screen.getByText('Tauri v2 (Rust Core)')).toBeInTheDocument();

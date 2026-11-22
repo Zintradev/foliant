@@ -230,7 +230,7 @@ jobs:
           const files = fs.readdirSync(assetsDir);
           console.log('Available assets in all-assets:', files);
 
-          const tag = (process.env.RELEASE_TAG || 'v0.3.1').trim();
+          const tag = (process.env.RELEASE_TAG || 'v0.3.2').trim();
           const tauriConf = JSON.parse(fs.readFileSync(path.resolve('src-tauri/tauri.conf.json'), 'utf8'));
           const version = tauriConf.version;
           const pubDate = new Date().toISOString();
