@@ -208,6 +208,9 @@ jobs:
     needs: [build-windows, build-macos]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Download all workflow artifacts
         uses: actions/download-artifact@v4
         with:
@@ -228,7 +231,8 @@ jobs:
           console.log('Available assets in all-assets:', files);
 
           const tag = (process.env.RELEASE_TAG || 'v0.3.1').trim();
-          const version = tag.replace(/^v/, '');
+          const tauriConf = JSON.parse(fs.readFileSync(path.resolve('src-tauri/tauri.conf.json'), 'utf8'));
+          const version = tauriConf.version;
           const pubDate = new Date().toISOString();
 
           // 1. Windows x86_64 (.exe and .exe.sig)

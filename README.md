@@ -6,6 +6,8 @@
 [![GitHub Pages](https://img.shields.io/badge/Web%20App-Live-emerald)](https://zintradev.github.io/foliant/)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-29abe0?logo=ko-fi&logoColor=white)](https://ko-fi.com/zintradev)
 
+![Foliant Workspace](public/screenshots/en/workspace-default.png)
+
 ---
 
 ## 🚀 Overview
