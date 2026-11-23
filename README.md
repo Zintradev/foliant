@@ -2,7 +2,7 @@
 
 > An intuitive, modern writing application designed for authors to structure novels, manage characters, track timelines, and weave interconnected stories without friction.
 
-[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-blue.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![GitHub Pages](https://img.shields.io/badge/Web%20App-Live-emerald)](https://zintradev.github.io/foliant/)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-29abe0?logo=ko-fi&logoColor=white)](https://ko-fi.com/zintradev)
 
@@ -63,6 +63,6 @@ Please read our [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a Pull Requ
 
 ## 🛡️ License
 
-This project is licensed under the PolyForm Noncommercial License 1.0.0.
+This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
 
-You are free to use, study, and modify this software for personal, hobby, noncommercial, and educational purposes. Commercial exploitation is strictly prohibited without explicit permission. See the LICENSE file for more details.
+You are free to use, study, modify, and distribute this software under the terms of the GPL-3.0 license. See the [LICENSE](LICENSE) file for more details.
