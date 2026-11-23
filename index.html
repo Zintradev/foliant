@@ -1887,8 +1887,9 @@
 
   <!-- Publisher Colophon / Footer -->
   <footer class="border-t border-zinc-800 bg-zinc-950 py-10 px-4 sm:px-6 lg:px-8 text-xs text-zinc-500 z-10">
-    <div class="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-      <div class="flex items-center gap-3">
+    <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 items-center gap-6">
+      <!-- Brand & Copyright -->
+      <div class="flex items-center justify-center md:justify-start gap-3">
         <img src="/logo.svg" alt="Foliant Logo" class="w-6 h-6 object-contain" />
         <div>
           <span class="font-cinzel font-semibold text-zinc-300">Foliant</span>
@@ -1898,8 +1899,8 @@
         </div>
       </div>
 
-      <!-- Footer External Links: GitHub & Ko-fi -->
-      <div class="flex items-center gap-2 shrink-0">
+      <!-- Footer External Links: GitHub & Ko-fi (Centered) -->
+      <div class="flex items-center justify-center gap-2 shrink-0">
         <a href="https://github.com/Zintradev/foliant" target="_blank" rel="noopener noreferrer"
           class="inline-flex flex-row items-center gap-1.5 px-3 py-1.5 rounded-sm border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-850 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 text-xs font-mono transition-colors group select-none no-underline whitespace-nowrap shrink-0"
           title="GitHub">
@@ -1926,46 +1927,61 @@
         </a>
       </div>
 
-      <!-- License Notice (GNU GPL-3.0) -->
-      <div class="text-center md:text-right max-w-md font-serif-literary">
+      <!-- License & Code Signing Notice -->
+      <div class="text-center md:text-right max-w-lg md:justify-self-end font-serif-literary space-y-1.5 text-balance">
         <p class="leading-relaxed">
           <span class="lang-es">
             Distribuido bajo licencia
             <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener noreferrer"
-              class="text-zinc-400 hover:text-zinc-200 underline decoration-zinc-800 transition">
-              GNU GPL-3.0
-            </a>.
+              class="text-zinc-400 hover:text-zinc-200 underline decoration-zinc-800 transition">GNU GPL-3.0</a>.
             Software libre y de código abierto para toda la comunidad.
           </span>
           <span class="lang-en">
             Distributed under the
             <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener noreferrer"
-              class="text-zinc-400 hover:text-zinc-200 underline decoration-zinc-800 transition">
-              GNU GPL-3.0
-            </a>
+              class="text-zinc-400 hover:text-zinc-200 underline decoration-zinc-800 transition">GNU GPL-3.0</a>
             license. Free and open-source software for everyone.
           </span>
         </p>
-      </div>
-
-      <!-- Manuskript Acknowledgment in Landing Page Footer -->
-      <div
-        class="max-w-5xl mx-auto mt-6 pt-6 border-t border-zinc-900 text-center text-[11px] text-zinc-500 font-serif-literary">
-        <p class="leading-relaxed">
+        <p class="text-[11px] text-zinc-500 leading-relaxed">
           <span class="lang-es">
-            Con especial agradecimiento a la aplicación de código abierto <a
-              href="https://www.theologeek.ch/manuskript/" target="_blank" rel="noopener noreferrer"
-              class="text-zinc-400 hover:text-zinc-200 underline decoration-zinc-800 transition">Manuskript</a> por
-            haber sido la inspiración original para la arquitectura narrativa de Foliant.
+            Firma de código gratuita en Windows proporcionada por
+            <a href="https://signpath.org/" target="_blank" rel="noopener noreferrer"
+              class="text-zinc-400 hover:text-zinc-200 underline decoration-zinc-800 transition whitespace-nowrap">SignPath.io</a>,
+            certificado por
+            <a href="https://signpath.org/" target="_blank" rel="noopener noreferrer"
+              class="text-zinc-400 hover:text-zinc-200 underline decoration-zinc-800 transition whitespace-nowrap">SignPath Foundation</a>.
           </span>
           <span class="lang-en">
-            With special thanks to the open-source application <a href="https://www.theologeek.ch/manuskript/"
-              target="_blank" rel="noopener noreferrer"
-              class="text-zinc-400 hover:text-zinc-200 underline decoration-zinc-800 transition">Manuskript</a> for
-            serving as the original inspiration for Foliant's narrative architecture.
+            Free Windows code signing provided by
+            <a href="https://signpath.org/" target="_blank" rel="noopener noreferrer"
+              class="text-zinc-400 hover:text-zinc-200 underline decoration-zinc-800 transition whitespace-nowrap">SignPath.io</a>,
+            certificate by
+            <a href="https://signpath.org/" target="_blank" rel="noopener noreferrer"
+              class="text-zinc-400 hover:text-zinc-200 underline decoration-zinc-800 transition whitespace-nowrap">SignPath Foundation</a>.
           </span>
         </p>
       </div>
+    </div>
+
+    <!-- Manuskript Acknowledgment in Landing Page Footer -->
+    <div
+      class="max-w-4xl mx-auto mt-6 pt-6 border-t border-zinc-900 text-center text-[11px] text-zinc-500 font-serif-literary text-balance">
+      <p class="leading-relaxed">
+        <span class="lang-es">
+          Con especial agradecimiento a la aplicación de código abierto
+          <a href="https://www.theologeek.ch/manuskript/" target="_blank" rel="noopener noreferrer"
+            class="text-zinc-400 hover:text-zinc-200 underline decoration-zinc-800 transition whitespace-nowrap">Manuskript</a>
+          por haber sido la inspiración original para la arquitectura narrativa de Foliant.
+        </span>
+        <span class="lang-en">
+          With special thanks to the open-source application
+          <a href="https://www.theologeek.ch/manuskript/" target="_blank" rel="noopener noreferrer"
+            class="text-zinc-400 hover:text-zinc-200 underline decoration-zinc-800 transition whitespace-nowrap">Manuskript</a>
+          for serving as the original inspiration for Foliant's narrative architecture.
+        </span>
+      </p>
+    </div>
   </footer>
 
   <script>
