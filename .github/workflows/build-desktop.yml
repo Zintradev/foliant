@@ -13,6 +13,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write     
+  attestations: write
 
 env:
   CARGO_NET_RETRY: 10
@@ -296,6 +298,17 @@ jobs:
           console.log(fs.readFileSync(outPath, 'utf8'));
           EOF
 
+      - name: Generate SHA-256 Checksums
+        shell: bash
+        run: |
+          cd all-assets
+          sha256sum * > SHA256SUMS.txt
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: 'all-assets/*'
+          
       - name: Publish all assets to GitHub Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'

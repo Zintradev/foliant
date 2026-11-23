@@ -1,0 +1,23 @@
+name: SignPath Foundation Reminder
+
+on:
+  watch:
+    types: [started]
+
+jobs:
+  check-stars:
+    runs-on: ubuntu-latest
+    if: github.event.repository.stargazers_count == 100
+    permissions:
+      issues: write
+    steps:
+      - name: Create reminder issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🎉 Foliant reached 100 stars! Reapply for SignPath Foundation',
+              body: 'The project has reached 100 GitHub stars and now has stronger public visibility to reapply for the SignPath Foundation program.\n\n- [ ] Gather links to external mentions (Reddit, blogs, discussions, etc.)\n- [ ] Submit the SignPath Foundation OSS Request Form\n- [ ] Add code signing steps to `.github/workflows/build-desktop.yml`'
+            });
